@@ -6,14 +6,10 @@ import { useGetStatsSummary, useGetWeeklyStats, useListWeeks } from "@workspace/
 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { LedgerSheet } from "@/components/ledger-sheet";
+import { LedgerSheet, THEMES } from "@/components/ledger-sheet";
 import type { LedgerTheme } from "@/components/ledger-sheet";
 
-const THEMES: { id: LedgerTheme; label: string; dot: string }[] = [
-  { id: "obsidian", label: "Obsidian", dot: "#ffffff" },
-  { id: "midnight", label: "Midnight", dot: "#818cf8" },
-  { id: "ember",    label: "Ember",    dot: "#fbbf24" },
-];
+const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix"];
 
 export function StatsPage() {
   const { isLoading: summaryLoading } = useGetStatsSummary();
@@ -25,6 +21,7 @@ export function StatsPage() {
   const [theme, setTheme] = useState<LedgerTheme>("obsidian");
 
   const isLoading = summaryLoading || weeklyLoading || weeksLoading;
+  const t = THEMES[theme];
 
   const handleDownload = async () => {
     if (!ledgerRef.current) return;
@@ -32,23 +29,19 @@ export function StatsPage() {
     try {
       const node = ledgerRef.current;
       const dataUrl = await domtoimage.toPng(node, {
-        bgcolor: node.style.background || "#080808",
+        bgcolor: t.bg,
         width:  node.scrollWidth,
         height: node.scrollHeight,
         scale: 2,
         ignoreCSSRuleErrors: true,
-        onImageError: (info) => {
-          console.warn("[dom-to-image-more] resource failed:", info);
-        },
+        onImageError: (info) => console.warn("[dom-to-image-more] resource failed:", info),
       });
-
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = `trade-ledger-${theme}-${format(new Date(), "yyyy-MM-dd")}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
       toast({ title: "Ledger downloaded!" });
     } catch (err) {
       console.error("[dom-to-image-more] render failed:", err);
@@ -60,6 +53,7 @@ export function StatsPage() {
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
       {/* Top bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -77,29 +71,42 @@ export function StatsPage() {
       </div>
 
       {/* Theme selector */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60 mr-1">Theme</span>
-        {THEMES.map((th) => (
-          <button
-            key={th.id}
-            onClick={() => setTheme(th.id)}
-            className={[
-              "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all border",
-              theme === th.id
-                ? "bg-white/10 border-white/20 text-white"
-                : "bg-transparent border-white/8 text-muted-foreground hover:border-white/15 hover:text-white/70",
-            ].join(" ")}
-          >
-            <span
-              style={{ background: th.dot }}
-              className="w-2 h-2 rounded-full flex-shrink-0"
-            />
-            {th.label}
-          </button>
-        ))}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/50 mr-1">
+          Theme
+        </span>
+        {THEME_ORDER.map((id) => {
+          const th = THEMES[id];
+          const active = theme === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setTheme(id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
+              style={{
+                background: active ? `${th.containerBorder}` : "rgba(255,255,255,0.03)",
+                border: `1px solid ${active ? th.containerBorder : "rgba(255,255,255,0.06)"}`,
+                color: active ? th.textPrimary : "#64748b",
+                boxShadow: active ? `0 0 12px ${th.dot}28` : "none",
+              }}
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: th.dot,
+                  flexShrink: 0,
+                  boxShadow: active ? `0 0 6px ${th.dot}` : "none",
+                }}
+              />
+              {th.name}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Ledger — entire node captured on download */}
+      {/* Ledger — entire node is captured on download */}
       <div ref={ledgerRef}>
         <LedgerSheet theme={theme} />
       </div>
