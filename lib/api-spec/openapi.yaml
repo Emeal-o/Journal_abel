@@ -3,20 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Trading Journal & Stats Dashboard API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: weeks
+    description: Week groupings
+  - name: trades
+    description: Individual trade entries
+  - name: stats
+    description: Statistics and summaries
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +29,219 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /weeks:
+    get:
+      operationId: listWeeks
+      tags: [weeks]
+      summary: List all weeks
+      responses:
+        "200":
+          description: List of weeks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Week"
+    post:
+      operationId: createWeek
+      tags: [weeks]
+      summary: Create a new week
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WeekInput"
+      responses:
+        "201":
+          description: Created week
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Week"
+
+  /weeks/{id}:
+    get:
+      operationId: getWeek
+      tags: [weeks]
+      summary: Get a week with its trades
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Week with trades
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekWithTrades"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateWeek
+      tags: [weeks]
+      summary: Update a week
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WeekUpdate"
+      responses:
+        "200":
+          description: Updated week
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Week"
+    delete:
+      operationId: deleteWeek
+      tags: [weeks]
+      summary: Delete a week and all its trades
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /trades:
+    get:
+      operationId: listTrades
+      tags: [trades]
+      summary: List trades, optionally filtered by week
+      parameters:
+        - name: weekId
+          in: query
+          required: false
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: List of trades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Trade"
+    post:
+      operationId: createTrade
+      tags: [trades]
+      summary: Create a new trade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeInput"
+      responses:
+        "201":
+          description: Created trade
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trade"
+
+  /trades/{id}:
+    get:
+      operationId: getTrade
+      tags: [trades]
+      summary: Get a trade by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trade
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trade"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateTrade
+      tags: [trades]
+      summary: Update a trade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeUpdate"
+      responses:
+        "200":
+          description: Updated trade
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trade"
+    delete:
+      operationId: deleteTrade
+      tags: [trades]
+      summary: Delete a trade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /stats/summary:
+    get:
+      operationId: getStatsSummary
+      tags: [stats]
+      summary: Grand total summary across all trades
+      responses:
+        "200":
+          description: Grand total stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsSummary"
+
+  /stats/weekly:
+    get:
+      operationId: getWeeklyStats
+      tags: [stats]
+      summary: Per-week finale stats for all weeks
+      responses:
+        "200":
+          description: Weekly stats array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeekStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +252,158 @@ components:
       required:
         - status
 
+    Week:
+      type: object
+      required: [id, label, startDate, createdAt]
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        startDate:
+          type: string
+          description: ISO date string for the week start
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    WeekWithTrades:
+      type: object
+      required: [id, label, startDate, createdAt, trades]
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        startDate:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        trades:
+          type: array
+          items:
+            $ref: "#/components/schemas/Trade"
+
+    WeekInput:
+      type: object
+      required: [label, startDate]
+      properties:
+        label:
+          type: string
+          minLength: 1
+        startDate:
+          type: string
+        notes:
+          type: string
+
+    WeekUpdate:
+      type: object
+      properties:
+        label:
+          type: string
+          minLength: 1
+        startDate:
+          type: string
+        notes:
+          type: ["string", "null"]
+
+    Trade:
+      type: object
+      required: [id, weekId, tradeNumber, result, rrr, pips, createdAt]
+      properties:
+        id:
+          type: integer
+        weekId:
+          type: integer
+        tradeNumber:
+          type: integer
+        result:
+          type: string
+          enum: [Win, Loss, BE]
+        rrr:
+          type: number
+          description: Risk-reward ratio (e.g. 1.5 means 1.5R)
+        pips:
+          type: number
+          description: Pips gained (positive) or lost (negative)
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    TradeInput:
+      type: object
+      required: [weekId, result, rrr, pips]
+      properties:
+        weekId:
+          type: integer
+        result:
+          type: string
+          enum: [Win, Loss, BE]
+        rrr:
+          type: number
+        pips:
+          type: number
+        notes:
+          type: string
+
+    TradeUpdate:
+      type: object
+      properties:
+        result:
+          type: string
+          enum: [Win, Loss, BE]
+        rrr:
+          type: number
+        pips:
+          type: number
+        notes:
+          type: ["string", "null"]
+
+    StatsSummary:
+      type: object
+      required: [totalTrades, wins, losses, breakEvens, winRate, netRR, netPips]
+      properties:
+        totalTrades:
+          type: integer
+        wins:
+          type: integer
+        losses:
+          type: integer
+        breakEvens:
+          type: integer
+        winRate:
+          type: number
+          description: Win rate percentage (0–100)
+        netRR:
+          type: number
+          description: Net risk-reward accumulated
+        netPips:
+          type: number
+          description: Net pips accumulated
+
+    WeekStats:
+      type: object
+      required: [weekId, weekLabel, totalTrades, wins, losses, breakEvens, winRate, netRR, netPips]
+      properties:
+        weekId:
+          type: integer
+        weekLabel:
+          type: string
+        totalTrades:
+          type: integer
+        wins:
+          type: integer
+        losses:
+          type: integer
+        breakEvens:
+          type: integer
+        winRate:
+          type: number
+        netRR:
+          type: number
+        netPips:
+          type: number

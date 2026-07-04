@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Trading Journal & Stats Dashboard"
+version = "1.0.0"
+id = "artifacts/trading-journal"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21194
+
+[services.development]
+run = "pnpm --filter @workspace/trading-journal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/trading-journal", "run", "build" ]
+publicDir = "artifacts/trading-journal/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21194"
+BASE_PATH = "/"
