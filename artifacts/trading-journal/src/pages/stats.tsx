@@ -23,8 +23,14 @@ export function StatsPage() {
     setExporting(true);
     try {
       const node = ledgerRef.current;
+      // Use scrollWidth/scrollHeight so the full table (including any column
+      // content that extends beyond the visible viewport) is never clipped.
+      const fullWidth = node.scrollWidth;
+      const fullHeight = node.scrollHeight;
       const dataUrl = await domtoimage.toPng(node, {
         bgcolor: "#0b0f1a",
+        width: fullWidth,
+        height: fullHeight,
         scale: 2,
         ignoreCSSRuleErrors: true,
         onImageError: (info) => {
