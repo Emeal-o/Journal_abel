@@ -20,22 +20,30 @@ export function StatsPage() {
 
   const handleDownload = async () => {
     if (!statsRef.current) return;
-    
+
     try {
       const canvas = await html2canvas(statsRef.current, {
-        backgroundColor: "#0a0e1a", // Deep midnight match
-        scale: 2, // High resolution
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#0b0f19",
+        scale: 2,
+        // Skip decorative blur divs — html2canvas cannot render CSS filter:blur()
+        // and throws a rendering error when it encounters them.
+        ignoreElements: (el) =>
+          el instanceof HTMLElement && el.dataset.exportIgnore === "true",
       });
-      
+
       const image = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = image;
       link.download = `trade-stats-${format(new Date(), "yyyy-MM-dd")}.png`;
+      document.body.appendChild(link);
       link.click();
-      
+      document.body.removeChild(link);
+
       toast({ title: "Stats card downloaded!" });
     } catch (error) {
-      console.error("Failed to generate image:", error);
+      console.error("[html2canvas] Failed to render stats card:", error);
       toast({ title: "Failed to download stats", variant: "destructive" });
     }
   };
@@ -76,10 +84,10 @@ export function StatsPage() {
             ref={statsRef} 
             className="p-6 md:p-8 rounded-2xl border border-white/10 bg-[#0c1120] relative overflow-hidden"
           >
-            {/* Background glowing effects for the exported card */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/20 rounded-full blur-[80px]" />
-            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/20 rounded-full blur-[80px]" />
+            {/* Background glowing effects — tagged so html2canvas skips blur() rendering */}
+            <div data-export-ignore="true" className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+            <div data-export-ignore="true" className="absolute -top-24 -right-24 w-48 h-48 bg-primary/20 rounded-full blur-[80px]" />
+            <div data-export-ignore="true" className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/20 rounded-full blur-[80px]" />
 
             <div className="relative z-10">
               <div className="flex justify-between items-start mb-8">
