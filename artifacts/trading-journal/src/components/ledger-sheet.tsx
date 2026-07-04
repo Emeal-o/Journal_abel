@@ -7,38 +7,98 @@ import {
 } from "@workspace/api-client-react";
 import type { Week } from "@workspace/api-client-react";
 
-// ─── design tokens ───────────────────────────────────────────────────────────
+// ─── themes ──────────────────────────────────────────────────────────────────
 
-const C = {
-  bg:          "#0b0f19",
-  bgCard:      "rgba(255,255,255,0.025)",
-  bgWeekHead:  "rgba(255,255,255,0.018)",
-  bgFinale:    "rgba(255,255,255,0.012)",
-  bgTotal:     "rgba(255,255,255,0.032)",
-  bgGrandHead: "rgba(99,102,241,0.10)",
-  bgGrand:     "rgba(99,102,241,0.055)",
-  divider:     "rgba(30,41,59,0.70)",
-  dividerAcc:  "rgba(51,65,85,0.90)",
-  textPrimary: "#f1f5f9",
-  textSecond:  "#94a3b8",
-  textMuted:   "#475569",
-  win:         "#10b981",
-  winBg:       "rgba(16,185,129,0.12)",
-  winBorder:   "rgba(16,185,129,0.25)",
-  loss:        "#ef4444",
-  lossBg:      "rgba(239,68,68,0.12)",
-  lossBorder:  "rgba(239,68,68,0.25)",
-  be:          "#64748b",
-  beBg:        "rgba(100,116,139,0.10)",
-  beBorder:    "rgba(100,116,139,0.22)",
-  accent:      "#818cf8",
-  finale:      "#78716c",
+export type LedgerTheme = "obsidian" | "midnight" | "ember";
+
+type ThemeTokens = {
+  bg: string;
+  bgHeader: string;
+  bgWeek: string;
+  bgFinale: string;
+  bgTotal: string;
+  bgGrand: string;
+  bgGrandHead: string;
+  border: string;
+  borderStrong: string;
+  textPrimary: string;
+  textSecond: string;
+  textMuted: string;
+  win: string;
+  loss: string;
+  be: string;
+  accent: string;
+  finaleText: string;
+  grandAccent: string;
 };
 
-const FONT = "'Inter','Segoe UI',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','Fira Code','Cascadia Code',monospace";
+const THEMES: Record<LedgerTheme, ThemeTokens> = {
+  obsidian: {
+    bg:           "#080808",
+    bgHeader:     "rgba(255,255,255,0.07)",
+    bgWeek:       "rgba(255,255,255,0.04)",
+    bgFinale:     "rgba(255,255,255,0.02)",
+    bgTotal:      "rgba(255,255,255,0.05)",
+    bgGrand:      "rgba(255,255,255,0.06)",
+    bgGrandHead:  "rgba(255,255,255,0.09)",
+    border:       "rgba(255,255,255,0.12)",
+    borderStrong: "rgba(255,255,255,0.20)",
+    textPrimary:  "#ffffff",
+    textSecond:   "#a0a0a0",
+    textMuted:    "#555555",
+    win:          "#22c55e",
+    loss:         "#ef4444",
+    be:           "#888888",
+    accent:       "#ffffff",
+    finaleText:   "#888888",
+    grandAccent:  "#cccccc",
+  },
+  midnight: {
+    bg:           "#05091a",
+    bgHeader:     "rgba(99,102,241,0.14)",
+    bgWeek:       "rgba(99,102,241,0.07)",
+    bgFinale:     "rgba(99,102,241,0.04)",
+    bgTotal:      "rgba(99,102,241,0.10)",
+    bgGrand:      "rgba(99,102,241,0.10)",
+    bgGrandHead:  "rgba(99,102,241,0.20)",
+    border:       "rgba(99,102,241,0.20)",
+    borderStrong: "rgba(99,102,241,0.38)",
+    textPrimary:  "#e0e7ff",
+    textSecond:   "#818cf8",
+    textMuted:    "#3730a3",
+    win:          "#34d399",
+    loss:         "#f87171",
+    be:           "#818cf8",
+    accent:       "#a5b4fc",
+    finaleText:   "#6366f1",
+    grandAccent:  "#a5b4fc",
+  },
+  ember: {
+    bg:           "#0c0900",
+    bgHeader:     "rgba(251,191,36,0.10)",
+    bgWeek:       "rgba(251,191,36,0.05)",
+    bgFinale:     "rgba(251,191,36,0.03)",
+    bgTotal:      "rgba(251,191,36,0.07)",
+    bgGrand:      "rgba(251,191,36,0.09)",
+    bgGrandHead:  "rgba(251,191,36,0.16)",
+    border:       "rgba(251,191,36,0.14)",
+    borderStrong: "rgba(251,191,36,0.28)",
+    textPrimary:  "#fef9eb",
+    textSecond:   "#d97706",
+    textMuted:    "#78350f",
+    win:          "#4ade80",
+    loss:         "#f87171",
+    be:           "#a78bfa",
+    accent:       "#fbbf24",
+    finaleText:   "#b45309",
+    grandAccent:  "#fbbf24",
+  },
+};
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+const FONT = "'Inter','Segoe UI',system-ui,-apple-system,sans-serif";
+const MONO = "'JetBrains Mono','Fira Code','Cascadia Code',ui-monospace,monospace";
 
 function deriveMonthLabel(weeks: Week[]): string {
   if (weeks.length === 0) return "All Time";
@@ -55,43 +115,9 @@ function deriveMonthLabel(weeks: Week[]): string {
   return `${fm} ${fy} – ${lm} ${ly}`;
 }
 
-function ResultPill({ result }: { result: string }) {
-  const styles: Record<string, React.CSSProperties> = {
-    Win:  { color: C.win,  background: C.winBg,  border: `1px solid ${C.winBorder}` },
-    Loss: { color: C.loss, background: C.lossBg, border: `1px solid ${C.lossBorder}` },
-    BE:   { color: C.be,   background: C.beBg,   border: `1px solid ${C.beBorder}` },
-  };
-  const label: Record<string, string> = { Win: "Win", Loss: "Loss", BE: "BE" };
-  const s = styles[result] ?? styles.BE;
-  return (
-    <span style={{
-      ...s,
-      display: "inline-block",
-      padding: "2px 10px",
-      borderRadius: 999,
-      fontSize: 11,
-      fontWeight: 600,
-      letterSpacing: "0.04em",
-      fontFamily: FONT,
-    }}>
-      {label[result] ?? result}
-    </span>
-  );
-}
-
-function pipColor(v: number) {
-  return v > 0 ? C.win : v < 0 ? C.loss : C.textSecond;
-}
-function rrColor(v: number) {
-  return v > 0 ? C.win : v < 0 ? C.loss : C.textSecond;
-}
 function sign(v: number) { return v > 0 ? "+" : ""; }
 
-// ─── column widths ────────────────────────────────────────────────────────────
-
-const COL = ["9%", "18%", "36%", "37%"];
-
-// ─── per-week block ───────────────────────────────────────────────────────────
+// ─── per-week section (fetches own trades) ────────────────────────────────────
 
 type WeeklyStat = {
   weekId: number; weekLabel: string;
@@ -99,147 +125,164 @@ type WeeklyStat = {
   totalTrades: number; winRate: number; netRR: number; netPips: number;
 };
 
-function WeekBlock({ week, weeklyStat }: { week: Week; weeklyStat: WeeklyStat | undefined }) {
+function WeekSection({
+  week, weeklyStat, t,
+}: {
+  week: Week;
+  weeklyStat: WeeklyStat | undefined;
+  t: ThemeTokens;
+}) {
   const { data: trades = [] } = useListTrades({ weekId: week.id });
 
-  const rowBase: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: COL.join(" "),
-    borderBottom: `1px solid ${C.divider}`,
-    alignItems: "center",
-  };
-
-  const cellBase: React.CSSProperties = {
-    padding: "11px 16px",
+  const cell: React.CSSProperties = {
+    padding: "7px 12px",
+    border: `1px solid ${t.border}`,
     fontFamily: FONT,
     fontSize: 13,
-    color: C.textPrimary,
+    color: t.textPrimary,
+    verticalAlign: "middle",
   };
 
+  const resultLabel: Record<string, string> = { Win: "Win", Loss: "Loss", BE: "BE" };
+  const resultColor: Record<string, string> = { Win: t.win, Loss: t.loss, BE: t.be };
+
   return (
-    <div>
-      {/* Week label row */}
-      <div style={{
-        padding: "9px 16px",
-        background: C.bgWeekHead,
-        borderBottom: `1px solid ${C.divider}`,
-        borderTop: `1px solid ${C.dividerAcc}`,
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-      }}>
-        <span style={{
-          fontFamily: FONT,
-          fontSize: 11,
-          fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: "0.10em",
-          color: C.textMuted,
-        }}>Week</span>
-        <span style={{
-          fontFamily: FONT,
-          fontSize: 12,
-          fontWeight: 500,
-          color: C.textSecond,
-        }}>
-          {week.label}
-          {week.startDate
-            ? <span style={{ color: C.textMuted, marginLeft: 8, fontWeight: 400 }}>
-                — {format(parseISO(week.startDate), "MMM d, yyyy")}
-              </span>
-            : null}
-        </span>
-      </div>
+    <>
+      {/* Week header — spans all 4 cols */}
+      <tr>
+        <td
+          colSpan={4}
+          style={{
+            ...cell,
+            background: t.bgWeek,
+            border: `1px solid ${t.border}`,
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.09em",
+            color: t.textSecond,
+            padding: "6px 12px",
+          }}
+        >
+          Weekly Stats Summary — {week.label}
+          {week.startDate && (
+            <span style={{ fontWeight: 400, marginLeft: 8, color: t.textMuted }}>
+              ({format(parseISO(week.startDate), "MMM d, yyyy")})
+            </span>
+          )}
+        </td>
+      </tr>
 
       {/* Trade rows */}
       {trades.length === 0 ? (
-        <div style={{ ...rowBase, background: C.bgCard }}>
+        <tr>
           {[0,1,2,3].map(i => (
-            <div key={i} style={{ ...cellBase, color: C.textMuted }}>—</div>
+            <td key={i} style={{ ...cell, color: t.textMuted, textAlign: "center" }}>—</td>
           ))}
-        </div>
-      ) : (
-        trades.map((trade) => (
-          <div key={trade.id} style={{ ...rowBase, background: C.bgCard }}>
-            <div style={{ ...cellBase, textAlign: "center", fontWeight: 700, fontFamily: MONO, color: C.textSecond, fontSize: 12 }}>
-              {trade.tradeNumber}
-            </div>
-            <div style={cellBase}>
-              <ResultPill result={trade.result} />
-            </div>
-            <div style={{ ...cellBase, fontFamily: MONO, fontSize: 12, color: C.textSecond }}>
-              1 / {trade.rrr.toFixed(2)}
-            </div>
-            <div style={{ ...cellBase, fontFamily: MONO, fontSize: 13, fontWeight: 600, color: pipColor(trade.pips) }}>
-              {sign(trade.pips)}{trade.pips.toFixed(1)}{" "}
-              <span style={{ fontSize: 11, fontWeight: 400, color: C.textMuted }}>pips</span>
-            </div>
-          </div>
-        ))
-      )}
+        </tr>
+      ) : trades.map((trade) => (
+        <tr key={trade.id}>
+          <td style={{ ...cell, textAlign: "center", fontFamily: MONO, fontWeight: 700, fontSize: 12 }}>
+            {trade.tradeNumber}
+          </td>
+          <td style={cell}>
+            <span style={{
+              display: "inline-block",
+              padding: "2px 9px",
+              borderRadius: 3,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+              color: resultColor[trade.result] ?? t.be,
+              border: `1px solid ${resultColor[trade.result] ?? t.be}`,
+              background: `${resultColor[trade.result] ?? t.be}18`,
+            }}>
+              {resultLabel[trade.result] ?? trade.result}
+            </span>
+          </td>
+          <td style={{ ...cell, fontFamily: MONO, fontSize: 12, color: t.textSecond }}>
+            1&nbsp;/&nbsp;{trade.rrr.toFixed(2)}
+          </td>
+          <td style={{
+            ...cell,
+            fontFamily: MONO,
+            fontWeight: 600,
+            color: trade.pips > 0 ? t.win : trade.pips < 0 ? t.loss : t.be,
+          }}>
+            {sign(trade.pips)}{trade.pips.toFixed(1)}&thinsp;pips
+          </td>
+        </tr>
+      ))}
 
-      {/* Weekly Finale divider */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "8px 20px",
-        background: C.bgFinale,
-        borderBottom: `1px solid ${C.divider}`,
-      }}>
-        <div style={{ flex: 1, height: 1, background: C.divider }} />
-        <span style={{
-          fontFamily: FONT,
-          fontSize: 11,
-          fontStyle: "italic",
-          fontWeight: 500,
-          letterSpacing: "0.12em",
-          color: C.finale,
-          textTransform: "uppercase",
-          whiteSpace: "nowrap",
-        }}>
+      {/* Weekly Finale row */}
+      <tr>
+        <td
+          colSpan={4}
+          style={{
+            ...cell,
+            background: t.bgFinale,
+            textAlign: "center",
+            fontStyle: "italic",
+            fontWeight: 600,
+            fontSize: 12,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: t.finaleText,
+            padding: "5px 12px",
+          }}
+        >
           Weekly Finale
-        </span>
-        <div style={{ flex: 1, height: 1, background: C.divider }} />
-      </div>
+        </td>
+      </tr>
 
       {/* Weekly total row */}
-      <div style={{
-        ...rowBase,
-        background: C.bgTotal,
-        borderBottom: `1px solid ${C.dividerAcc}`,
-      }}>
-        <div style={{ ...cellBase, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textMuted }}>
+      <tr>
+        <td style={{ ...cell, background: t.bgTotal, fontWeight: 700, fontSize: 12, color: t.textSecond, fontFamily: MONO }}>
           Total
-        </div>
-        <div style={{ ...cellBase, fontFamily: MONO, fontWeight: 700, fontSize: 13, color: C.textPrimary }}>
+        </td>
+        <td style={{ ...cell, background: t.bgTotal, fontFamily: MONO, fontWeight: 700, color: t.textPrimary }}>
           {weeklyStat ? `${weeklyStat.winRate}%` : "0%"}
-        </div>
-        <div style={{ ...cellBase, fontFamily: MONO, fontWeight: 700, fontSize: 13, color: weeklyStat ? rrColor(weeklyStat.netRR) : C.textSecond }}>
+        </td>
+        <td style={{
+          ...cell,
+          background: t.bgTotal,
+          fontFamily: MONO,
+          fontWeight: 700,
+          color: weeklyStat && weeklyStat.netRR > 0 ? t.win : weeklyStat && weeklyStat.netRR < 0 ? t.loss : t.be,
+        }}>
           {weeklyStat ? `${sign(weeklyStat.netRR)}${weeklyStat.netRR.toFixed(2)} RR` : "—"}
-        </div>
-        <div style={{ ...cellBase, fontFamily: MONO, fontWeight: 700, fontSize: 13, color: weeklyStat ? pipColor(weeklyStat.netPips) : C.textSecond }}>
+        </td>
+        <td style={{
+          ...cell,
+          background: t.bgTotal,
+          fontFamily: MONO,
+          fontWeight: 700,
+          color: weeklyStat && weeklyStat.netPips > 0 ? t.win : weeklyStat && weeklyStat.netPips < 0 ? t.loss : t.be,
+        }}>
           {weeklyStat ? `${sign(weeklyStat.netPips)}${weeklyStat.netPips.toFixed(1)} pips` : "—"}
-        </div>
-      </div>
-    </div>
+        </td>
+      </tr>
+    </>
   );
 }
 
 // ─── main component ───────────────────────────────────────────────────────────
 
 interface LedgerSheetProps {
+  theme?: LedgerTheme;
   className?: string;
 }
 
-export function LedgerSheet({ className }: LedgerSheetProps) {
-  const { data: weeks = [],    isLoading: wL } = useListWeeks();
-  const { data: summary,       isLoading: sL } = useGetStatsSummary();
+export function LedgerSheet({ theme = "obsidian", className }: LedgerSheetProps) {
+  const { data: weeks = [],      isLoading: wL  } = useListWeeks();
+  const { data: summary,         isLoading: sL  } = useGetStatsSummary();
   const { data: weeklyStats = [], isLoading: wsL } = useGetWeeklyStats();
+
+  const t = THEMES[theme];
 
   if (wL || sL || wsL) {
     return (
-      <div style={{ background: C.bg, borderRadius: 14, padding: 48, textAlign: "center", color: C.textMuted, fontFamily: FONT }}>
+      <div style={{ background: t.bg, borderRadius: 10, padding: 48, textAlign: "center", color: t.textMuted, fontFamily: FONT }}>
         Loading ledger…
       </div>
     );
@@ -247,176 +290,158 @@ export function LedgerSheet({ className }: LedgerSheetProps) {
 
   const monthLabel = deriveMonthLabel(weeks);
 
-  const colLabelStyle: React.CSSProperties = {
-    padding: "10px 16px",
-    fontFamily: FONT,
+  const th: React.CSSProperties = {
+    padding: "8px 12px",
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgHeader,
+    color: t.textSecond,
     fontSize: 11,
     fontWeight: 600,
     textTransform: "uppercase",
-    letterSpacing: "0.10em",
-    color: C.textMuted,
+    letterSpacing: "0.09em",
+    textAlign: "left",
+    fontFamily: FONT,
   };
 
   return (
     <div
       className={className}
       style={{
-        background: C.bg,
-        borderRadius: 14,
-        overflow: "hidden",
+        background: t.bg,
+        borderRadius: 10,
+        padding: "28px 28px 32px",
         fontFamily: FONT,
       }}
     >
-      {/* Month header */}
-      <div style={{
-        padding: "22px 24px 20px",
-        textAlign: "center",
-        borderBottom: `1px solid ${C.dividerAcc}`,
-        background: "rgba(255,255,255,0.02)",
-      }}>
-        <div style={{
-          fontSize: 11,
-          fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: "0.18em",
-          color: C.textMuted,
-          marginBottom: 6,
-        }}>
-          Stats Summary
-        </div>
-        <div style={{
-          fontSize: 22,
-          fontWeight: 800,
-          color: C.textPrimary,
-          letterSpacing: "-0.01em",
-        }}>
-          {monthLabel}
-        </div>
-      </div>
+      <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+        <colgroup>
+          <col style={{ width: "10%" }} />
+          <col style={{ width: "18%" }} />
+          <col style={{ width: "36%" }} />
+          <col style={{ width: "36%" }} />
+        </colgroup>
 
-      {/* Column headers */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: COL.join(" "),
-        borderBottom: `1px solid ${C.dividerAcc}`,
-        background: "rgba(255,255,255,0.012)",
-      }}>
-        <div style={{ ...colLabelStyle, textAlign: "center" }}>Trade #</div>
-        <div style={colLabelStyle}>Result</div>
-        <div style={colLabelStyle}>Risk-Reward (RRR)</div>
-        <div style={colLabelStyle}>Pips Gained / Loss</div>
-      </div>
+        <thead>
+          {/* Month title */}
+          <tr>
+            <td
+              colSpan={4}
+              style={{
+                padding: "14px 16px 12px",
+                border: `1px solid ${t.borderStrong}`,
+                background: t.bgHeader,
+                textAlign: "center",
+                fontWeight: 800,
+                fontSize: 15,
+                color: t.textPrimary,
+                letterSpacing: "0.03em",
+                fontFamily: FONT,
+              }}
+            >
+              {monthLabel}&ensp;·&ensp;Stats Summary
+            </td>
+          </tr>
 
-      {/* Week blocks */}
-      {weeks.map((week) => {
-        const weeklyStat = weeklyStats.find((s) => s.weekId === week.id) as WeeklyStat | undefined;
-        return <WeekBlock key={week.id} week={week} weeklyStat={weeklyStat} />;
-      })}
+          {/* Column headers */}
+          <tr>
+            <th style={{ ...th, textAlign: "center" }}>Trade</th>
+            <th style={th}>Result</th>
+            <th style={th}>Risk-Reward (RRR)</th>
+            <th style={th}>Pips Gained / Loss</th>
+          </tr>
+        </thead>
 
-      {/* Grand Total */}
-      {summary && (
-        <div>
-          {/* Section label */}
-          <div style={{
-            padding: "12px 20px",
-            background: C.bgGrandHead,
-            borderTop: `1px solid rgba(99,102,241,0.22)`,
-            borderBottom: `1px solid rgba(99,102,241,0.15)`,
-            display: "flex",
-            alignItems: "center",
-            gap: 14,
-          }}>
-            <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.25)" }} />
-            <span style={{
-              fontFamily: FONT,
-              fontSize: 11,
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.18em",
-              color: C.accent,
-            }}>
-              Grand Total
-            </span>
-            <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.25)" }} />
-          </div>
+        <tbody>
+          {/* Week blocks */}
+          {weeks.map((week) => {
+            const weeklyStat = weeklyStats.find((s) => s.weekId === week.id) as WeeklyStat | undefined;
+            return (
+              <WeekSection key={week.id} week={week} weeklyStat={weeklyStat} t={t} />
+            );
+          })}
 
-          {/* Grand Total column headers */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: COL.join(" "),
-            borderBottom: `1px solid rgba(99,102,241,0.12)`,
-            background: C.bgGrand,
-          }}>
-            {["Trades", "Win Rate", "Net RR", "Net Pips"].map((label, i) => (
-              <div key={label} style={{
-                ...colLabelStyle,
-                color: "rgba(129,140,248,0.7)",
-                textAlign: i === 0 ? "center" : "left",
-              }}>
-                {label}
-              </div>
-            ))}
-          </div>
-
-          {/* Grand Total values */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: COL.join(" "),
-            background: C.bgGrand,
-            alignItems: "center",
-          }}>
-            <div style={{
-              padding: "18px 16px",
-              textAlign: "center",
-              fontFamily: MONO,
-              fontWeight: 800,
-              fontSize: 28,
-              color: C.textPrimary,
-            }}>
-              {summary.totalTrades}
-            </div>
-
-            <div style={{ padding: "18px 16px" }}>
-              <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: 18, color: C.textPrimary }}>
-                {summary.winRate}%
-              </div>
-              <div style={{ marginTop: 4, display: "flex", gap: 6 }}>
-                <span style={{ fontFamily: FONT, fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 999, background: C.winBg, color: C.win, border: `1px solid ${C.winBorder}` }}>
-                  {summary.wins}W
-                </span>
-                <span style={{ fontFamily: FONT, fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 999, background: C.lossBg, color: C.loss, border: `1px solid ${C.lossBorder}` }}>
-                  {summary.losses}L
-                </span>
-                <span style={{ fontFamily: FONT, fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 999, background: C.beBg, color: C.be, border: `1px solid ${C.beBorder}` }}>
-                  {summary.breakEvens}BE
-                </span>
-              </div>
-            </div>
-
-            <div style={{
-              padding: "18px 16px",
-              fontFamily: MONO,
-              fontWeight: 700,
-              fontSize: 20,
-              color: rrColor(summary.netRR),
-            }}>
-              {sign(summary.netRR)}{summary.netRR.toFixed(2)}
-              <span style={{ fontSize: 13, fontWeight: 400, color: C.textMuted, marginLeft: 4 }}>R</span>
-            </div>
-
-            <div style={{
-              padding: "18px 16px",
-              fontFamily: MONO,
-              fontWeight: 700,
-              fontSize: 20,
-              color: pipColor(summary.netPips),
-            }}>
-              {sign(summary.netPips)}{summary.netPips.toFixed(1)}
-              <span style={{ fontSize: 13, fontWeight: 400, color: C.textMuted, marginLeft: 4 }}>pips</span>
-            </div>
-          </div>
-        </div>
-      )}
+          {/* Grand Total */}
+          {summary && (
+            <>
+              <tr>
+                <td
+                  colSpan={4}
+                  style={{
+                    padding: "8px 16px",
+                    border: `1px solid ${t.borderStrong}`,
+                    background: t.bgGrandHead,
+                    textAlign: "center",
+                    fontWeight: 700,
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.16em",
+                    color: t.grandAccent,
+                    fontFamily: FONT,
+                  }}
+                >
+                  Grand Total
+                </td>
+              </tr>
+              <tr>
+                <th style={{ ...th, textAlign: "center", background: t.bgGrand }}>Trades</th>
+                <th style={{ ...th, background: t.bgGrand }}>Win Rate</th>
+                <th style={{ ...th, background: t.bgGrand }}>Net RR</th>
+                <th style={{ ...th, background: t.bgGrand }}>Net Pips</th>
+              </tr>
+              <tr>
+                <td style={{
+                  padding: "14px 12px",
+                  border: `1px solid ${t.border}`,
+                  background: t.bgGrand,
+                  textAlign: "center",
+                  fontFamily: MONO,
+                  fontWeight: 800,
+                  fontSize: 22,
+                  color: t.textPrimary,
+                }}>
+                  {summary.totalTrades}
+                </td>
+                <td style={{
+                  padding: "14px 12px",
+                  border: `1px solid ${t.border}`,
+                  background: t.bgGrand,
+                  fontFamily: MONO,
+                  verticalAlign: "middle",
+                }}>
+                  <span style={{ fontWeight: 800, fontSize: 16, color: t.textPrimary }}>
+                    {summary.winRate}%
+                  </span>
+                  <span style={{ display: "block", marginTop: 4, fontSize: 11, color: t.textSecond, fontFamily: FONT }}>
+                    {summary.wins}W · {summary.losses}L · {summary.breakEvens}BE
+                  </span>
+                </td>
+                <td style={{
+                  padding: "14px 12px",
+                  border: `1px solid ${t.border}`,
+                  background: t.bgGrand,
+                  fontFamily: MONO,
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: summary.netRR > 0 ? t.win : summary.netRR < 0 ? t.loss : t.be,
+                }}>
+                  {sign(summary.netRR)}{summary.netRR.toFixed(2)}&thinsp;R
+                </td>
+                <td style={{
+                  padding: "14px 12px",
+                  border: `1px solid ${t.border}`,
+                  background: t.bgGrand,
+                  fontFamily: MONO,
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: summary.netPips > 0 ? t.win : summary.netPips < 0 ? t.loss : t.be,
+                }}>
+                  {sign(summary.netPips)}{summary.netPips.toFixed(1)}&thinsp;pips
+                </td>
+              </tr>
+            </>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
