@@ -55,7 +55,6 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "catalog:",
-    "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
     "lucide-react": "catalog:",
     "next-themes": "^0.4.6",
@@ -74,5 +73,8 @@
     "vite": "catalog:",
     "wouter": "^3.3.5",
     "zod": "catalog:"
+  },
+  "dependencies": {
+    "dom-to-image-more": "^3.10.0"
   }
 }
