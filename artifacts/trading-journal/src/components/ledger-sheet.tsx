@@ -355,9 +355,11 @@ function WeekSection({ week, weeklyStat, t }: {
 interface LedgerSheetProps {
   theme?: LedgerTheme;
   className?: string;
+  titleOverride?: string;
+  tag?: string;
 }
 
-export function LedgerSheet({ theme = "obsidian", className }: LedgerSheetProps) {
+export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag }: LedgerSheetProps) {
   const { data: weeks = [],       isLoading: wL  } = useListWeeks();
   const { data: summary,          isLoading: sL  } = useGetStatsSummary();
   const { data: weeklyStats = [], isLoading: wsL } = useGetWeeklyStats();
@@ -411,7 +413,28 @@ export function LedgerSheet({ theme = "obsidian", className }: LedgerSheetProps)
         textAlign: "center",
         background: t.headerBg,
         borderBottom: `1px solid ${t.dividerStrong}`,
+        position: "relative",
       }}>
+        {/* Y-II tag — top-right corner of header */}
+        {tag && (
+          <div style={{
+            position: "absolute",
+            top: 12,
+            right: 14,
+            fontSize: 9,
+            fontWeight: 800,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: t.accent,
+            padding: "3px 8px",
+            borderRadius: 999,
+            border: `1px solid ${t.containerBorder}`,
+            background: `${t.accent}14`,
+            fontFamily: MONO,
+          }}>
+            {tag}
+          </div>
+        )}
         <div style={{
           fontSize: 10,
           fontWeight: 700,
@@ -428,7 +451,7 @@ export function LedgerSheet({ theme = "obsidian", className }: LedgerSheetProps)
           color: t.textPrimary,
           letterSpacing: "-0.01em",
         }}>
-          {deriveMonthLabel(weeks)}
+          {titleOverride || deriveMonthLabel(weeks)}
         </div>
       </div>
 

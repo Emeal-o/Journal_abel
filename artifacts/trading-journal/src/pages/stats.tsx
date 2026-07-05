@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Download } from "lucide-react";
+import { Download, Pencil } from "lucide-react";
 import domtoimage from "dom-to-image-more";
 import { format } from "date-fns";
 import { useGetStatsSummary, useGetWeeklyStats, useListWeeks } from "@workspace/api-client-react";
@@ -10,7 +10,6 @@ import { LedgerSheet, THEMES } from "@/components/ledger-sheet";
 import type { LedgerTheme } from "@/components/ledger-sheet";
 
 const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix"];
-
 const FONT = "'Inter','Segoe UI',system-ui,-apple-system,sans-serif";
 
 export function StatsPage() {
@@ -19,8 +18,11 @@ export function StatsPage() {
   const { isLoading: weeksLoading }   = useListWeeks();
   const cardRef   = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
   const [exporting, setExporting] = useState(false);
-  const [theme, setTheme] = useState<LedgerTheme>("obsidian");
+  const [theme, setTheme]         = useState<LedgerTheme>("obsidian");
+  const [cardTitle, setCardTitle] = useState("");   // empty = auto from date range
+  const [cardTag, setCardTag]     = useState("Y-II");
 
   const isLoading = summaryLoading || weeklyLoading || weeksLoading;
   const t = THEMES[theme];
@@ -51,6 +53,19 @@ export function StatsPage() {
     } finally {
       setExporting(false);
     }
+  };
+
+  const inputStyle: React.CSSProperties = {
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.09)",
+    borderRadius: 8,
+    padding: "7px 12px",
+    color: "#f1f5f9",
+    fontSize: 13,
+    fontFamily: FONT,
+    outline: "none",
+    width: "100%",
+    transition: "border-color 0.15s",
   };
 
   return (
@@ -105,9 +120,61 @@ export function StatsPage() {
         })}
       </div>
 
-      {/* Card preview — what you see is exactly what downloads */}
+      {/* Card label editor */}
+      <div
+        style={{
+          background: "rgba(255,255,255,0.025)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 12,
+          padding: "14px 18px",
+        }}
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <Pencil className="w-3 h-3 text-muted-foreground/60" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/50">
+            Card Labels
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label
+              className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40 mb-1.5"
+              style={{ fontFamily: FONT }}
+            >
+              Header Title
+            </label>
+            <input
+              type="text"
+              placeholder="Auto (date range from weeks)"
+              value={cardTitle}
+              onChange={(e) => setCardTitle(e.target.value)}
+              style={inputStyle}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.20)")}
+              onBlur={(e)  => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.09)")}
+            />
+          </div>
+          <div>
+            <label
+              className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40 mb-1.5"
+              style={{ fontFamily: FONT }}
+            >
+              Period Tag (e.g. Y-II)
+            </label>
+            <input
+              type="text"
+              placeholder="Y-II"
+              value={cardTag}
+              onChange={(e) => setCardTag(e.target.value)}
+              style={inputStyle}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.20)")}
+              onBlur={(e)  => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.09)")}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Card preview — exactly what downloads */}
       <div className="flex justify-center">
-        {/* Outer card: deep background + generous padding — this is the captured node */}
         <div
           ref={cardRef}
           style={{
@@ -144,6 +211,7 @@ export function StatsPage() {
                 fontSize: 15,
                 letterSpacing: "-0.01em",
                 color: t.textPrimary,
+                fontFamily: FONT,
               }}>
                 Trade<span style={{ color: t.accent }}>Ops</span>
               </span>
@@ -157,13 +225,18 @@ export function StatsPage() {
               padding: "4px 10px",
               borderRadius: 999,
               border: `1px solid ${t.divider}`,
+              fontFamily: FONT,
             }}>
               {t.name}
             </div>
           </div>
 
           {/* Ledger */}
-          <LedgerSheet theme={theme} />
+          <LedgerSheet
+            theme={theme}
+            titleOverride={cardTitle.trim() || undefined}
+            tag={cardTag.trim() || undefined}
+          />
 
           {/* Card footer */}
           <div style={{
@@ -180,6 +253,7 @@ export function StatsPage() {
               padding: "0 14px",
               whiteSpace: "nowrap",
               letterSpacing: "0.08em",
+              fontFamily: FONT,
             }}>
               Generated {format(new Date(), "MMM d, yyyy")}
             </span>
