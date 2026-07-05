@@ -1,5 +1,17 @@
 import { useState } from "react";
-import { BookOpen, GripVertical, Plus, RotateCcw } from "lucide-react";
+import {
+  ArrowDownAZ,
+  ArrowUpAZ,
+  BookOpen,
+  CalendarArrowDown,
+  CalendarArrowUp,
+  ChevronDown,
+  Clock,
+  GripVertical,
+  History,
+  Plus,
+  Rows3,
+} from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -21,11 +33,69 @@ import { WeekCard } from "@/components/week-card";
 import { WeekForm } from "@/components/week-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useOrderedWeeks } from "@/hooks/use-ordered-weeks";
+import type { SortMode } from "@/hooks/use-ordered-weeks";
+
+// ─── sort config ──────────────────────────────────────────────────────────────
+
+type SortOption = {
+  mode: SortMode;
+  label: string;
+  shortLabel: string;
+  icon: React.ReactNode;
+};
+
+const SORT_OPTIONS: SortOption[] = [
+  {
+    mode: "date-desc",
+    label: "Newest week first",
+    shortLabel: "Newest first",
+    icon: <CalendarArrowDown className="w-4 h-4" />,
+  },
+  {
+    mode: "date-asc",
+    label: "Oldest week first",
+    shortLabel: "Oldest first",
+    icon: <CalendarArrowUp className="w-4 h-4" />,
+  },
+  {
+    mode: "added-desc",
+    label: "Recently added",
+    shortLabel: "Recently added",
+    icon: <Clock className="w-4 h-4" />,
+  },
+  {
+    mode: "added-asc",
+    label: "First added",
+    shortLabel: "First added",
+    icon: <History className="w-4 h-4" />,
+  },
+  {
+    mode: "label-asc",
+    label: "By label (A → Z)",
+    shortLabel: "By label",
+    icon: <ArrowDownAZ className="w-4 h-4" />,
+  },
+  {
+    mode: "custom",
+    label: "Manual order",
+    shortLabel: "Manual",
+    icon: <Rows3 className="w-4 h-4" />,
+  },
+];
 
 // ─── sortable wrapper ─────────────────────────────────────────────────────────
 
-function SortableWeekCard({ week }: { week: Week }) {
+function SortableWeekCard({ week, showDragHandle }: { week: Week; showDragHandle: boolean }) {
   const {
     attributes,
     listeners,
@@ -43,7 +113,7 @@ function SortableWeekCard({ week }: { week: Week }) {
     zIndex: isDragging ? 50 : undefined,
   };
 
-  const dragHandle = (
+  const dragHandle = showDragHandle ? (
     <button
       {...listeners}
       {...attributes}
@@ -53,6 +123,8 @@ function SortableWeekCard({ week }: { week: Week }) {
     >
       <GripVertical className="w-4 h-4" />
     </button>
+  ) : (
+    <div className="w-7" />
   );
 
   return (
@@ -65,7 +137,7 @@ function SortableWeekCard({ week }: { week: Week }) {
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export function JournalPage() {
-  const { orderedWeeks, isLoading, error, setOrderedIds, resetOrder, isCustomOrder } =
+  const { orderedWeeks, isLoading, error, setOrderedIds, sortMode, setSortMode } =
     useOrderedWeeks();
   const [isAddWeekOpen, setIsAddWeekOpen] = useState(false);
 
@@ -82,6 +154,9 @@ export function JournalPage() {
     setOrderedIds(arrayMove(ids, oldIndex, newIndex));
   };
 
+  const currentOption = SORT_OPTIONS.find((o) => o.mode === sortMode) ?? SORT_OPTIONS[0];
+  const isManual = sortMode === "custom";
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -89,19 +164,63 @@ export function JournalPage() {
           <h1 className="text-3xl font-bold tracking-tight text-white">Trading Journal</h1>
           <p className="text-muted-foreground mt-1">Log your sessions and analyze your edge.</p>
         </div>
+
         <div className="flex items-center gap-2">
-          {isCustomOrder && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetOrder}
-              className="gap-1.5 text-muted-foreground hover:text-white"
-              title="Reset to date order"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Reset order
-            </Button>
-          )}
+          {/* Sort picker */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-white/10 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white"
+              >
+                <span className="text-white/60">{currentOption.icon}</span>
+                <span className="hidden sm:inline">{currentOption.shortLabel}</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Sort weeks by
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                {SORT_OPTIONS.slice(0, 5).map((opt) => (
+                  <DropdownMenuItem
+                    key={opt.mode}
+                    onClick={() => setSortMode(opt.mode)}
+                    className={`gap-2.5 cursor-pointer ${sortMode === opt.mode ? "text-primary bg-primary/10" : ""}`}
+                  >
+                    <span className="opacity-70">{opt.icon}</span>
+                    {opt.label}
+                    {sortMode === opt.mode && (
+                      <span className="ml-auto text-primary text-xs">✓</span>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onClick={() => setSortMode("custom")}
+                  className={`gap-2.5 cursor-pointer ${isManual ? "text-primary bg-primary/10" : ""}`}
+                >
+                  <span className="opacity-70"><Rows3 className="w-4 h-4" /></span>
+                  Manual order
+                  {isManual && <span className="ml-auto text-primary text-xs">✓</span>}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              {isManual && (
+                <>
+                  <DropdownMenuSeparator />
+                  <p className="px-2 py-1.5 text-[11px] text-muted-foreground/50 leading-snug">
+                    Drag weeks to reorder. Switch to any sort above to exit manual mode.
+                  </p>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button
             onClick={() => setIsAddWeekOpen(true)}
             className="gap-2 shadow-[0_0_15px_rgba(var(--primary),0.2)]"
@@ -111,6 +230,14 @@ export function JournalPage() {
           </Button>
         </div>
       </div>
+
+      {/* Manual mode hint */}
+      {isManual && orderedWeeks.length > 0 && (
+        <p className="text-xs text-muted-foreground/50 -mt-4 flex items-center gap-1.5">
+          <GripVertical className="w-3.5 h-3.5" />
+          Drag the grip handles to reorder weeks.
+        </p>
+      )}
 
       {isLoading ? (
         <div className="space-y-4">
@@ -144,7 +271,7 @@ export function JournalPage() {
           >
             <div className="space-y-6">
               {orderedWeeks.map((week) => (
-                <SortableWeekCard key={week.id} week={week} />
+                <SortableWeekCard key={week.id} week={week} showDragHandle={isManual} />
               ))}
             </div>
           </SortableContext>
