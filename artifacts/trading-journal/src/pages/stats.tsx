@@ -23,6 +23,7 @@ export function StatsPage() {
   const [theme, setTheme]         = useState<LedgerTheme>("obsidian");
   const [cardTitle, setCardTitle] = useState("");   // empty = auto from date range
   const [cardTag, setCardTag]     = useState("Y-II");
+  const [cardMonth, setCardMonth] = useState("");
 
   const isLoading = summaryLoading || weeklyLoading || weeksLoading;
   const t = THEMES[theme];
@@ -135,7 +136,7 @@ export function StatsPage() {
             Card Labels
           </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label
               className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40 mb-1.5"
@@ -148,6 +149,23 @@ export function StatsPage() {
               placeholder="Auto (date range from weeks)"
               value={cardTitle}
               onChange={(e) => setCardTitle(e.target.value)}
+              style={inputStyle}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.20)")}
+              onBlur={(e)  => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.09)")}
+            />
+          </div>
+          <div>
+            <label
+              className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40 mb-1.5"
+              style={{ fontFamily: FONT }}
+            >
+              Month (e.g. Month 9)
+            </label>
+            <input
+              type="text"
+              placeholder="Month 1"
+              value={cardMonth}
+              onChange={(e) => setCardMonth(e.target.value)}
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.20)")}
               onBlur={(e)  => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.09)")}
@@ -236,6 +254,7 @@ export function StatsPage() {
             theme={theme}
             titleOverride={cardTitle.trim() || undefined}
             tag={cardTag.trim() || undefined}
+            month={cardMonth.trim() || undefined}
           />
 
           {/* Card footer */}

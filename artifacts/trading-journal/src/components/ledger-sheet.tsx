@@ -357,9 +357,10 @@ interface LedgerSheetProps {
   className?: string;
   titleOverride?: string;
   tag?: string;
+  month?: string;
 }
 
-export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag }: LedgerSheetProps) {
+export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag, month }: LedgerSheetProps) {
   const { orderedWeeks: weeks,    isLoading: wL  } = useOrderedWeeks();
   const { data: summary,          isLoading: sL  } = useGetStatsSummary();
   const { data: weeklyStats = [], isLoading: wsL } = useGetWeeklyStats();
@@ -415,7 +416,27 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag 
         borderBottom: `1px solid ${t.dividerStrong}`,
         position: "relative",
       }}>
-        {/* Y-II tag — top-right corner of header */}
+        {/* Month badge — top-left corner */}
+        {month && (
+          <div style={{
+            position: "absolute",
+            top: 12,
+            left: 14,
+            fontSize: 9,
+            fontWeight: 800,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            color: t.textMuted,
+            padding: "3px 8px",
+            borderRadius: 999,
+            border: `1px solid ${t.divider}`,
+            background: "rgba(255,255,255,0.03)",
+            fontFamily: MONO,
+          }}>
+            {month}
+          </div>
+        )}
+        {/* Y-II tag — top-right corner */}
         {tag && (
           <div style={{
             position: "absolute",
@@ -477,12 +498,12 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag 
       {/* Grand Total */}
       {summary && (
         <>
-          {/* Section header */}
+          {/* Grand Total — banner */}
           <div style={{
             display: "flex",
             alignItems: "center",
             gap: 16,
-            padding: "10px 22px",
+            padding: "14px 24px",
             background: t.grandHeadBg,
             borderTop: `1px solid ${t.dividerStrong}`,
             borderBottom: `1px solid ${t.dividerStrong}`,
@@ -493,7 +514,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag 
               fontSize: 10,
               fontWeight: 700,
               textTransform: "uppercase",
-              letterSpacing: "0.20em",
+              letterSpacing: "0.22em",
               color: t.grandAccent,
               whiteSpace: "nowrap",
             }}>
@@ -502,80 +523,116 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag 
             <div style={{ flex: 1, height: 1, background: t.dividerStrong }} />
           </div>
 
-          {/* Grand Total column labels */}
+          {/* Grand Total — 2×2 spacious panel grid */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: COLS.join(" "),
+            gridTemplateColumns: "1fr 1fr",
+            gridTemplateRows: "auto auto",
             background: t.grandBg,
-            borderBottom: `1px solid ${t.divider}`,
           }}>
-            {["Trades", "Win Rate", "Net RR", "Net Pips"].map((label, i) => (
-              <div key={label} style={{
-                ...colLabelCell,
-                color: t.grandAccent,
-                opacity: 0.65,
-                textAlign: i === 0 ? "center" : "left",
-              }}>
-                {label}
-              </div>
-            ))}
-          </div>
-
-          {/* Grand Total values */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: COLS.join(" "),
-            background: t.grandBg,
-            alignItems: "center",
-          }}>
+            {/* ── Top-left: Trades ── */}
             <div style={{
-              padding: "20px 20px",
-              textAlign: "center",
-              fontFamily: MONO,
-              fontWeight: 800,
-              fontSize: 26,
-              color: t.textPrimary,
+              padding: "28px 28px 24px",
+              borderRight: `1px solid ${t.divider}`,
+              borderBottom: `1px solid ${t.divider}`,
             }}>
-              {summary.totalTrades}
+              <div style={{
+                fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                letterSpacing: "0.14em", color: t.grandAccent, opacity: 0.6,
+                fontFamily: FONT, marginBottom: 12,
+              }}>
+                Trades
+              </div>
+              <div style={{
+                fontFamily: MONO, fontWeight: 900, fontSize: 42,
+                color: t.textPrimary, lineHeight: 1,
+              }}>
+                {summary.totalTrades}
+              </div>
             </div>
 
-            <div style={{ padding: "20px 20px" }}>
-              <div style={{ fontFamily: MONO, fontWeight: 800, fontSize: 17, color: t.textPrimary }}>
+            {/* ── Top-right: Win Rate + pills ── */}
+            <div style={{
+              padding: "28px 28px 24px",
+              borderBottom: `1px solid ${t.divider}`,
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                letterSpacing: "0.14em", color: t.grandAccent, opacity: 0.6,
+                fontFamily: FONT, marginBottom: 12,
+              }}>
+                Win Rate
+              </div>
+              <div style={{
+                fontFamily: MONO, fontWeight: 900, fontSize: 32,
+                color: t.textPrimary, lineHeight: 1, marginBottom: 14,
+              }}>
                 {summary.winRate}%
               </div>
-              <div style={{ marginTop: 5, display: "flex", flexWrap: "wrap", gap: 5 }}>
-                <span style={{ fontFamily: FONT, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: t.winBg, color: t.win }}>
-                  {summary.wins}W
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <span style={{
+                  fontFamily: FONT, fontSize: 11, fontWeight: 700,
+                  padding: "4px 12px", borderRadius: 999,
+                  background: t.winBg, color: t.win,
+                }}>
+                  {summary.wins} Win{summary.wins !== 1 ? "s" : ""}
                 </span>
-                <span style={{ fontFamily: FONT, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: t.lossBg, color: t.loss }}>
-                  {summary.losses}L
+                <span style={{
+                  fontFamily: FONT, fontSize: 11, fontWeight: 700,
+                  padding: "4px 12px", borderRadius: 999,
+                  background: t.lossBg, color: t.loss,
+                }}>
+                  {summary.losses} Loss{summary.losses !== 1 ? "es" : ""}
                 </span>
-                <span style={{ fontFamily: FONT, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: t.beBg, color: t.be }}>
-                  {summary.breakEvens}BE
+                <span style={{
+                  fontFamily: FONT, fontSize: 11, fontWeight: 700,
+                  padding: "4px 12px", borderRadius: 999,
+                  background: t.beBg, color: t.be,
+                }}>
+                  {summary.breakEvens} BE
                 </span>
               </div>
             </div>
 
+            {/* ── Bottom-left: Net RR ── */}
             <div style={{
-              padding: "20px 20px",
-              fontFamily: MONO,
-              fontWeight: 800,
-              fontSize: 18,
-              color: rrColor(summary.netRR),
+              padding: "24px 28px 28px",
+              borderRight: `1px solid ${t.divider}`,
             }}>
-              {sign(summary.netRR)}{summary.netRR.toFixed(2)}
-              <span style={{ fontSize: 12, fontWeight: 400, color: t.textMuted, marginLeft: 4 }}>R</span>
+              <div style={{
+                fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                letterSpacing: "0.14em", color: t.grandAccent, opacity: 0.6,
+                fontFamily: FONT, marginBottom: 12,
+              }}>
+                Net RR
+              </div>
+              <div style={{
+                fontFamily: MONO, fontWeight: 900, fontSize: 30,
+                color: rrColor(summary.netRR), lineHeight: 1,
+              }}>
+                {sign(summary.netRR)}{summary.netRR.toFixed(2)}
+                <span style={{ fontSize: 14, fontWeight: 500, color: t.textMuted, marginLeft: 6 }}>R</span>
+              </div>
             </div>
 
+            {/* ── Bottom-right: Net Pips ── */}
             <div style={{
-              padding: "20px 20px",
-              fontFamily: MONO,
-              fontWeight: 800,
-              fontSize: 18,
-              color: pipColor(summary.netPips),
+              padding: "24px 28px 28px",
             }}>
-              {sign(summary.netPips)}{summary.netPips.toFixed(1)}
-              <span style={{ fontSize: 12, fontWeight: 400, color: t.textMuted, marginLeft: 4 }}>pips</span>
+              <div style={{
+                fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                letterSpacing: "0.14em", color: t.grandAccent, opacity: 0.6,
+                fontFamily: FONT, marginBottom: 12,
+              }}>
+                Net Pips
+              </div>
+              <div style={{
+                fontFamily: MONO, fontWeight: 900, fontSize: 30,
+                color: pipColor(summary.netPips), lineHeight: 1,
+              }}>
+                {sign(summary.netPips)}{summary.netPips.toFixed(1)}
+                <span style={{ fontSize: 14, fontWeight: 500, color: t.textMuted, marginLeft: 6 }}>pips</span>
+              </div>
             </div>
           </div>
         </>
