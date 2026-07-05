@@ -408,9 +408,9 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
         fontFamily: FONT,
       }}
     >
-      {/* Month header */}
+      {/* Stats header */}
       <div style={{
-        padding: "22px 24px 18px",
+        padding: "46px 24px 20px",
         textAlign: "center",
         background: t.headerBg,
         borderBottom: `1px solid ${t.dividerStrong}`,
