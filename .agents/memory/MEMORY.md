@@ -1,0 +1,1 @@
+- [TradeOps app structure](tradeops-structure.md) — full-stack pnpm monorepo; trading journal with weeks+trades DB, api-server routes, Vite+React frontend at root path.

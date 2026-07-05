@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface WeekInput {
+  /** @minLength 1 */
+  label: string;
+  startDate: string;
+  notes?: string;
 }
