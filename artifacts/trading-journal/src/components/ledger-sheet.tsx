@@ -38,6 +38,7 @@ export type ThemeTokens = {
   be: string;
   beBg: string;
   accent: string;
+  accentGlow: string;
   finaleColor: string;
   grandAccent: string;
 };
@@ -69,6 +70,7 @@ export const THEMES: Record<LedgerTheme, ThemeTokens> = {
     be: "#64748b",
     beBg: "rgba(100,116,139,0.11)",
     accent: "#cbd5e1",
+    accentGlow: "rgba(203,213,225,0.05)",
     finaleColor: "#475569",
     grandAccent: "#e2e8f0",
   },
@@ -98,6 +100,7 @@ export const THEMES: Record<LedgerTheme, ThemeTokens> = {
     be: "#818cf8",
     beBg: "rgba(129,140,248,0.11)",
     accent: "#60a5fa",
+    accentGlow: "rgba(96,165,250,0.05)",
     finaleColor: "#3b82f6",
     grandAccent: "#93c5fd",
   },
@@ -127,6 +130,7 @@ export const THEMES: Record<LedgerTheme, ThemeTokens> = {
     be: "#9ca3af",
     beBg: "rgba(156,163,175,0.10)",
     accent: "#f87171",
+    accentGlow: "rgba(248,113,113,0.05)",
     finaleColor: "#b91c1c",
     grandAccent: "#fca5a5",
   },
@@ -156,6 +160,7 @@ export const THEMES: Record<LedgerTheme, ThemeTokens> = {
     be: "#6b7280",
     beBg: "rgba(107,114,128,0.10)",
     accent: "#4ade80",
+    accentGlow: "rgba(74,222,128,0.05)",
     finaleColor: "#16a34a",
     grandAccent: "#86efac",
   },
@@ -188,6 +193,7 @@ export const THEMES: Record<LedgerTheme, ThemeTokens> = {
     be: "#2d7a68",
     beBg: "rgba(45,122,104,0.12)",
     accent: "#00ffc8",
+    accentGlow: "rgba(0,255,200,0.05)",
     finaleColor: "#0d6b58",
     grandAccent: "#5eead4",
   },
@@ -218,6 +224,7 @@ export const THEMES: Record<LedgerTheme, ThemeTokens> = {
     be: "#92400e",
     beBg: "rgba(146,64,14,0.13)",
     accent: "#f5c842",
+    accentGlow: "rgba(245,200,66,0.05)",
     finaleColor: "#8a6200",
     grandAccent: "#fcd34d",
   },
@@ -248,6 +255,7 @@ export const THEMES: Record<LedgerTheme, ThemeTokens> = {
     be: "#9ca3af",
     beBg: "rgba(156,163,175,0.10)",
     accent: "#f9a8d4",
+    accentGlow: "rgba(249,168,212,0.05)",
     finaleColor: "#9d3060",
     grandAccent: "#fda4af",
   },
@@ -278,6 +286,7 @@ export const THEMES: Record<LedgerTheme, ThemeTokens> = {
     be: "#a16207",
     beBg: "rgba(161,98,7,0.13)",
     accent: "#f97316",
+    accentGlow: "rgba(249,115,22,0.05)",
     finaleColor: "#9a3412",
     grandAccent: "#fb923c",
   },
@@ -308,6 +317,7 @@ export const THEMES: Record<LedgerTheme, ThemeTokens> = {
     be: "#7c3aed",
     beBg: "rgba(124,58,237,0.13)",
     accent: "#e040fb",
+    accentGlow: "rgba(224,64,251,0.05)",
     finaleColor: "#7e22ce",
     grandAccent: "#e879f9",
   },
@@ -532,7 +542,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
   if (wL || sL || wsL) {
     return (
       <div style={{
-        background: t.bg,
+        background: `radial-gradient(ellipse at 50% 30%, ${t.accentGlow}, ${t.bg} 70%)`,
         border: `1px solid ${t.containerBorder}`,
         borderRadius: 16,
         padding: 48,
@@ -569,7 +579,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
     <div
       className={className}
       style={{
-        background: t.bg,
+        background: `radial-gradient(ellipse at 50% 30%, ${t.accentGlow}, ${t.bg} 70%)`,
         border: `1px solid ${t.containerBorder}`,
         boxShadow: t.containerShadow,
         borderRadius: 16,
