@@ -10,7 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 // ─── theme engine ─────────────────────────────────────────────────────────────
 
-export type LedgerTheme = "obsidian" | "midnight" | "ember" | "matrix" | "aurora" | "goldrush" | "sakura" | "vapor";
+export type LedgerTheme = "obsidian" | "midnight" | "ember" | "matrix" | "aurora" | "goldrush" | "sakura" | "vapor" | "autumn";
 
 export type ThemeTokens = {
   name: string;
@@ -250,6 +250,36 @@ export const THEMES: Record<LedgerTheme, ThemeTokens> = {
     accent: "#f9a8d4",
     finaleColor: "#9d3060",
     grandAccent: "#fda4af",
+  },
+
+  autumn: {
+    name: "Autumn",
+    dot: "#f97316",
+    pageBg: "#060400",
+    bg: "#0b0600",
+    containerBorder: "rgba(251,146,60,0.20)",
+    containerShadow: "inset 0 1px 0 rgba(251,146,60,0.09), 0 12px 40px rgba(40,15,0,0.78)",
+    headerBg: "rgba(251,146,60,0.07)",
+    weekBg: "rgba(251,146,60,0.04)",
+    rowBg: "rgba(251,146,60,0.016)",
+    finaleBg: "rgba(251,146,60,0.010)",
+    totalBg: "rgba(251,146,60,0.05)",
+    grandBg: "rgba(251,146,60,0.065)",
+    grandHeadBg: "rgba(251,146,60,0.13)",
+    divider: "rgba(251,146,60,0.09)",
+    dividerStrong: "rgba(251,146,60,0.19)",
+    textPrimary: "#fef3e2",
+    textSecond: "#fb923c",
+    textMuted: "#7c2d12",
+    win: "#84cc16",
+    winBg: "rgba(132,204,22,0.12)",
+    loss: "#dc2626",
+    lossBg: "rgba(220,38,38,0.13)",
+    be: "#a16207",
+    beBg: "rgba(161,98,7,0.13)",
+    accent: "#f97316",
+    finaleColor: "#9a3412",
+    grandAccent: "#fb923c",
   },
 
   vapor: {

@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LedgerSheet, THEMES } from "@/components/ledger-sheet";
 import type { LedgerTheme } from "@/components/ledger-sheet";
 
-const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix", "aurora", "goldrush", "sakura", "vapor"];
+const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix", "aurora", "goldrush", "sakura", "vapor", "autumn"];
 const FONT = "'Inter','Segoe UI',system-ui,-apple-system,sans-serif";
 
 export function StatsPage() {
