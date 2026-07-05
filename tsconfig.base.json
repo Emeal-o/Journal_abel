@@ -5,6 +5,8 @@
     "lib": ["es2022"],
     "module": "esnext",
     "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": false,
