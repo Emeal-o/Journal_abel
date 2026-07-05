@@ -225,8 +225,28 @@ export function StatsPage() {
             padding: "40px 36px 36px",
             borderRadius: 24,
             fontFamily: FONT,
+            position: "relative",
           }}
         >
+          {/* ── hidden provenance mark ── */}
+          <span
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              bottom: 11,
+              left: 14,
+              fontSize: 6.5,
+              fontWeight: 600,
+              letterSpacing: "0.22em",
+              color: t.textPrimary,
+              opacity: 0.035,
+              fontFamily: FONT,
+              userSelect: "none",
+              pointerEvents: "none",
+            }}
+          >
+            EMEAL
+          </span>
           {/* Card header branding */}
           <div style={{
             display: "flex",
