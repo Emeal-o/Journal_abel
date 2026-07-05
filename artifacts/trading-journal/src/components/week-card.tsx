@@ -204,9 +204,9 @@ export function WeekCard({ week, dragHandle }: WeekCardProps) {
                         </Badge>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right font-mono">
-                      <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-muted-foreground"}>
-                        {Number(trade.rrr) > 0 ? "+" : ""}{trade.rrr}R
+                    <td className="px-6 py-4 text-right font-mono text-muted-foreground">
+                      1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
+                        {Math.abs(Number(trade.rrr)).toFixed(2)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right font-mono">
