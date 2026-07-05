@@ -1,61 +1,49 @@
-# TradeOps — Trading Journal & Stats Dashboard
+# TradeOps — Trading Journal
 
-A premium dark-mode trading journal for logging, tracking, and analyzing trades. Features glassmorphic UI, week-based trade grouping, automated stats, and a PNG screenshot export.
+A trading journal app for logging weekly sessions and analyzing performance.
 
-## Run & Operate
+## Architecture
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port varies)
-- `pnpm --filter @workspace/trading-journal run dev` — run the frontend (port varies)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+pnpm monorepo with three artifacts:
+
+| Artifact | Path | Preview |
+|---|---|---|
+| Frontend (React + Vite) | `artifacts/trading-journal` | `/` |
+| API Server (Express) | `artifacts/api-server` | `/api` |
+| Mockup Sandbox | `artifacts/mockup-sandbox` | `/__mockup` |
+
+Shared libraries in `lib/`:
+- `lib/db` — Drizzle ORM schema + Postgres client (`DATABASE_URL`)
+- `lib/api-zod` — shared Zod validation schemas
+- `lib/api-client-react` — TanStack Query hooks for the frontend
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- Frontend: React + Vite, Tailwind CSS (dark glassmorphic theme), wouter, TanStack Query
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
-- Screenshot export: html2canvas
+- **Frontend**: React 19, Vite 7, Tailwind CSS 4, Radix UI, Framer Motion, Wouter
+- **Backend**: Node.js, Express 5, Drizzle ORM, Zod, Pino
+- **Database**: PostgreSQL (Replit managed, `DATABASE_URL` auto-provisioned)
 
-## Where things live
+## Running in dev mode
 
-- DB schema: `lib/db/src/schema/` (weeks.ts, trades.ts)
-- API contract: `lib/api-spec/openapi.yaml`
-- Generated hooks: `lib/api-client-react/src/generated/`
-- Generated Zod schemas: `lib/api-zod/src/generated/`
-- API routes: `artifacts/api-server/src/routes/` (weeks.ts, trades.ts, stats.ts)
-- Frontend pages: `artifacts/trading-journal/src/pages/` (journal.tsx, stats.tsx)
-- Frontend components: `artifacts/trading-journal/src/components/`
+All three workflows start automatically. To restart manually:
 
-## Architecture decisions
+```bash
+# Install dependencies (first time)
+pnpm install
 
-- Weeks are fetched as `Week[]` from `useListWeeks()`; each `WeekCard` fetches its own trades via `useListTrades({ weekId })` for independent loading and cache granularity.
-- Stats are computed server-side in `/api/stats/summary` and `/api/stats/weekly` so the frontend only needs to display results.
-- Trade number is auto-incremented per week on the server side at creation time.
-- `html2canvas` captures the stats section as a PNG on "Download Statistics Card" click.
-- Dark mode is forced always via `document.documentElement.classList.add("dark")` in App.tsx.
+# Push DB schema
+pnpm --filter @workspace/db run push
 
-## Product
+# Start individual services
+pnpm --filter @workspace/trading-journal run dev   # frontend
+pnpm --filter @workspace/api-server run dev        # API server
+```
 
-- **Journal page (`/`)**: Collapsible week sections, trade table per week (Trade #, Result, RRR, Pips, Notes), add/edit/delete trades and weeks, per-week aggregate stats footer.
-- **Stats page (`/stats`)**: Grand total summary (win rate, net RR, net pips, trade count), weekly breakdown table, "Download Statistics Card" PNG export button.
+## Environment variables
+
+- `DATABASE_URL` — auto-provided by Replit
+- `SESSION_SECRET` — set in Replit Secrets
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-- Always run codegen after editing `lib/api-spec/openapi.yaml`.
-- Body schema names in the OpenAPI spec must be entity-shaped (e.g. `TradeInput`), not operation-shaped (e.g. `CreateTradeBody`) to avoid TS2308 collisions in the generated barrel.
-- `useListTrades` takes `params` as the first arg, then React Query options as second — the `weekId` filter goes in `params`.
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+_(none recorded yet)_
