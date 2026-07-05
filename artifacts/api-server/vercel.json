@@ -1,7 +1,11 @@
 {
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.mjs" }
+  "framework": null,
+  "builds": [
+    { "src": "dist/index.mjs", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "dist/index.mjs" }
   ]
 }
