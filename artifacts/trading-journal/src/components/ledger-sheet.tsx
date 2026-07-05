@@ -6,6 +6,7 @@ import {
 } from "@workspace/api-client-react";
 import type { Week } from "@workspace/api-client-react";
 import { useOrderedWeeks } from "@/hooks/use-ordered-weeks";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // ─── theme engine ─────────────────────────────────────────────────────────────
 
@@ -165,8 +166,9 @@ export const THEMES: Record<LedgerTheme, ThemeTokens> = {
 const FONT = "'Inter','Segoe UI',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','Fira Code','Cascadia Code',ui-monospace,monospace";
 
-// 4-column proportions
-const COLS = ["8%", "16%", "38%", "38%"];
+// 4-column proportions — wider first two cols on mobile so labels aren't clipped
+const COLS_DESKTOP = ["8%", "16%", "38%", "38%"];
+const COLS_MOBILE  = ["14%", "22%", "32%", "32%"];
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -218,12 +220,17 @@ type WeeklyStat = {
   totalTrades: number; winRate: number; netRR: number; netPips: number;
 };
 
-function WeekSection({ week, weeklyStat, t }: {
+function WeekSection({ week, weeklyStat, t, isMobile }: {
   week: Week;
   weeklyStat: WeeklyStat | undefined;
   t: ThemeTokens;
+  isMobile: boolean;
 }) {
   const { data: trades = [] } = useListTrades({ weekId: week.id });
+
+  const COLS = isMobile ? COLS_MOBILE : COLS_DESKTOP;
+  const hPad = isMobile ? 8 : 20;
+  const vPad = isMobile ? 10 : 12;
 
   const row: React.CSSProperties = {
     display: "grid",
@@ -233,9 +240,9 @@ function WeekSection({ week, weeklyStat, t }: {
   };
 
   const cell: React.CSSProperties = {
-    padding: "12px 20px",
+    padding: `${vPad}px ${hPad}px`,
     fontFamily: FONT,
-    fontSize: 13,
+    fontSize: isMobile ? 12 : 13,
     color: t.textPrimary,
   };
 
@@ -246,7 +253,7 @@ function WeekSection({ week, weeklyStat, t }: {
     <>
       {/* Week label row */}
       <div style={{
-        padding: "8px 20px",
+        padding: `8px ${hPad}px`,
         background: t.weekBg,
         borderTop: `1px solid ${t.dividerStrong}`,
         borderBottom: `1px solid ${t.divider}`,
@@ -291,17 +298,19 @@ function WeekSection({ week, weeklyStat, t }: {
           <div style={cell}>
             <ResultPill result={trade.result} t={t} />
           </div>
-          <div style={{ ...cell, fontFamily: MONO, fontSize: 12, color: t.textSecond }}>
-            1 / {trade.rrr.toFixed(2)}
+          <div style={{ ...cell, fontFamily: MONO, fontSize: 12, color: t.textSecond, whiteSpace: "nowrap", overflow: "hidden" }}>
+            {isMobile ? `1/${trade.rrr.toFixed(2)}` : `1 / ${trade.rrr.toFixed(2)}`}
           </div>
           <div style={{
             ...cell,
             fontFamily: MONO,
             fontWeight: 600,
             color: pipColor(trade.pips),
+            whiteSpace: "nowrap",
+            overflow: "hidden",
           }}>
             {sign(trade.pips)}{trade.pips.toFixed(1)}
-            <span style={{ fontSize: 11, fontWeight: 400, color: t.textMuted, marginLeft: 4 }}>pips</span>
+            {!isMobile && <span style={{ fontSize: 11, fontWeight: 400, color: t.textMuted, marginLeft: 4 }}>pips</span>}
           </div>
         </div>
       ))}
@@ -311,7 +320,7 @@ function WeekSection({ week, weeklyStat, t }: {
         display: "flex",
         alignItems: "center",
         gap: 14,
-        padding: "7px 20px",
+        padding: `7px ${hPad}px`,
         background: t.finaleBg,
         borderBottom: `1px solid ${t.divider}`,
       }}>
@@ -333,17 +342,17 @@ function WeekSection({ week, weeklyStat, t }: {
 
       {/* Total row */}
       <div style={{ ...row, background: t.totalBg, borderBottom: `1px solid ${t.dividerStrong}` }}>
-        <div style={{ ...cell, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.10em", color: t.textMuted, textAlign: "center" }}>
+        <div style={{ ...cell, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: t.textMuted, textAlign: "center" }}>
           Total
         </div>
-        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: 13, color: t.textPrimary }}>
+        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: isMobile ? 12 : 13, color: t.textPrimary }}>
           {weeklyStat ? `${weeklyStat.winRate}%` : "0%"}
         </div>
-        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: 13, color: weeklyStat ? rrColor(weeklyStat.netRR) : t.be }}>
-          {weeklyStat ? `${sign(weeklyStat.netRR)}${weeklyStat.netRR.toFixed(2)} RR` : "—"}
+        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: isMobile ? 12 : 13, color: weeklyStat ? rrColor(weeklyStat.netRR) : t.be, whiteSpace: "nowrap", overflow: "hidden" }}>
+          {weeklyStat ? `${sign(weeklyStat.netRR)}${weeklyStat.netRR.toFixed(2)}${isMobile ? "" : " RR"}` : "—"}
         </div>
-        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: 13, color: weeklyStat ? pipColor(weeklyStat.netPips) : t.be }}>
-          {weeklyStat ? `${sign(weeklyStat.netPips)}${weeklyStat.netPips.toFixed(1)} pips` : "—"}
+        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: isMobile ? 12 : 13, color: weeklyStat ? pipColor(weeklyStat.netPips) : t.be, whiteSpace: "nowrap", overflow: "hidden" }}>
+          {weeklyStat ? `${sign(weeklyStat.netPips)}${weeklyStat.netPips.toFixed(1)}${isMobile ? "" : " pips"}` : "—"}
         </div>
       </div>
     </>
@@ -364,6 +373,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
   const { orderedWeeks: weeks,    isLoading: wL  } = useOrderedWeeks();
   const { data: summary,          isLoading: sL  } = useGetStatsSummary();
   const { data: weeklyStats = [], isLoading: wsL } = useGetWeeklyStats();
+  const isMobile = useIsMobile();
 
   const t = THEMES[theme];
 
@@ -383,15 +393,22 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
     );
   }
 
+  const COLS = isMobile ? COLS_MOBILE : COLS_DESKTOP;
+  const hPad = isMobile ? 8 : 20;
+
   const colLabelCell: React.CSSProperties = {
-    padding: "10px 20px",
+    padding: `${isMobile ? 8 : 10}px ${hPad}px`,
     fontFamily: FONT,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 700,
     textTransform: "uppercase",
-    letterSpacing: "0.12em",
+    letterSpacing: "0.10em",
     color: t.textMuted,
   };
+
+  // Grand Total uses a different 4-column split
+  const GT_COLS = isMobile ? "14% 26% 30% 30%" : "11% 27% 31% 31%";
+  const gtPad   = isMobile ? `14px ${hPad}px` : "16px 18px";
 
   const pipColor = (v: number) => v > 0 ? t.win : v < 0 ? t.loss : t.be;
   const rrColor  = (v: number) => v > 0 ? t.win : v < 0 ? t.loss : t.be;
@@ -410,7 +427,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
     >
       {/* Stats header */}
       <div style={{
-        padding: "46px 24px 20px",
+        padding: isMobile ? "36px 16px 16px" : "46px 24px 20px",
         textAlign: "center",
         background: t.headerBg,
         borderBottom: `1px solid ${t.dividerStrong}`,
@@ -467,7 +484,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
           Stats Summary
         </div>
         <div style={{
-          fontSize: 20,
+          fontSize: isMobile ? 17 : 20,
           fontWeight: 800,
           color: t.textPrimary,
           letterSpacing: "-0.01em",
@@ -485,14 +502,14 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
       }}>
         <div style={{ ...colLabelCell, textAlign: "center" }}>Trade</div>
         <div style={colLabelCell}>Result</div>
-        <div style={colLabelCell}>Risk-Reward (RRR)</div>
-        <div style={colLabelCell}>Pips Gained / Loss</div>
+        <div style={colLabelCell}>{isMobile ? "RRR" : "Risk-Reward (RRR)"}</div>
+        <div style={colLabelCell}>{isMobile ? "Pips" : "Pips Gained / Loss"}</div>
       </div>
 
       {/* Week blocks */}
       {weeks.map((week) => {
         const weeklyStat = weeklyStats.find((s) => s.weekId === week.id) as WeeklyStat | undefined;
-        return <WeekSection key={week.id} week={week} weeklyStat={weeklyStat} t={t} />;
+        return <WeekSection key={week.id} week={week} weeklyStat={weeklyStat} t={t} isMobile={isMobile} />;
       })}
 
       {/* Grand Total */}
@@ -503,7 +520,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
             display: "flex",
             alignItems: "center",
             gap: 16,
-            padding: "14px 24px",
+            padding: `14px ${isMobile ? 12 : 24}px`,
             background: t.grandHeadBg,
             borderTop: `1px solid ${t.dividerStrong}`,
             borderBottom: `1px solid ${t.dividerStrong}`,
@@ -526,7 +543,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
           {/* Grand Total — column labels */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: "11% 27% 31% 31%",
+            gridTemplateColumns: GT_COLS,
             background: t.grandBg,
             borderBottom: `1px solid ${t.divider}`,
           }}>
@@ -544,54 +561,56 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
           {/* Grand Total — values row */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: "11% 27% 31% 31%",
+            gridTemplateColumns: GT_COLS,
             background: t.grandBg,
             alignItems: "center",
           }}>
             {/* Trades */}
             <div style={{
-              padding: "16px 18px",
-              fontFamily: MONO, fontWeight: 800, fontSize: 22,
+              padding: gtPad,
+              fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 18 : 22,
               color: t.textPrimary,
             }}>
               {summary.totalTrades}
             </div>
 
             {/* Win Rate */}
-            <div style={{ padding: "16px 18px" }}>
+            <div style={{ padding: gtPad }}>
               <div style={{
-                fontFamily: MONO, fontWeight: 800, fontSize: 16,
+                fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 14 : 16,
                 color: t.textPrimary, marginBottom: 5,
               }}>
                 {summary.winRate}%
               </div>
               <div style={{ fontSize: 10, color: t.textMuted, fontFamily: FONT }}>
                 <span style={{ color: t.win }}>{summary.wins}W</span>
-                {" · "}
+                {" "}
                 <span style={{ color: t.loss }}>{summary.losses}L</span>
-                {" · "}
+                {" "}
                 <span style={{ color: t.be }}>{summary.breakEvens}BE</span>
               </div>
             </div>
 
             {/* Net RR */}
             <div style={{
-              padding: "16px 18px",
-              fontFamily: MONO, fontWeight: 800, fontSize: 18,
+              padding: gtPad,
+              fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 14 : 18,
               color: rrColor(summary.netRR),
+              whiteSpace: "nowrap", overflow: "hidden",
             }}>
               {sign(summary.netRR)}{summary.netRR.toFixed(2)}
-              <span style={{ fontSize: 12, fontWeight: 400, color: t.textMuted, marginLeft: 4 }}>R</span>
+              {!isMobile && <span style={{ fontSize: 11, fontWeight: 400, color: t.textMuted, marginLeft: 3 }}>R</span>}
             </div>
 
             {/* Net Pips */}
             <div style={{
-              padding: "16px 18px",
-              fontFamily: MONO, fontWeight: 800, fontSize: 18,
+              padding: gtPad,
+              fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 14 : 18,
               color: pipColor(summary.netPips),
+              whiteSpace: "nowrap", overflow: "hidden",
             }}>
               {sign(summary.netPips)}{summary.netPips.toFixed(1)}
-              <span style={{ fontSize: 12, fontWeight: 400, color: t.textMuted, marginLeft: 4 }}>pips</span>
+              {!isMobile && <span style={{ fontSize: 11, fontWeight: 400, color: t.textMuted, marginLeft: 3 }}>pips</span>}
             </div>
           </div>
         </>
