@@ -1,49 +1,45 @@
-# TradeOps — Trading Journal
+# [Project name]
 
-A trading journal app for logging weekly sessions and analyzing performance.
+_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
 
-## Architecture
+## Run & Operate
 
-pnpm monorepo with three artifacts:
-
-| Artifact | Path | Preview |
-|---|---|---|
-| Frontend (React + Vite) | `artifacts/trading-journal` | `/` |
-| API Server (Express) | `artifacts/api-server` | `/api` |
-| Mockup Sandbox | `artifacts/mockup-sandbox` | `/__mockup` |
-
-Shared libraries in `lib/`:
-- `lib/db` — Drizzle ORM schema + Postgres client (`DATABASE_URL`)
-- `lib/api-zod` — shared Zod validation schemas
-- `lib/api-client-react` — TanStack Query hooks for the frontend
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
+- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
 
-- **Frontend**: React 19, Vite 7, Tailwind CSS 4, Radix UI, Framer Motion, Wouter
-- **Backend**: Node.js, Express 5, Drizzle ORM, Zod, Pino
-- **Database**: PostgreSQL (Replit managed, `DATABASE_URL` auto-provisioned)
+- pnpm workspaces, Node.js 24, TypeScript 5.9
+- API: Express 5
+- DB: PostgreSQL + Drizzle ORM
+- Validation: Zod (`zod/v4`), `drizzle-zod`
+- API codegen: Orval (from OpenAPI spec)
+- Build: esbuild (CJS bundle)
 
-## Running in dev mode
+## Where things live
 
-All three workflows start automatically. To restart manually:
+_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
 
-```bash
-# Install dependencies (first time)
-pnpm install
+## Architecture decisions
 
-# Push DB schema
-pnpm --filter @workspace/db run push
+_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
 
-# Start individual services
-pnpm --filter @workspace/trading-journal run dev   # frontend
-pnpm --filter @workspace/api-server run dev        # API server
-```
+## Product
 
-## Environment variables
-
-- `DATABASE_URL` — auto-provided by Replit
-- `SESSION_SECRET` — set in Replit Secrets
+_Describe the high-level user-facing capabilities of this app once they exist._
 
 ## User preferences
 
-_(none recorded yet)_
+_Populate as you build — explicit user instructions worth remembering across sessions._
+
+## Gotchas
+
+_Populate as you build — sharp edges, "always run X before Y" rules._
+
+## Pointers
+
+- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
