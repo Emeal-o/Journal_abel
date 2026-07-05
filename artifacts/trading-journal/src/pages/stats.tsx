@@ -32,14 +32,30 @@ export function StatsPage() {
     if (!cardRef.current) return;
     setExporting(true);
     const node = cardRef.current;
+
+    // Snapshot original layout values so we can restore them after capture
+    const origWidth  = node.style.width;
+    const origMaxWidth = node.style.maxWidth;
+
+    // Expand to 960 px — at scale:4 this yields a 3840 px (4K) output canvas
+    node.style.width    = "960px";
+    node.style.maxWidth = "none";
+
+    // Font smoothing; applied before reading scroll dimensions so layout is settled
     node.style.setProperty("-webkit-font-smoothing", "antialiased");
     node.style.setProperty("-moz-osx-font-smoothing", "grayscale");
+
+    // Reading scrollWidth/scrollHeight triggers a synchronous browser reflow,
+    // so these values reflect the fully-expanded 960 px layout.
+    const captureWidth  = node.scrollWidth;
+    const captureHeight = node.scrollHeight;
+
     try {
       const dataUrl = await domtoimage.toPng(node, {
         bgcolor: t.pageBg,
-        width:   node.scrollWidth,
-        height:  node.scrollHeight,
-        scale: 4,
+        width:   captureWidth,
+        height:  captureHeight,
+        scale: 4,                  // 960 × 4 = 3840 px wide (true 4K)
         ignoreCSSRuleErrors: true,
         onImageError: (info) => console.warn("[dom-to-image-more] resource failed:", info),
       });
@@ -54,6 +70,9 @@ export function StatsPage() {
       console.error("[dom-to-image-more] render failed:", err);
       toast({ title: "Failed to download card", variant: "destructive" });
     } finally {
+      // Always restore the card to its display size, whatever happens
+      node.style.width    = origWidth;
+      node.style.maxWidth = origMaxWidth;
       node.style.removeProperty("-webkit-font-smoothing");
       node.style.removeProperty("-moz-osx-font-smoothing");
       setExporting(false);
