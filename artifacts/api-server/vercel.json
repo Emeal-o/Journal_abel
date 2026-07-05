@@ -1,11 +1,9 @@
 {
-  "buildCommand": "pnpm run build",
-  "outputDirectory": "dist",
-  "framework": null,
+  "installCommand": "pnpm install",
   "builds": [
-    { "src": "dist/index.mjs", "use": "@vercel/node" }
+    { "src": "src/app.ts", "use": "@vercel/node" }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "dist/index.mjs" }
+    { "src": "/(.*)", "dest": "src/app.ts" }
   ]
 }
