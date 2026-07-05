@@ -1,10 +1,16 @@
 {
-  "installCommand": "pnpm install --no-frozen-lockfile",
+  "installCommand": "pnpm install",
   "builds": [
-    { "src": "src/app.ts", "use": "@vercel/node" }
+    {
+      "src": "src/app.ts",
+      "use": "@vercel/node",
+      "config": {
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true
+      }
+    }
   ],
   "routes": [
     { "src": "/(.*)", "dest": "src/app.ts" }
   ]
 }
-
