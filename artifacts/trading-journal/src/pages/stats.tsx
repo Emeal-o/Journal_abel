@@ -239,7 +239,7 @@ export function StatsPage() {
               fontWeight: 600,
               letterSpacing: "0.22em",
               color: t.textPrimary,
-              opacity: 0.035,
+              opacity: 0.018,
               fontFamily: FONT,
               userSelect: "none",
               pointerEvents: "none",
