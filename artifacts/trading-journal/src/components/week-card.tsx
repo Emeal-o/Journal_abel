@@ -43,9 +43,10 @@ import { WeekForm } from "./week-form";
 
 interface WeekCardProps {
   week: Week;
+  dragHandle?: React.ReactNode;
 }
 
-export function WeekCard({ week }: WeekCardProps) {
+export function WeekCard({ week, dragHandle }: WeekCardProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [isTradeFormOpen, setIsTradeFormOpen] = useState(false);
   const [isEditWeekOpen, setIsEditWeekOpen] = useState(false);
@@ -112,6 +113,7 @@ export function WeekCard({ week }: WeekCardProps) {
     >
       <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/[0.01]">
         <div className="flex items-center gap-4">
+          {dragHandle}
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="w-8 h-8 p-0 hover:bg-white/10">
               {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}

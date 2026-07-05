@@ -1,11 +1,11 @@
 import { format, parseISO } from "date-fns";
 import {
-  useListWeeks,
   useListTrades,
   useGetStatsSummary,
   useGetWeeklyStats,
 } from "@workspace/api-client-react";
 import type { Week } from "@workspace/api-client-react";
+import { useOrderedWeeks } from "@/hooks/use-ordered-weeks";
 
 // ─── theme engine ─────────────────────────────────────────────────────────────
 
@@ -360,7 +360,7 @@ interface LedgerSheetProps {
 }
 
 export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag }: LedgerSheetProps) {
-  const { data: weeks = [],       isLoading: wL  } = useListWeeks();
+  const { orderedWeeks: weeks,    isLoading: wL  } = useOrderedWeeks();
   const { data: summary,          isLoading: sL  } = useGetStatsSummary();
   const { data: weeklyStats = [], isLoading: wsL } = useGetWeeklyStats();
 
