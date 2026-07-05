@@ -1,5 +1,5 @@
 {
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "builds": [
     { "src": "src/app.ts", "use": "@vercel/node" }
   ],
