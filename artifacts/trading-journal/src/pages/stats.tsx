@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Download, Pencil } from "lucide-react";
-import domtoimage from "dom-to-image-more";
+import html2canvas from "html2canvas";
 import { format } from "date-fns";
 import { useGetStatsSummary, useGetWeeklyStats, useListWeeks } from "@workspace/api-client-react";
 
@@ -31,19 +31,21 @@ export function StatsPage() {
   const handleDownload = async () => {
     if (!cardRef.current) return;
     setExporting(true);
-    const node = cardRef.current;
-    // Apply vendor text-smoothing via setProperty (not in CSSStyleDeclaration typings)
-    node.style.setProperty("-webkit-font-smoothing", "antialiased");
-    node.style.setProperty("-moz-osx-font-smoothing", "grayscale");
     try {
-      const dataUrl = await domtoimage.toPng(node, {
-        bgcolor: t.pageBg,
-        width:   node.scrollWidth,
-        height:  node.scrollHeight,
+      const canvas = await html2canvas(cardRef.current, {
+        windowWidth: 1200,
         scale: 4,
-        ignoreCSSRuleErrors: true,
-        onImageError: (info) => console.warn("[dom-to-image-more] resource failed:", info),
+        useCORS: true,
+        onclone: (clonedDoc) => {
+          const element = clonedDoc.getElementById("ledger-card");
+          if (element) {
+            element.style.transform = "none";
+            // Force rendering engine to use crisp typography scaling
+            element.style.textRendering = "geometricPrecision";
+          }
+        },
       });
+      const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = `tradeops-${theme}-${format(new Date(), "yyyy-MM-dd")}.png`;
@@ -52,12 +54,9 @@ export function StatsPage() {
       document.body.removeChild(link);
       toast({ title: "Statistics card downloaded!" });
     } catch (err) {
-      console.error("[dom-to-image-more] render failed:", err);
+      console.error("[html2canvas] render failed:", err);
       toast({ title: "Failed to download card", variant: "destructive" });
     } finally {
-      // Always restore smoothing styles regardless of success or failure
-      node.style.removeProperty("-webkit-font-smoothing");
-      node.style.removeProperty("-moz-osx-font-smoothing");
       setExporting(false);
     }
   };
@@ -200,6 +199,7 @@ export function StatsPage() {
       {/* Card preview — exactly what downloads */}
       <div className="flex justify-center">
         <div
+          id="ledger-card"
           ref={cardRef}
           style={{
             width: 680,
