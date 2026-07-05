@@ -542,7 +542,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
   if (wL || sL || wsL) {
     return (
       <div style={{
-        background: `radial-gradient(ellipse at 50% 30%, ${t.accentGlow}, ${t.bg} 70%)`,
+        background: t.bg,
         border: `1px solid ${t.containerBorder}`,
         borderRadius: 16,
         padding: 48,
@@ -579,7 +579,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
     <div
       className={className}
       style={{
-        background: `radial-gradient(ellipse at 50% 30%, ${t.accentGlow}, ${t.bg} 70%)`,
+        background: t.bg,
         border: `1px solid ${t.containerBorder}`,
         boxShadow: t.containerShadow,
         borderRadius: 16,
