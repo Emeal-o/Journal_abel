@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Download, Pencil } from "lucide-react";
-import html2canvas from "html2canvas";
+import domtoimage from "dom-to-image-more";
 import { format } from "date-fns";
 import { useGetStatsSummary, useGetWeeklyStats, useListWeeks } from "@workspace/api-client-react";
 
@@ -31,24 +31,19 @@ export function StatsPage() {
   const handleDownload = async () => {
     if (!cardRef.current) return;
     setExporting(true);
+    const node = cardRef.current;
+    // Apply vendor text-smoothing via setProperty (not in CSSStyleDeclaration typings)
+    node.style.setProperty("-webkit-font-smoothing", "antialiased");
+    node.style.setProperty("-moz-osx-font-smoothing", "grayscale");
     try {
-      const node = cardRef.current;
-
-      // Apply strict CSS vector text smoothing before capture
-      node.style.webkitFontSmoothing = "antialiased";
-      node.style.mozOsxFontSmoothing = "grayscale";
-
-      const canvas = await html2canvas(node, {
+      const dataUrl = await domtoimage.toPng(node, {
+        bgcolor: t.pageBg,
+        width:   node.scrollWidth,
+        height:  node.scrollHeight,
         scale: 4,
-        logging: false,
-        useCORS: true,
+        ignoreCSSRuleErrors: true,
+        onImageError: (info) => console.warn("[dom-to-image-more] resource failed:", info),
       });
-
-      // Restore text smoothing styles
-      node.style.webkitFontSmoothing = "";
-      node.style.mozOsxFontSmoothing = "";
-
-      const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = `tradeops-${theme}-${format(new Date(), "yyyy-MM-dd")}.png`;
@@ -57,9 +52,12 @@ export function StatsPage() {
       document.body.removeChild(link);
       toast({ title: "Statistics card downloaded!" });
     } catch (err) {
-      console.error("[html2canvas] render failed:", err);
+      console.error("[dom-to-image-more] render failed:", err);
       toast({ title: "Failed to download card", variant: "destructive" });
     } finally {
+      // Always restore smoothing styles regardless of success or failure
+      node.style.removeProperty("-webkit-font-smoothing");
+      node.style.removeProperty("-moz-osx-font-smoothing");
       setExporting(false);
     }
   };
