@@ -270,7 +270,7 @@ export function StatsPage() {
               </div>
               <span style={{
                 fontWeight: 800,
-                fontSize: 15,
+                fontSize: 17,
                 letterSpacing: "-0.01em",
                 color: t.textPrimary,
                 fontFamily: FONT,
@@ -279,7 +279,7 @@ export function StatsPage() {
               </span>
             </div>
             <div style={{
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 600,
               textTransform: "uppercase",
               letterSpacing: "0.12em",
@@ -310,7 +310,7 @@ export function StatsPage() {
           }}>
             <div style={{ flex: 1, height: 1, background: t.divider }} />
             <span style={{
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 500,
               color: t.textMuted,
               padding: "0 14px",
