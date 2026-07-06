@@ -362,7 +362,7 @@ function ResultPill({ result, t }: { result: string; t: ThemeTokens }) {
       display: "inline-block",
       padding: "3px 11px",
       borderRadius: 999,
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: 700,
       letterSpacing: "0.05em",
       color: s.color,
@@ -404,7 +404,7 @@ function WeekSection({ week, weeklyStat, t, isMobile }: {
   const cell: React.CSSProperties = {
     padding: `${vPad}px ${hPad}px`,
     fontFamily: FONT,
-    fontSize: isMobile ? 12 : 13,
+    fontSize: isMobile ? 13 : 14,
     color: t.textPrimary,
   };
 
@@ -424,7 +424,7 @@ function WeekSection({ week, weeklyStat, t, isMobile }: {
         gap: 10,
       }}>
         <span style={{
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "0.13em",
@@ -433,11 +433,11 @@ function WeekSection({ week, weeklyStat, t, isMobile }: {
         }}>
           Week
         </span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: t.textSecond, fontFamily: FONT }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: t.textSecond, fontFamily: FONT }}>
           {week.label}
         </span>
         {week.startDate && (
-          <span style={{ fontSize: 11, color: t.textMuted, fontFamily: FONT }}>
+          <span style={{ fontSize: 12, color: t.textMuted, fontFamily: FONT }}>
             {format(parseISO(week.startDate), "MMM d, yyyy")}
           </span>
         )}
@@ -454,13 +454,13 @@ function WeekSection({ week, weeklyStat, t, isMobile }: {
         </div>
       ) : trades.map((trade) => (
         <div key={trade.id} style={{ ...row, background: t.rowBg }}>
-          <div style={{ ...cell, textAlign: "center", fontFamily: MONO, fontWeight: 600, fontSize: 12, color: t.textSecond }}>
+          <div style={{ ...cell, textAlign: "center", fontFamily: MONO, fontWeight: 600, fontSize: 13, color: t.textSecond }}>
             {trade.tradeNumber}
           </div>
           <div style={cell}>
             <ResultPill result={trade.result} t={t} />
           </div>
-          <div style={{ ...cell, fontFamily: MONO, fontSize: 12, color: t.textSecond, whiteSpace: "nowrap", overflow: "hidden" }}>
+          <div style={{ ...cell, fontFamily: MONO, fontSize: 13, color: t.textSecond, whiteSpace: "nowrap", overflow: "hidden" }}>
             {isMobile ? `1/${trade.rrr.toFixed(2)}` : `1 / ${trade.rrr.toFixed(2)}`}
           </div>
           <div style={{
@@ -472,7 +472,7 @@ function WeekSection({ week, weeklyStat, t, isMobile }: {
             overflow: "hidden",
           }}>
             {sign(trade.pips)}{trade.pips.toFixed(1)}
-            {!isMobile && <span style={{ fontSize: 11, fontWeight: 400, color: t.textMuted, marginLeft: 4 }}>pips</span>}
+            {!isMobile && <span style={{ fontSize: 12, fontWeight: 400, color: t.textMuted, marginLeft: 4 }}>pips</span>}
           </div>
         </div>
       ))}
@@ -489,7 +489,7 @@ function WeekSection({ week, weeklyStat, t, isMobile }: {
         <div style={{ flex: 1, height: 1, background: t.divider }} />
         <span style={{
           fontFamily: FONT,
-          fontSize: 10,
+          fontSize: 11,
           fontStyle: "italic",
           fontWeight: 600,
           textTransform: "uppercase",
@@ -504,16 +504,16 @@ function WeekSection({ week, weeklyStat, t, isMobile }: {
 
       {/* Total row */}
       <div style={{ ...row, background: t.totalBg, borderBottom: `1px solid ${t.dividerStrong}` }}>
-        <div style={{ ...cell, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: t.textMuted, textAlign: "center" }}>
+        <div style={{ ...cell, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: t.textMuted, textAlign: "center" }}>
           Total
         </div>
-        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: isMobile ? 12 : 13, color: t.textPrimary }}>
+        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: isMobile ? 13 : 14, color: t.textPrimary }}>
           {weeklyStat ? `${weeklyStat.winRate}%` : "0%"}
         </div>
-        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: isMobile ? 12 : 13, color: weeklyStat ? rrColor(weeklyStat.netRR) : t.be, whiteSpace: "nowrap", overflow: "hidden" }}>
+        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: isMobile ? 13 : 14, color: weeklyStat ? rrColor(weeklyStat.netRR) : t.be, whiteSpace: "nowrap", overflow: "hidden" }}>
           {weeklyStat ? `${sign(weeklyStat.netRR)}${weeklyStat.netRR.toFixed(2)}${isMobile ? "" : " RR"}` : "—"}
         </div>
-        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: isMobile ? 12 : 13, color: weeklyStat ? pipColor(weeklyStat.netPips) : t.be, whiteSpace: "nowrap", overflow: "hidden" }}>
+        <div style={{ ...cell, fontFamily: MONO, fontWeight: 700, fontSize: isMobile ? 13 : 14, color: weeklyStat ? pipColor(weeklyStat.netPips) : t.be, whiteSpace: "nowrap", overflow: "hidden" }}>
           {weeklyStat ? `${sign(weeklyStat.netPips)}${weeklyStat.netPips.toFixed(1)}${isMobile ? "" : " pips"}` : "—"}
         </div>
       </div>
@@ -561,7 +561,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
   const colLabelCell: React.CSSProperties = {
     padding: `${isMobile ? 8 : 10}px ${hPad}px`,
     fontFamily: FONT,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: "0.10em",
@@ -601,7 +601,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
             position: "absolute",
             top: 12,
             left: 14,
-            fontSize: 9,
+            fontSize: 10,
             fontWeight: 800,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
@@ -621,7 +621,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
             position: "absolute",
             top: 12,
             right: 14,
-            fontSize: 9,
+            fontSize: 10,
             fontWeight: 800,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
@@ -636,7 +636,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
           </div>
         )}
         <div style={{
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "0.20em",
@@ -646,7 +646,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
           Stats Summary
         </div>
         <div style={{
-          fontSize: isMobile ? 17 : 20,
+          fontSize: isMobile ? 19 : 22,
           fontWeight: 800,
           color: t.textPrimary,
           letterSpacing: "-0.01em",
@@ -690,7 +690,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
             <div style={{ flex: 1, height: 1, background: t.dividerStrong }} />
             <span style={{
               fontFamily: FONT,
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: "0.22em",
@@ -730,7 +730,7 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
             {/* Trades */}
             <div style={{
               padding: gtPad,
-              fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 18 : 22,
+              fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 20 : 24,
               color: t.textPrimary,
             }}>
               {summary.totalTrades}
@@ -739,12 +739,12 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
             {/* Win Rate */}
             <div style={{ padding: gtPad }}>
               <div style={{
-                fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 14 : 16,
+                fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 16 : 18,
                 color: t.textPrimary, marginBottom: 5,
               }}>
                 {summary.winRate}%
               </div>
-              <div style={{ fontSize: 10, color: t.textMuted, fontFamily: FONT }}>
+              <div style={{ fontSize: 11, color: t.textMuted, fontFamily: FONT }}>
                 <span style={{ color: t.win }}>{summary.wins}W</span>
                 {" "}
                 <span style={{ color: t.loss }}>{summary.losses}L</span>
@@ -756,23 +756,23 @@ export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag,
             {/* Net RR */}
             <div style={{
               padding: gtPad,
-              fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 14 : 18,
+              fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 16 : 20,
               color: rrColor(summary.netRR),
               whiteSpace: "nowrap", overflow: "hidden",
             }}>
               {sign(summary.netRR)}{summary.netRR.toFixed(2)}
-              {!isMobile && <span style={{ fontSize: 11, fontWeight: 400, color: t.textMuted, marginLeft: 3 }}>R</span>}
+              {!isMobile && <span style={{ fontSize: 12, fontWeight: 400, color: t.textMuted, marginLeft: 3 }}>R</span>}
             </div>
 
             {/* Net Pips */}
             <div style={{
               padding: gtPad,
-              fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 14 : 18,
+              fontFamily: MONO, fontWeight: 800, fontSize: isMobile ? 16 : 20,
               color: pipColor(summary.netPips),
               whiteSpace: "nowrap", overflow: "hidden",
             }}>
               {sign(summary.netPips)}{summary.netPips.toFixed(1)}
-              {!isMobile && <span style={{ fontSize: 11, fontWeight: 400, color: t.textMuted, marginLeft: 3 }}>pips</span>}
+              {!isMobile && <span style={{ fontSize: 12, fontWeight: 400, color: t.textMuted, marginLeft: 3 }}>pips</span>}
             </div>
           </div>
         </>
