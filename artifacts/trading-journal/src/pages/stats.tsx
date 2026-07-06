@@ -28,49 +28,88 @@ export function StatsPage() {
   const isLoading = summaryLoading || weeklyLoading || weeksLoading;
   const t = THEMES[theme];
 
+  // ── capture helpers ──────────────────────────────────────────────────────────
+
+  /** Zero out every inline letter-spacing inside `root`; returns a restore fn. */
+  function stripLetterSpacing(root: HTMLElement): () => void {
+    const saved: Array<[HTMLElement, string]> = [];
+    root.querySelectorAll<HTMLElement>("*").forEach((el) => {
+      if (el.style.letterSpacing) {
+        saved.push([el, el.style.letterSpacing]);
+        el.style.letterSpacing = "normal";
+      }
+    });
+    return () => saved.forEach(([el, v]) => { el.style.letterSpacing = v; });
+  }
+
+  /** Capture `node` as a PNG data-URL at the given logical width + scale. */
+  async function captureCard(node: HTMLElement, logicalWidth: number, scale: number): Promise<string> {
+    node.style.width    = `${logicalWidth}px`;
+    node.style.maxWidth = "none";
+    node.style.setProperty("-webkit-font-smoothing", "antialiased");
+    node.style.setProperty("-moz-osx-font-smoothing", "grayscale");
+
+    const restoreLetterSpacing = stripLetterSpacing(node);
+
+    // Reflow happens when we read scroll dimensions
+    const w = node.scrollWidth;
+    const h = node.scrollHeight;
+
+    try {
+      return await domtoimage.toPng(node, {
+        bgcolor: t.pageBg,
+        width:   w,
+        height:  h,
+        scale,
+        ignoreCSSRuleErrors: true,
+        onImageError: (info: unknown) => console.warn("[dom-to-image-more] resource failed:", info),
+      });
+    } finally {
+      restoreLetterSpacing();
+    }
+  }
+
+  function triggerDownload(dataUrl: string, filename: string) {
+    const link = document.createElement("a");
+    link.href     = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // ── main handler ─────────────────────────────────────────────────────────────
+
   const handleDownload = async () => {
     if (!cardRef.current) return;
     setExporting(true);
     const node = cardRef.current;
 
-    // Snapshot original layout values so we can restore them after capture
-    const origWidth  = node.style.width;
+    const origWidth    = node.style.width;
     const origMaxWidth = node.style.maxWidth;
 
-    // Expand to 960 px — at scale:4 this yields a 3840 px (4K) output canvas
-    node.style.width    = "960px";
-    node.style.maxWidth = "none";
-
-    // Font smoothing; applied before reading scroll dimensions so layout is settled
-    node.style.setProperty("-webkit-font-smoothing", "antialiased");
-    node.style.setProperty("-moz-osx-font-smoothing", "grayscale");
-
-    // Reading scrollWidth/scrollHeight triggers a synchronous browser reflow,
-    // so these values reflect the fully-expanded 960 px layout.
-    const captureWidth  = node.scrollWidth;
-    const captureHeight = node.scrollHeight;
-
     try {
-      const dataUrl = await domtoimage.toPng(node, {
-        bgcolor: t.pageBg,
-        width:   captureWidth,
-        height:  captureHeight,
-        scale: 4,                  // 960 × 4 = 3840 px wide (true 4K)
-        ignoreCSSRuleErrors: true,
-        onImageError: (info) => console.warn("[dom-to-image-more] resource failed:", info),
-      });
-      const link = document.createElement("a");
-      link.href = dataUrl;
-      link.download = `tradeops-${theme}-${format(new Date(), "yyyy-MM-dd")}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast({ title: "Statistics card downloaded!" });
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+
+      // V1 — scale:4 × 960 px (3 840 px output) — original resolution approach,
+      //       letter-spacing stripped to reduce SVG foreignObject hinting artefacts
+      const v1 = await captureCard(node, 960, 4);
+      triggerDownload(v1, `tradeops-${theme}-${dateStr}-v1-scale4x960.png`);
+
+      // Small gap so browsers don't block the second download
+      await new Promise<void>((r) => setTimeout(r, 400));
+
+      // V2 — scale:2 × 1920 px (3 840 px output) — same final resolution but the
+      //       DOM is laid out at a natural screen width, so font hinting is sharper
+      //       before the 2× upscale step.
+      const v2 = await captureCard(node, 1920, 2);
+      triggerDownload(v2, `tradeops-${theme}-${dateStr}-v2-scale2x1920.png`);
+
+      toast({ title: "Two comparison PNGs downloaded — v1 (4×960) and v2 (2×1920)" });
     } catch (err) {
       console.error("[dom-to-image-more] render failed:", err);
       toast({ title: "Failed to download card", variant: "destructive" });
     } finally {
-      // Always restore the card to its display size, whatever happens
       node.style.width    = origWidth;
       node.style.maxWidth = origMaxWidth;
       node.style.removeProperty("-webkit-font-smoothing");
