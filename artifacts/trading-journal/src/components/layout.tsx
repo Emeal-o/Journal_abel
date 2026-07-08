@@ -1,9 +1,19 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Activity, BookOpen, LineChart } from "lucide-react";
+import { Activity, BookOpen, LineChart, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { logout } = useAuth();
+  const queryClient = useQueryClient();
+
+  async function handleLogout() {
+    await logout();
+    // Clear all cached query data so the next session starts fresh
+    queryClient.clear();
+  }
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col font-sans selection:bg-primary/30">
@@ -22,8 +32,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               href="/"
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                location === "/" 
-                  ? "bg-white/10 text-white shadow-sm" 
+                location === "/"
+                  ? "bg-white/10 text-white shadow-sm"
                   : "text-muted-foreground hover:text-white hover:bg-white/5"
               )}
             >
@@ -34,14 +44,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
               href="/stats"
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                location === "/stats" 
-                  ? "bg-white/10 text-white shadow-sm" 
+                location === "/stats"
+                  ? "bg-white/10 text-white shadow-sm"
                   : "text-muted-foreground hover:text-white hover:bg-white/5"
               )}
             >
               <LineChart className="w-4 h-4" />
               Stats
             </Link>
+
+            {/* Divider */}
+            <div className="w-px h-5 bg-border/50 mx-1" />
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition-all duration-200"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
           </nav>
         </div>
       </header>
@@ -51,7 +73,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Decorative background glows */}
         <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="fixed bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
-        
+
         {children}
       </main>
     </div>

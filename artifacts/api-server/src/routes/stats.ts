@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
-import { db, tradesTable, weeksTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
+import { db, tradesTable, weeksTable, type Week } from "@workspace/db";
+import { requireAuth } from "../middlewares/requireAuth.js";
 
 const router: IRouter = Router();
 
@@ -19,18 +20,29 @@ function computeStats(trades: Array<{ result: string; rrr: number; pips: number 
   return { totalTrades, wins, losses, breakEvens, winRate, netRR, netPips };
 }
 
-router.get("/stats/summary", async (_req, res) => {
-  const trades = await db.select({ result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips }).from(tradesTable);
+// GET /api/stats/summary — overall stats for the authenticated user's trades only
+router.get("/stats/summary", requireAuth, async (req, res) => {
+  const userId = req.session.userId!;
+  const trades = await db
+    .select({ result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips })
+    .from(tradesTable)
+    .where(eq(tradesTable.userId, userId));
   res.json(computeStats(trades));
 });
 
-router.get("/stats/weekly", async (_req, res) => {
-  const weeks = await db.select().from(weeksTable).orderBy(weeksTable.createdAt);
-  const result = await Promise.all(weeks.map(async week => {
+// GET /api/stats/weekly — per-week stats for the authenticated user's weeks only
+router.get("/stats/weekly", requireAuth, async (req, res) => {
+  const userId = req.session.userId!;
+  const weeks = await db
+    .select()
+    .from(weeksTable)
+    .where(eq(weeksTable.userId, userId))
+    .orderBy(weeksTable.createdAt);
+  const result = await Promise.all(weeks.map(async (week: Week) => {
     const trades = await db
       .select({ result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips })
       .from(tradesTable)
-      .where(eq(tradesTable.weekId, week.id));
+      .where(and(eq(tradesTable.weekId, week.id), eq(tradesTable.userId, userId)));
     return {
       weekId: week.id,
       weekLabel: week.label,
