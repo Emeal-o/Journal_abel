@@ -27,10 +27,41 @@ app.use(
   }),
 );
 
-app.use(cors({
-  origin: true,      // reflect the request origin (same-origin in practice)
-  credentials: true, // allow cookies on cross-origin dev requests
-}));
+// CORS_ORIGIN is a comma-separated allowlist of exact frontend origins
+// (e.g. "https://tradeops.vercel.app,https://tradeops-git-main.vercel.app").
+// Required in production because cookies cannot be sent cross-origin with a
+// wildcard ("*") origin — the browser only attaches credentials when the
+// server echoes back the exact requesting origin.
+const corsOrigins = (process.env.CORS_ORIGIN ?? "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+if (process.env.NODE_ENV === "production" && corsOrigins.length === 0) {
+  throw new Error(
+    "CORS_ORIGIN environment variable is required in production but was not provided. " +
+      "Set it to the exact frontend origin(s), comma-separated, e.g. https://tradeops.vercel.app",
+  );
+}
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Requests with no Origin header (curl, server-to-server, same-origin
+      // navigation) are not subject to CORS and are always allowed through.
+      if (!origin) return callback(null, true);
+
+      // In development (Replit preview), allow any origin so the iframe
+      // proxy and local tooling keep working without extra configuration.
+      if (process.env.NODE_ENV !== "production") return callback(null, true);
+
+      if (corsOrigins.includes(origin)) return callback(null, true);
+
+      callback(new Error(`Origin "${origin}" is not allowed by CORS.`));
+    },
+    credentials: true, // required so the browser sends/accepts the session cookie
+  }),
+);
 
 app.use(cookieParser());
 app.use(express.json());
