@@ -61228,7 +61228,8 @@ app.use(
       if (!origin) return callback(null, true);
       if (process.env.NODE_ENV !== "production") return callback(null, true);
       if (corsOrigins.includes(origin)) return callback(null, true);
-      callback(new Error(`Origin "${origin}" is not allowed by CORS.`));
+      logger.warn({ origin }, "Rejected cross-origin request: origin not in CORS_ORIGIN allowlist");
+      callback(null, false);
     },
     credentials: true
     // required so the browser sends/accepts the session cookie
@@ -61237,6 +61238,16 @@ app.use(
 app.use((0, import_cookie_parser.default)());
 app.use(import_express7.default.json());
 app.use(import_express7.default.urlencoded({ extended: true }));
+var UNSAFE_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV !== "production") return next();
+  if (!UNSAFE_METHODS.has(req.method)) return next();
+  const origin = req.get("origin");
+  if (!origin) return next();
+  if (corsOrigins.includes(origin)) return next();
+  logger.warn({ origin, method: req.method, url: req.url }, "Blocked state-changing request: origin not in CORS_ORIGIN allowlist (possible CSRF)");
+  res.status(403).json({ error: "Origin not allowed." });
+});
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET environment variable is required but was not provided.");
 }
@@ -61259,7 +61270,15 @@ app.use(
       httpOnly: true,
       secure: true,
       // requires HTTPS — Replit and Vercel both proxy over HTTPS
-      sameSite: "lax",
+      // "none" (not "lax"): the frontend and backend are deployed on separate
+      // Vercel projects (e.g. tradeops-web.vercel.app / tradeops-api.vercel.app).
+      // ".vercel.app" is on the public suffix list, so these count as different
+      // *sites* for cookie purposes even though they're both HTTPS. "lax" only
+      // sends cookies on same-site requests or top-level GET navigations — a
+      // cross-site fetch()/XHR (every API call this app makes) would silently
+      // drop the cookie, so login appears to succeed but every subsequent
+      // authenticated request 401s. "none" requires `secure: true`, already set.
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1e3
       // 7 days
     }

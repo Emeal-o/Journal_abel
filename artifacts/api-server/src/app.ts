@@ -57,7 +57,14 @@ app.use(
 
       if (corsOrigins.includes(origin)) return callback(null, true);
 
-      callback(new Error(`Origin "${origin}" is not allowed by CORS.`));
+      // Reject via `callback(null, false)` rather than `callback(err)`. Passing
+      // an Error here makes the `cors` middleware call Express's `next(err)`,
+      // which falls through to the default error handler and returns a 500 —
+      // browsers report that as an opaque "Failed to fetch", indistinguishable
+      // from a real server crash. `callback(null, false)` just omits the CORS
+      // headers, so the browser cleanly blocks the (pre)flight itself.
+      logger.warn({ origin }, "Rejected cross-origin request: origin not in CORS_ORIGIN allowlist");
+      callback(null, false);
     },
     credentials: true, // required so the browser sends/accepts the session cookie
   }),
@@ -66,6 +73,34 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// CSRF defense-in-depth: the session cookie now uses `sameSite: "none"`
+// (required for the split-domain Vercel deployment — see cookie config
+// below), which removes the CSRF protection that `sameSite: "lax"` used to
+// provide implicitly. Reusing the same CORS_ORIGIN allowlist here as a
+// belt-and-suspenders Origin check on state-changing requests: a malicious
+// site can issue a cross-site <form> POST with cookies attached (forms
+// aren't subject to CORS), so this must be enforced server-side, not just
+// via the `cors` middleware above (which only governs whether the *browser*
+// exposes the response to the calling script, not whether the request is
+// processed).
+const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV !== "production") return next();
+  if (!UNSAFE_METHODS.has(req.method)) return next();
+
+  const origin = req.get("origin");
+  // No Origin header: not a cross-site browser request (e.g. same-origin
+  // fetch in some browsers, or a non-browser/server-to-server call, which
+  // isn't riding on the browser's cookie jar in the first place).
+  if (!origin) return next();
+
+  if (corsOrigins.includes(origin)) return next();
+
+  logger.warn({ origin, method: req.method, url: req.url }, "Blocked state-changing request: origin not in CORS_ORIGIN allowlist (possible CSRF)");
+  res.status(403).json({ error: "Origin not allowed." });
+});
 
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET environment variable is required but was not provided.");
@@ -109,7 +144,15 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: true,            // requires HTTPS — Replit and Vercel both proxy over HTTPS
-      sameSite: "lax",
+      // "none" (not "lax"): the frontend and backend are deployed on separate
+      // Vercel projects (e.g. tradeops-web.vercel.app / tradeops-api.vercel.app).
+      // ".vercel.app" is on the public suffix list, so these count as different
+      // *sites* for cookie purposes even though they're both HTTPS. "lax" only
+      // sends cookies on same-site requests or top-level GET navigations — a
+      // cross-site fetch()/XHR (every API call this app makes) would silently
+      // drop the cookie, so login appears to succeed but every subsequent
+      // authenticated request 401s. "none" requires `secure: true`, already set.
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     },
   }),
