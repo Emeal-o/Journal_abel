@@ -360,7 +360,15 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  // Default to sending cookies on every request, including cross-origin ones
+  // (e.g. a Vercel-hosted frontend calling a separately-hosted Vercel backend).
+  // Same-origin requests send cookies by default regardless, so this only
+  // changes behavior for cross-origin deployments, where the session cookie
+  // would otherwise be silently dropped. Callers can still override this via
+  // an explicit `credentials` option.
+  const credentials = init.credentials ?? "include";
+
+  const response = await fetch(input, { ...init, method, headers, credentials });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
