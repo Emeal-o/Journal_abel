@@ -2,7 +2,7 @@ import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import bcrypt from "bcrypt";
 import crypto from "node:crypto";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, loginEventsTable } from "@workspace/db";
 
 const router = Router();
 
@@ -47,6 +47,20 @@ export async function hashAccessCode(code: string): Promise<string> {
   return bcrypt.hash(code, 12);
 }
 
+/**
+ * Extract the real client IP, preferring the x-forwarded-for header set by
+ * Vercel's / Replit's proxy over Express's req.ip (which resolves to the
+ * proxy's address when trust proxy is set).
+ */
+function getClientIp(req: import("express").Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") {
+    const first = forwarded.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return req.ip ?? "unknown";
+}
+
 // POST /api/auth/login
 // Verifies the submitted access code against stored hashes.
 // On success, sets a session cookie with the user's ID.
@@ -72,6 +86,15 @@ router.post("/auth/login", loginLimiter, async (req, res) => {
       break;
     }
   }
+
+  // Log the attempt (success or failure) regardless of outcome.
+  // Fire-and-forget: a logging failure should not block the auth response.
+  const ip = getClientIp(req);
+  db.insert(loginEventsTable).values({
+    userId: matchedUser?.id ?? null,
+    ipAddress: ip,
+    success: matchedUser !== null,
+  }).catch(() => { /* non-critical */ });
 
   if (!matchedUser) {
     res.status(401).json({ error: "Invalid access code." });

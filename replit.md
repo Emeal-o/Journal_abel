@@ -1,15 +1,23 @@
-# [Project name]
+# TradeOps — Trading Journal
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A private trading journal where users track weekly performance and individual trades, protected by personal access codes.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+Workflows (managed by Replit — restart from the Workflows panel):
+- **API Server** — `pnpm --filter @workspace/api-server run dev`
+- **Trading Journal (web)** — `pnpm --filter @workspace/trading-journal run dev`
+
+One-off commands:
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only, non-interactive)
+
+Required secrets (all set in Replit Secrets):
+- `DATABASE_URL` — Postgres connection string (Replit-managed)
+- `SESSION_SECRET` — session signing secret
+- `ADMIN_SECRET` — password for the /admin panel (create/manage user access codes)
 
 ## Stack
 

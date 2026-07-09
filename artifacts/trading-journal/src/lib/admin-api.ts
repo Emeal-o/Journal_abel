@@ -20,6 +20,17 @@ async function parseErrorMessage(res: Response, fallback: string): Promise<strin
 export interface AdminUser {
   id: number;
   createdAt: string;
+  tradeCount: number;
+  weekCount: number;
+  lastActivity: string | null;
+}
+
+export interface LoginEvent {
+  id: number;
+  userId: number | null;
+  ipAddress: string;
+  success: boolean;
+  createdAt: string;
 }
 
 /** True if the browser currently holds a valid admin session. */
@@ -48,7 +59,7 @@ export async function adminLogout(): Promise<void> {
   await adminFetch("/api/admin/logout", { method: "POST" });
 }
 
-/** Lists every user (id + creation date only — never the code). */
+/** Lists every user with id, creation date, and activity counts. */
 export async function listAdminUsers(): Promise<AdminUser[]> {
   const res = await adminFetch("/api/admin/users");
   if (!res.ok) {
@@ -73,4 +84,13 @@ export async function revokeAdminUser(id: number): Promise<{ id: number; code: s
     throw new Error(await parseErrorMessage(res, "Failed to revoke access code."));
   }
   return res.json() as Promise<{ id: number; code: string }>;
+}
+
+/** Returns the 50 most recent login attempts, newest first. */
+export async function listAdminLoginEvents(): Promise<LoginEvent[]> {
+  const res = await adminFetch("/api/admin/login-events");
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, "Failed to load login events."));
+  }
+  return res.json() as Promise<LoginEvent[]>;
 }

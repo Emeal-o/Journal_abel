@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
 import { rateLimit } from "express-rate-limit";
 import crypto from "node:crypto";
-import { eq } from "drizzle-orm";
-import { db, pool, usersTable } from "@workspace/db";
+import { eq, desc, sql } from "drizzle-orm";
+import { db, pool, usersTable, tradesTable, weeksTable, loginEventsTable } from "@workspace/db";
 import { requireAdmin } from "../middlewares/requireAdmin.js";
 import { generateAccessCode, hashAccessCode } from "./auth.js";
 
@@ -96,12 +96,24 @@ router.get("/admin/me", (req, res) => {
 });
 
 // GET /api/admin/users
-// Lists every user's id and creation date. Never exposes code_hash.
+// Lists every user's id, creation date, and per-user activity counts
+// (trade count, week count, most recent activity timestamp).
+// All counts are computed in a single query to avoid N+1 queries.
 router.get("/admin/users", requireAdmin, async (_req, res) => {
   const users = await db
-    .select({ id: usersTable.id, createdAt: usersTable.createdAt })
+    .select({
+      id: usersTable.id,
+      createdAt: usersTable.createdAt,
+      tradeCount: sql<number>`cast(count(distinct ${tradesTable.id}) as int)`,
+      weekCount: sql<number>`cast(count(distinct ${weeksTable.id}) as int)`,
+      lastActivity: sql<string | null>`GREATEST(MAX(${tradesTable.createdAt}), MAX(${weeksTable.createdAt}))`,
+    })
     .from(usersTable)
+    .leftJoin(tradesTable, eq(tradesTable.userId, usersTable.id))
+    .leftJoin(weeksTable, eq(weeksTable.userId, usersTable.id))
+    .groupBy(usersTable.id, usersTable.createdAt)
     .orderBy(usersTable.id);
+
   res.json(users);
 });
 
@@ -157,6 +169,25 @@ router.post("/admin/users/:id/revoke", requireAdmin, async (req, res) => {
   }
 
   res.json({ id: userId, code: newCode });
+});
+
+// GET /api/admin/login-events
+// Returns the 50 most recent login attempts (successful and failed),
+// ordered by newest first.
+router.get("/admin/login-events", requireAdmin, async (_req, res) => {
+  const events = await db
+    .select({
+      id: loginEventsTable.id,
+      userId: loginEventsTable.userId,
+      ipAddress: loginEventsTable.ipAddress,
+      success: loginEventsTable.success,
+      createdAt: loginEventsTable.createdAt,
+    })
+    .from(loginEventsTable)
+    .orderBy(desc(loginEventsTable.createdAt))
+    .limit(50);
+
+  res.json(events);
 });
 
 export default router;
