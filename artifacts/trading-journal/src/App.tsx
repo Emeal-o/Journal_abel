@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import { JournalPage } from "@/pages/journal";
 import { StatsPage } from "@/pages/stats";
 import { LoginPage } from "@/pages/login";
+import { AdminPage } from "@/pages/admin";
 import { Layout } from "@/components/layout";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -51,7 +52,15 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AuthGate />
+          {/* /admin has its own independent auth (admin password), so it must
+              sit outside AuthGate — otherwise a signed-out browser would be
+              redirected to the regular journal login page instead. */}
+          <Switch>
+            <Route path="/admin" component={AdminPage} />
+            <Route>
+              <AuthGate />
+            </Route>
+          </Switch>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

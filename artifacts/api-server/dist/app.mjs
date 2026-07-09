@@ -18921,14 +18921,14 @@ var require_etag = __commonJS({
   "../../node_modules/.pnpm/etag@1.8.1/node_modules/etag/index.js"(exports, module) {
     "use strict";
     module.exports = etag;
-    var crypto2 = __require("crypto");
+    var crypto4 = __require("crypto");
     var Stats = __require("fs").Stats;
     var toString = Object.prototype.toString;
     function entitytag(entity) {
       if (entity.length === 0) {
         return '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"';
       }
-      var hash = crypto2.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
+      var hash = crypto4.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
       var len = typeof entity === "string" ? Buffer.byteLength(entity, "utf8") : entity.length;
       return '"' + len.toString(16) + "-" + hash + '"';
     }
@@ -20651,27 +20651,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router7;
+    module.exports = Router8;
     module.exports.Route = Route;
-    function Router7(options) {
-      if (!(this instanceof Router7)) {
-        return new Router7(options);
+    function Router8(options) {
+      if (!(this instanceof Router8)) {
+        return new Router8(options);
       }
       const opts = options || {};
-      function router7(req, res, next) {
-        router7.handle(req, res, next);
+      function router8(req, res, next) {
+        router8.handle(req, res, next);
       }
-      Object.setPrototypeOf(router7, this);
-      router7.caseSensitive = opts.caseSensitive;
-      router7.mergeParams = opts.mergeParams;
-      router7.params = {};
-      router7.strict = opts.strict;
-      router7.stack = [];
-      return router7;
+      Object.setPrototypeOf(router8, this);
+      router8.caseSensitive = opts.caseSensitive;
+      router8.mergeParams = opts.mergeParams;
+      router8.params = {};
+      router8.strict = opts.strict;
+      router8.stack = [];
+      return router8;
     }
-    Router7.prototype = function() {
+    Router8.prototype = function() {
     };
-    Router7.prototype.param = function param(name, fn) {
+    Router8.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20691,7 +20691,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router7.prototype.handle = function handle(req, res, callback) {
+    Router8.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20818,7 +20818,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router7.prototype.use = function use(handler) {
+    Router8.prototype.use = function use(handler) {
       let offset = 0;
       let path = "/";
       if (typeof handler !== "function") {
@@ -20851,7 +20851,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router7.prototype.route = function route(path) {
+    Router8.prototype.route = function route(path) {
       const route2 = new Route(path);
       const layer = new Layer(path, {
         sensitive: this.caseSensitive,
@@ -20866,7 +20866,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router7.prototype[method] = function(path) {
+      Router8.prototype[method] = function(path) {
         const route = this.route(path);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21049,13 +21049,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router7 = require_router();
+    var Router8 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router7 = null;
+      var router8 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21064,13 +21064,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router7 === null) {
-            router7 = new Router7({
+          if (router8 === null) {
+            router8 = new Router8({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router7;
+          return router8;
         }
       });
     };
@@ -21141,15 +21141,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router7 = this.router;
+      var router8 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router7.use(path, fn2);
+          return router8.use(path, fn2);
         }
         debug(".use app under %s", path);
         fn2.mountpath = path;
         fn2.parent = this;
-        router7.use(path, function mounted_app(req, res, next) {
+        router8.use(path, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -22403,17 +22403,17 @@ var require_content_disposition = __commonJS({
 // ../../node_modules/.pnpm/cookie-signature@1.2.2/node_modules/cookie-signature/index.js
 var require_cookie_signature = __commonJS({
   "../../node_modules/.pnpm/cookie-signature@1.2.2/node_modules/cookie-signature/index.js"(exports) {
-    var crypto2 = __require("crypto");
+    var crypto4 = __require("crypto");
     exports.sign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Cookie value must be provided as a string.");
       if (null == secret) throw new TypeError("Secret key must be provided.");
-      return val + "." + crypto2.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
+      return val + "." + crypto4.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
     };
     exports.unsign = function(input, secret) {
       if ("string" != typeof input) throw new TypeError("Signed cookie string must be provided.");
       if (null == secret) throw new TypeError("Secret key must be provided.");
       var tentativeValue = input.slice(0, input.lastIndexOf(".")), expectedInput = exports.sign(tentativeValue, secret), expectedBuffer = Buffer.from(expectedInput), inputBuffer = Buffer.from(input);
-      return expectedBuffer.length === inputBuffer.length && crypto2.timingSafeEqual(expectedBuffer, inputBuffer) ? tentativeValue : false;
+      return expectedBuffer.length === inputBuffer.length && crypto4.timingSafeEqual(expectedBuffer, inputBuffer) ? tentativeValue : false;
     };
   }
 });
@@ -23722,7 +23722,7 @@ var require_express = __commonJS({
     var EventEmitter = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router7 = require_router();
+    var Router8 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23744,8 +23744,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router7.Route;
-    exports.Router = Router7;
+    exports.Route = Router8.Route;
+    exports.Router = Router8;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -24623,11 +24623,11 @@ var require_on_headers = __commonJS({
 // ../../node_modules/.pnpm/cookie-signature@1.0.7/node_modules/cookie-signature/index.js
 var require_cookie_signature2 = __commonJS({
   "../../node_modules/.pnpm/cookie-signature@1.0.7/node_modules/cookie-signature/index.js"(exports) {
-    var crypto2 = __require("crypto");
+    var crypto4 = __require("crypto");
     exports.sign = function(val, secret) {
       if ("string" !== typeof val) throw new TypeError("Cookie value must be provided as a string.");
       if (null == secret) throw new TypeError("Secret key must be provided.");
-      return val + "." + crypto2.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
+      return val + "." + crypto4.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
     };
     exports.unsign = function(val, secret) {
       if ("string" !== typeof val) throw new TypeError("Signed cookie string must be provided.");
@@ -24636,7 +24636,7 @@ var require_cookie_signature2 = __commonJS({
       return sha1(mac) == sha1(val) ? str : false;
     };
     function sha1(str) {
-      return crypto2.createHash("sha1").update(str).digest("hex");
+      return crypto4.createHash("sha1").update(str).digest("hex");
     }
   }
 });
@@ -24645,8 +24645,8 @@ var require_cookie_signature2 = __commonJS({
 var require_random_bytes = __commonJS({
   "../../node_modules/.pnpm/random-bytes@1.0.0/node_modules/random-bytes/index.js"(exports, module) {
     "use strict";
-    var crypto2 = __require("crypto");
-    var generateAttempts = crypto2.randomBytes === crypto2.pseudoRandomBytes ? 1 : 3;
+    var crypto4 = __require("crypto");
+    var generateAttempts = crypto4.randomBytes === crypto4.pseudoRandomBytes ? 1 : 3;
     module.exports = randomBytes;
     module.exports.sync = randomBytesSync;
     function randomBytes(size, callback) {
@@ -24670,7 +24670,7 @@ var require_random_bytes = __commonJS({
       var err = null;
       for (var i = 0; i < generateAttempts; i++) {
         try {
-          return crypto2.randomBytes(size);
+          return crypto4.randomBytes(size);
         } catch (e) {
           err = e;
         }
@@ -24678,7 +24678,7 @@ var require_random_bytes = __commonJS({
       throw err;
     }
     function generateRandomBytes(size, attempts, callback) {
-      crypto2.randomBytes(size, function onRandomBytes(err, buf) {
+      crypto4.randomBytes(size, function onRandomBytes(err, buf) {
         if (!err) return callback(null, buf);
         if (!--attempts) return callback(err);
         setTimeout(generateRandomBytes.bind(null, size, attempts, callback), 10);
@@ -25020,7 +25020,7 @@ var require_express_session = __commonJS({
     "use strict";
     var Buffer3 = require_safe_buffer().Buffer;
     var cookie = require_cookie();
-    var crypto2 = __require("crypto");
+    var crypto4 = __require("crypto");
     var debug = require_src2()("express-session");
     var deprecate = require_depd()("express-session");
     var onHeaders = require_on_headers();
@@ -25393,7 +25393,7 @@ var require_express_session = __commonJS({
         }
         return val;
       });
-      return crypto2.createHash("sha1").update(str, "utf8").digest("hex");
+      return crypto4.createHash("sha1").update(str, "utf8").digest("hex");
     }
     function issecure(req, trustProxy) {
       if (req.connection && req.connection.encrypted) {
@@ -26747,7 +26747,7 @@ var require_cert_signatures = __commonJS({
 var require_sasl = __commonJS({
   "../../node_modules/.pnpm/pg@8.22.0/node_modules/pg/lib/crypto/sasl.js"(exports, module) {
     "use strict";
-    var crypto2 = require_utils5();
+    var crypto4 = require_utils5();
     var { signatureAlgorithmHashFromCertificate } = require_cert_signatures();
     function saslprep(password) {
       const nonAsciiSpace = /[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g;
@@ -26765,7 +26765,7 @@ var require_sasl = __commonJS({
       if (mechanism === "SCRAM-SHA-256-PLUS" && typeof stream.getPeerCertificate !== "function") {
         throw new Error("SASL: Mechanism SCRAM-SHA-256-PLUS requires a certificate");
       }
-      const clientNonce = crypto2.randomBytes(18).toString("base64");
+      const clientNonce = crypto4.randomBytes(18).toString("base64");
       const gs2Header = mechanism === "SCRAM-SHA-256-PLUS" ? "p=tls-server-end-point" : stream ? "y" : "n";
       return {
         mechanism,
@@ -26807,20 +26807,20 @@ var require_sasl = __commonJS({
         const peerCert = stream.getPeerCertificate().raw;
         let hashName = signatureAlgorithmHashFromCertificate(peerCert);
         if (hashName === "MD5" || hashName === "SHA-1") hashName = "SHA-256";
-        const certHash = await crypto2.hashByName(hashName, peerCert);
+        const certHash = await crypto4.hashByName(hashName, peerCert);
         const bindingData = Buffer.concat([Buffer.from("p=tls-server-end-point,,"), Buffer.from(certHash)]);
         channelBinding = bindingData.toString("base64");
       }
       const clientFinalMessageWithoutProof = "c=" + channelBinding + ",r=" + sv.nonce;
       const authMessage = clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageWithoutProof;
       const saltBytes = Buffer.from(sv.salt, "base64");
-      const saltedPassword = await crypto2.deriveKey(saslprep(password), saltBytes, sv.iteration);
-      const clientKey = await crypto2.hmacSha256(saltedPassword, "Client Key");
-      const storedKey = await crypto2.sha256(clientKey);
-      const clientSignature = await crypto2.hmacSha256(storedKey, authMessage);
+      const saltedPassword = await crypto4.deriveKey(saslprep(password), saltBytes, sv.iteration);
+      const clientKey = await crypto4.hmacSha256(saltedPassword, "Client Key");
+      const storedKey = await crypto4.sha256(clientKey);
+      const clientSignature = await crypto4.hmacSha256(storedKey, authMessage);
       const clientProof = xorBuffers(Buffer.from(clientKey), Buffer.from(clientSignature)).toString("base64");
-      const serverKey = await crypto2.hmacSha256(saltedPassword, "Server Key");
-      const serverSignatureBytes = await crypto2.hmacSha256(serverKey, authMessage);
+      const serverKey = await crypto4.hmacSha256(saltedPassword, "Server Key");
+      const serverSignatureBytes = await crypto4.hmacSha256(serverKey, authMessage);
       session2.message = "SASLResponse";
       session2.serverSignature = Buffer.from(serverSignatureBytes).toString("base64");
       session2.response = clientFinalMessageWithoutProof + ",p=" + clientProof;
@@ -29050,7 +29050,7 @@ var require_client = __commonJS({
     var Query2 = require_query();
     var defaults2 = require_defaults();
     var Connection2 = require_connection();
-    var crypto2 = require_utils5();
+    var crypto4 = require_utils5();
     var activeQueryDeprecationNotice = nodeUtils.deprecate(
       () => {
       },
@@ -29301,7 +29301,7 @@ var require_client = __commonJS({
       _handleAuthMD5Password(msg) {
         this._getPassword(async () => {
           try {
-            const hashedPassword = await crypto2.postgresMd5PasswordHash(this.user, this.password, msg.salt);
+            const hashedPassword = await crypto4.postgresMd5PasswordHash(this.user, this.password, msg.salt);
             this.connection.password(hashedPassword);
           } catch (e) {
             this.emit("error", e);
@@ -30922,11 +30922,11 @@ var require_connect_pg_simple = __commonJS({
 // ../../node_modules/.pnpm/cookie-signature@1.0.6/node_modules/cookie-signature/index.js
 var require_cookie_signature3 = __commonJS({
   "../../node_modules/.pnpm/cookie-signature@1.0.6/node_modules/cookie-signature/index.js"(exports) {
-    var crypto2 = __require("crypto");
+    var crypto4 = __require("crypto");
     exports.sign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Cookie value must be provided as a string.");
       if ("string" != typeof secret) throw new TypeError("Secret string must be provided.");
-      return val + "." + crypto2.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
+      return val + "." + crypto4.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
     };
     exports.unsign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Signed cookie string must be provided.");
@@ -30935,7 +30935,7 @@ var require_cookie_signature3 = __commonJS({
       return sha1(mac) == sha1(val) ? str : false;
     };
     function sha1(str) {
-      return crypto2.createHash("sha1").update(str).digest("hex");
+      return crypto4.createHash("sha1").update(str).digest("hex");
     }
   }
 });
@@ -37514,7 +37514,7 @@ var require_ip_address = __commonJS({
 });
 
 // src/app.ts
-var import_express7 = __toESM(require_express2(), 1);
+var import_express8 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_express_session = __toESM(require_express_session(), 1);
 var import_connect_pg_simple = __toESM(require_connect_pg_simple(), 1);
@@ -55929,7 +55929,7 @@ var pool = new Pool3({ connectionString: process.env.DATABASE_URL });
 var db = drizzle(pool, { schema: schema_exports });
 
 // src/routes/index.ts
-var import_express6 = __toESM(require_express2(), 1);
+var import_express7 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -60938,6 +60938,7 @@ var rate_limit_default = rateLimit;
 
 // src/routes/auth.ts
 import bcrypt from "bcrypt";
+import crypto2 from "node:crypto";
 var router2 = (0, import_express2.Router)();
 var loginLimiter = rate_limit_default({
   windowMs: 15 * 60 * 1e3,
@@ -60947,6 +60948,24 @@ var loginLimiter = rate_limit_default({
   standardHeaders: true,
   legacyHeaders: false
 });
+function generateAccessCode(length = 12) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const bytes = crypto2.randomBytes(length * 2);
+  let code = "";
+  for (let i = 0; i < bytes.length && code.length < length; i++) {
+    const idx = bytes[i] % chars.length;
+    if (bytes[i] < Math.floor(256 / chars.length) * chars.length) {
+      code += chars[idx];
+    }
+  }
+  if (code.length < length) {
+    code += generateAccessCode(length - code.length);
+  }
+  return code;
+}
+async function hashAccessCode(code) {
+  return bcrypt.hash(code, 12);
+}
 router2.post("/auth/login", loginLimiter, async (req, res) => {
   const { code } = req.body;
   if (typeof code !== "string" || code.trim().length === 0) {
@@ -60991,8 +61010,123 @@ router2.get("/auth/me", (req, res) => {
 });
 var auth_default = router2;
 
-// src/routes/weeks.ts
+// src/routes/admin.ts
 var import_express3 = __toESM(require_express2(), 1);
+import crypto3 from "node:crypto";
+
+// src/middlewares/requireAdmin.ts
+function requireAdmin(req, res, next) {
+  if (!req.session.isAdmin) {
+    res.status(401).json({ error: "Admin authentication required." });
+    return;
+  }
+  next();
+}
+
+// src/routes/admin.ts
+var router3 = (0, import_express3.Router)();
+if (!process.env.ADMIN_SECRET) {
+  throw new Error(
+    "ADMIN_SECRET environment variable is required but was not provided. Set it to a strong password used to protect the /admin page."
+  );
+}
+var ADMIN_SECRET = process.env.ADMIN_SECRET;
+function timingSafeStringsEqual(a, b) {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    crypto3.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto3.timingSafeEqual(bufA, bufB);
+}
+var adminLoginLimiter = rate_limit_default({
+  windowMs: 15 * 60 * 1e3,
+  max: 5,
+  message: { error: "Too many login attempts. Please wait 15 minutes before trying again." },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+router3.post("/admin/login", adminLoginLimiter, async (req, res) => {
+  const { password } = req.body;
+  if (typeof password !== "string" || password.length === 0) {
+    res.status(400).json({ error: "Password is required." });
+    return;
+  }
+  if (!timingSafeStringsEqual(password, ADMIN_SECRET)) {
+    res.status(401).json({ error: "Invalid password." });
+    return;
+  }
+  req.session.regenerate((err) => {
+    if (err) {
+      res.status(500).json({ error: "Session error." });
+      return;
+    }
+    req.session.isAdmin = true;
+    res.json({ ok: true });
+  });
+});
+router3.post("/admin/logout", (req, res) => {
+  req.session.isAdmin = false;
+  req.session.save((err) => {
+    if (err) {
+      res.status(500).json({ error: "Session error." });
+      return;
+    }
+    res.json({ ok: true });
+  });
+});
+router3.get("/admin/me", (req, res) => {
+  if (!req.session.isAdmin) {
+    res.status(401).json({ error: "Not authenticated." });
+    return;
+  }
+  res.json({ isAdmin: true });
+});
+router3.get("/admin/users", requireAdmin, async (_req, res) => {
+  const users = await db.select({ id: usersTable.id, createdAt: usersTable.createdAt }).from(usersTable).orderBy(usersTable.id);
+  res.json(users);
+});
+router3.post("/admin/users", requireAdmin, async (_req, res) => {
+  const code = generateAccessCode(12);
+  const codeHash = await hashAccessCode(code);
+  const [user] = await db.insert(usersTable).values({ codeHash }).returning({
+    id: usersTable.id,
+    createdAt: usersTable.createdAt
+  });
+  res.status(201).json({ id: user.id, createdAt: user.createdAt, code });
+});
+router3.post("/admin/users/:id/revoke", requireAdmin, async (req, res) => {
+  const userId = Number(req.params.id);
+  if (!Number.isInteger(userId) || userId < 1) {
+    res.status(400).json({ error: "Invalid user id." });
+    return;
+  }
+  const [existing] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, userId));
+  if (!existing) {
+    res.status(404).json({ error: "User not found." });
+    return;
+  }
+  const newCode = generateAccessCode(12);
+  const newHash = await hashAccessCode(newCode);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(`UPDATE users SET code_hash = $1 WHERE id = $2`, [newHash, userId]);
+    await client.query(`DELETE FROM sessions WHERE sess ->> 'userId' = $1`, [String(userId)]);
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+  res.json({ id: userId, code: newCode });
+});
+var admin_default = router3;
+
+// src/routes/weeks.ts
+var import_express4 = __toESM(require_express2(), 1);
 
 // src/middlewares/requireAuth.ts
 function requireAuth(req, res, next) {
@@ -61004,13 +61138,13 @@ function requireAuth(req, res, next) {
 }
 
 // src/routes/weeks.ts
-var router3 = (0, import_express3.Router)();
-router3.get("/weeks", requireAuth, async (req, res) => {
+var router4 = (0, import_express4.Router)();
+router4.get("/weeks", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const weeks = await db.select().from(weeksTable).where(eq(weeksTable.userId, userId)).orderBy(desc(weeksTable.createdAt));
   res.json(weeks.map((w) => ({ ...w, createdAt: w.createdAt.toISOString(), startDate: w.startDate })));
 });
-router3.post("/weeks", requireAuth, async (req, res) => {
+router4.post("/weeks", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const body = CreateWeekBody.parse(req.body);
   const [week] = await db.insert(weeksTable).values({
@@ -61021,7 +61155,7 @@ router3.post("/weeks", requireAuth, async (req, res) => {
   }).returning();
   res.status(201).json({ ...week, createdAt: week.createdAt.toISOString() });
 });
-router3.get("/weeks/:id", requireAuth, async (req, res) => {
+router4.get("/weeks/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { id } = GetWeekParams.parse({ id: Number(req.params.id) });
   const [week] = await db.select().from(weeksTable).where(and(eq(weeksTable.id, id), eq(weeksTable.userId, userId)));
@@ -61036,7 +61170,7 @@ router3.get("/weeks/:id", requireAuth, async (req, res) => {
     trades: trades.map((t) => ({ ...t, createdAt: t.createdAt.toISOString() }))
   });
 });
-router3.patch("/weeks/:id", requireAuth, async (req, res) => {
+router4.patch("/weeks/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { id } = UpdateWeekParams.parse({ id: Number(req.params.id) });
   const body = UpdateWeekBody.parse(req.body);
@@ -61047,7 +61181,7 @@ router3.patch("/weeks/:id", requireAuth, async (req, res) => {
   }
   res.json({ ...week, createdAt: week.createdAt.toISOString() });
 });
-router3.delete("/weeks/:id", requireAuth, async (req, res) => {
+router4.delete("/weeks/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { id } = DeleteWeekParams.parse({ id: Number(req.params.id) });
   const [week] = await db.select({ id: weeksTable.id }).from(weeksTable).where(and(eq(weeksTable.id, id), eq(weeksTable.userId, userId)));
@@ -61058,12 +61192,12 @@ router3.delete("/weeks/:id", requireAuth, async (req, res) => {
   await db.delete(weeksTable).where(eq(weeksTable.id, id));
   res.status(204).send();
 });
-var weeks_default = router3;
+var weeks_default = router4;
 
 // src/routes/trades.ts
-var import_express4 = __toESM(require_express2(), 1);
-var router4 = (0, import_express4.Router)();
-router4.get("/trades", requireAuth, async (req, res) => {
+var import_express5 = __toESM(require_express2(), 1);
+var router5 = (0, import_express5.Router)();
+router5.get("/trades", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const query = ListTradesQueryParams.parse({
     weekId: req.query.weekId !== void 0 ? Number(req.query.weekId) : void 0
@@ -61081,7 +61215,7 @@ router4.get("/trades", requireAuth, async (req, res) => {
     res.json(trades.map((t) => ({ ...t, createdAt: t.createdAt.toISOString() })));
   }
 });
-router4.post("/trades", requireAuth, async (req, res) => {
+router5.post("/trades", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const body = CreateTradeBody.parse(req.body);
   const [week] = await db.select({ id: weeksTable.id }).from(weeksTable).where(and(eq(weeksTable.id, body.weekId), eq(weeksTable.userId, userId)));
@@ -61102,7 +61236,7 @@ router4.post("/trades", requireAuth, async (req, res) => {
   }).returning();
   res.status(201).json({ ...trade, createdAt: trade.createdAt.toISOString() });
 });
-router4.get("/trades/:id", requireAuth, async (req, res) => {
+router5.get("/trades/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { id } = GetTradeParams.parse({ id: Number(req.params.id) });
   const [trade] = await db.select().from(tradesTable).where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId)));
@@ -61112,7 +61246,7 @@ router4.get("/trades/:id", requireAuth, async (req, res) => {
   }
   res.json({ ...trade, createdAt: trade.createdAt.toISOString() });
 });
-router4.patch("/trades/:id", requireAuth, async (req, res) => {
+router5.patch("/trades/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { id } = UpdateTradeParams.parse({ id: Number(req.params.id) });
   const body = UpdateTradeBody.parse(req.body);
@@ -61123,7 +61257,7 @@ router4.patch("/trades/:id", requireAuth, async (req, res) => {
   }
   res.json({ ...trade, createdAt: trade.createdAt.toISOString() });
 });
-router4.delete("/trades/:id", requireAuth, async (req, res) => {
+router5.delete("/trades/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { id } = DeleteTradeParams.parse({ id: Number(req.params.id) });
   const [trade] = await db.select({ id: tradesTable.id }).from(tradesTable).where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId)));
@@ -61134,11 +61268,11 @@ router4.delete("/trades/:id", requireAuth, async (req, res) => {
   await db.delete(tradesTable).where(eq(tradesTable.id, id));
   res.status(204).send();
 });
-var trades_default = router4;
+var trades_default = router5;
 
 // src/routes/stats.ts
-var import_express5 = __toESM(require_express2(), 1);
-var router5 = (0, import_express5.Router)();
+var import_express6 = __toESM(require_express2(), 1);
+var router6 = (0, import_express6.Router)();
 function computeStats(trades) {
   const totalTrades = trades.length;
   const wins = trades.filter((t) => t.result === "Win").length;
@@ -61153,12 +61287,12 @@ function computeStats(trades) {
   const netPips = Math.round(trades.reduce((sum, t) => sum + t.pips, 0) * 10) / 10;
   return { totalTrades, wins, losses, breakEvens, winRate, netRR, netPips };
 }
-router5.get("/stats/summary", requireAuth, async (req, res) => {
+router6.get("/stats/summary", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const trades = await db.select({ result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips }).from(tradesTable).where(eq(tradesTable.userId, userId));
   res.json(computeStats(trades));
 });
-router5.get("/stats/weekly", requireAuth, async (req, res) => {
+router6.get("/stats/weekly", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const weeks = await db.select().from(weeksTable).where(eq(weeksTable.userId, userId)).orderBy(weeksTable.createdAt);
   const result = await Promise.all(weeks.map(async (week) => {
@@ -61171,16 +61305,17 @@ router5.get("/stats/weekly", requireAuth, async (req, res) => {
   }));
   res.json(result);
 });
-var stats_default = router5;
+var stats_default = router6;
 
 // src/routes/index.ts
-var router6 = (0, import_express6.Router)();
-router6.use(health_default);
-router6.use(auth_default);
-router6.use(weeks_default);
-router6.use(trades_default);
-router6.use(stats_default);
-var routes_default = router6;
+var router7 = (0, import_express7.Router)();
+router7.use(health_default);
+router7.use(auth_default);
+router7.use(admin_default);
+router7.use(weeks_default);
+router7.use(trades_default);
+router7.use(stats_default);
+var routes_default = router7;
 
 // src/lib/logger.ts
 var import_pino = __toESM(require_pino(), 1);
@@ -61201,7 +61336,7 @@ var logger = (0, import_pino.default)({
 });
 
 // src/app.ts
-var app = (0, import_express7.default)();
+var app = (0, import_express8.default)();
 app.set("trust proxy", 1);
 app.use(
   (0, import_pino_http.pinoHttp)({
@@ -61236,8 +61371,8 @@ app.use(
   })
 );
 app.use((0, import_cookie_parser.default)());
-app.use(import_express7.default.json());
-app.use(import_express7.default.urlencoded({ extended: true }));
+app.use(import_express8.default.json());
+app.use(import_express8.default.urlencoded({ extended: true }));
 var UNSAFE_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
 app.use((req, res, next) => {
   if (process.env.NODE_ENV !== "production") return next();
