@@ -91,21 +91,13 @@ export function StatsPage() {
     try {
       const dateStr = format(new Date(), "yyyy-MM-dd");
 
-      // V1 — scale:4 × 960 px (3 840 px output) — original resolution approach,
-      //       letter-spacing stripped to reduce SVG foreignObject hinting artefacts
-      const v1 = await captureCard(node, 960, 4);
-      triggerDownload(v1, `tradeops-${theme}-${dateStr}-v1-scale4x960.png`);
+      // scale:6 × 960 px (5 760 px output) — extra resolution headroom so
+      // small text stays legible after Discord's upload compression.
+      // Letter-spacing is stripped to reduce SVG foreignObject hinting artefacts.
+      const png = await captureCard(node, 960, 6);
+      triggerDownload(png, `tradeops-${theme}-${dateStr}.png`);
 
-      // Small gap so browsers don't block the second download
-      await new Promise<void>((r) => setTimeout(r, 400));
-
-      // V2 — scale:2 × 1920 px (3 840 px output) — same final resolution but the
-      //       DOM is laid out at a natural screen width, so font hinting is sharper
-      //       before the 2× upscale step.
-      const v2 = await captureCard(node, 1920, 2);
-      triggerDownload(v2, `tradeops-${theme}-${dateStr}-v2-scale2x1920.png`);
-
-      toast({ title: "Two comparison PNGs downloaded — v1 (4×960) and v2 (2×1920)" });
+      toast({ title: "Statistics card downloaded" });
     } catch (err) {
       console.error("[dom-to-image-more] render failed:", err);
       toast({ title: "Failed to download card", variant: "destructive" });
