@@ -222,14 +222,16 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                       {trade.notes || "-"}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-white" onClick={() => handleEditTrade(trade)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteTrade(trade.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      {!readOnly && (
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-white" onClick={() => handleEditTrade(trade)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteTrade(trade.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

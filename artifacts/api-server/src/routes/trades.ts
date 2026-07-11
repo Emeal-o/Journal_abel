@@ -90,6 +90,23 @@ router.patch("/trades/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId!;
   const { id } = UpdateTradeParams.parse({ id: Number(req.params.id) });
   const body = UpdateTradeBody.parse(req.body);
+
+  // Verify ownership and that the parent week isn't archived before mutating
+  const [existing] = await db
+    .select({ id: tradesTable.id, weekId: tradesTable.weekId })
+    .from(tradesTable)
+    .where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId)));
+  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+
+  const [week] = await db
+    .select({ archivedAt: weeksTable.archivedAt })
+    .from(weeksTable)
+    .where(eq(weeksTable.id, existing.weekId));
+  if (week?.archivedAt) {
+    res.status(403).json({ error: "Cannot modify trades in an archived week." });
+    return;
+  }
+
   const [trade] = await db
     .update(tradesTable)
     .set({ ...body })
@@ -104,10 +121,20 @@ router.delete("/trades/:id", requireAuth, async (req, res) => {
   const { id } = DeleteTradeParams.parse({ id: Number(req.params.id) });
   // Verify ownership before deleting
   const [trade] = await db
-    .select({ id: tradesTable.id })
+    .select({ id: tradesTable.id, weekId: tradesTable.weekId })
     .from(tradesTable)
     .where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId)));
   if (!trade) { res.status(404).json({ error: "Not found" }); return; }
+
+  const [week] = await db
+    .select({ archivedAt: weeksTable.archivedAt })
+    .from(weeksTable)
+    .where(eq(weeksTable.id, trade.weekId));
+  if (week?.archivedAt) {
+    res.status(403).json({ error: "Cannot modify trades in an archived week." });
+    return;
+  }
+
   await db.delete(tradesTable).where(eq(tradesTable.id, id));
   res.status(204).send();
 });

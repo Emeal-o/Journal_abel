@@ -63398,6 +63398,16 @@ router5.patch("/trades/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { id } = UpdateTradeParams.parse({ id: Number(req.params.id) });
   const body = UpdateTradeBody.parse(req.body);
+  const [existing] = await db.select({ id: tradesTable.id, weekId: tradesTable.weekId }).from(tradesTable).where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId)));
+  if (!existing) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  const [week] = await db.select({ archivedAt: weeksTable.archivedAt }).from(weeksTable).where(eq(weeksTable.id, existing.weekId));
+  if (week?.archivedAt) {
+    res.status(403).json({ error: "Cannot modify trades in an archived week." });
+    return;
+  }
   const [trade] = await db.update(tradesTable).set({ ...body }).where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId))).returning();
   if (!trade) {
     res.status(404).json({ error: "Not found" });
@@ -63408,9 +63418,14 @@ router5.patch("/trades/:id", requireAuth, async (req, res) => {
 router5.delete("/trades/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { id } = DeleteTradeParams.parse({ id: Number(req.params.id) });
-  const [trade] = await db.select({ id: tradesTable.id }).from(tradesTable).where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId)));
+  const [trade] = await db.select({ id: tradesTable.id, weekId: tradesTable.weekId }).from(tradesTable).where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId)));
   if (!trade) {
     res.status(404).json({ error: "Not found" });
+    return;
+  }
+  const [week] = await db.select({ archivedAt: weeksTable.archivedAt }).from(weeksTable).where(eq(weeksTable.id, trade.weekId));
+  if (week?.archivedAt) {
+    res.status(403).json({ error: "Cannot modify trades in an archived week." });
     return;
   }
   await db.delete(tradesTable).where(eq(tradesTable.id, id));
