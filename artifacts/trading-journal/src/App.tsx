@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { JournalPage } from "@/pages/journal";
 import { StatsPage } from "@/pages/stats";
+import { ArchivePage } from "@/pages/archive";
 import { LoginPage } from "@/pages/login";
 import { AdminPage } from "@/pages/admin";
 import { Layout } from "@/components/layout";
@@ -36,6 +37,7 @@ function AuthGate() {
       <Switch>
         <Route path="/" component={JournalPage} />
         <Route path="/stats" component={StatsPage} />
+        <Route path="/archive" component={ArchivePage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

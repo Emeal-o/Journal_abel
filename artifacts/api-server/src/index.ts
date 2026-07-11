@@ -35,6 +35,14 @@ async function runStartupMigrations() {
     CREATE INDEX IF NOT EXISTS idx_login_events_created_at
       ON login_events(created_at DESC)
   `);
+  // Archive columns on weeks — idempotent; existing rows default to NULL (active).
+  await db.execute(sql`ALTER TABLE weeks ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP`);
+  await db.execute(sql`ALTER TABLE weeks ADD COLUMN IF NOT EXISTS month_label TEXT`);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS idx_weeks_archived
+      ON weeks(user_id, archived_at)
+      WHERE archived_at IS NOT NULL
+  `);
   logger.info("Startup migrations complete.");
 }
 

@@ -57940,9 +57940,18 @@ var weeksTable = pgTable("weeks", {
   label: text("label").notNull(),
   startDate: text("start_date").notNull(),
   notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull()
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  // null = active/current; a timestamp = archived into a named month
+  archivedAt: timestamp("archived_at"),
+  monthLabel: text("month_label")
 });
-var insertWeekSchema = createInsertSchema(weeksTable).omit({ id: true, createdAt: true, userId: true });
+var insertWeekSchema = createInsertSchema(weeksTable).omit({
+  id: true,
+  createdAt: true,
+  userId: true,
+  archivedAt: true,
+  monthLabel: true
+});
 
 // ../../lib/db/src/schema/trades.ts
 var tradesTable = pgTable("trades", {
@@ -63252,10 +63261,21 @@ function requireAuth(req, res, next) {
 
 // src/routes/weeks.ts
 var router4 = (0, import_express4.Router)();
+function serializeWeek(w) {
+  return {
+    ...w,
+    createdAt: w.createdAt.toISOString(),
+    archivedAt: w.archivedAt ? w.archivedAt.toISOString() : null
+  };
+}
 router4.get("/weeks", requireAuth, async (req, res) => {
   const userId = req.session.userId;
-  const weeks = await db.select().from(weeksTable).where(eq(weeksTable.userId, userId)).orderBy(desc(weeksTable.createdAt));
-  res.json(weeks.map((w) => ({ ...w, createdAt: w.createdAt.toISOString(), startDate: w.startDate })));
+  const wantArchived = req.query.archived === "true";
+  const weeks = await db.select().from(weeksTable).where(and(
+    eq(weeksTable.userId, userId),
+    wantArchived ? isNotNull(weeksTable.archivedAt) : isNull(weeksTable.archivedAt)
+  )).orderBy(desc(weeksTable.createdAt));
+  res.json(weeks.map(serializeWeek));
 });
 router4.post("/weeks", requireAuth, async (req, res) => {
   const userId = req.session.userId;
@@ -63266,7 +63286,23 @@ router4.post("/weeks", requireAuth, async (req, res) => {
     startDate: body.startDate,
     notes: body.notes ?? null
   }).returning();
-  res.status(201).json({ ...week, createdAt: week.createdAt.toISOString() });
+  res.status(201).json(serializeWeek(week));
+});
+router4.post("/weeks/archive-current-month", requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const { monthLabel } = req.body;
+  if (typeof monthLabel !== "string" || monthLabel.trim().length === 0 || monthLabel.length > 100) {
+    res.status(400).json({ error: "monthLabel is required and must be 1\u2013100 characters." });
+    return;
+  }
+  const activeWeeks = await db.select({ id: weeksTable.id }).from(weeksTable).where(and(eq(weeksTable.userId, userId), isNull(weeksTable.archivedAt)));
+  if (activeWeeks.length === 0) {
+    res.status(400).json({ error: "No active weeks to archive." });
+    return;
+  }
+  const now = /* @__PURE__ */ new Date();
+  await db.update(weeksTable).set({ archivedAt: now, monthLabel }).where(and(eq(weeksTable.userId, userId), isNull(weeksTable.archivedAt)));
+  res.json({ archivedCount: activeWeeks.length });
 });
 router4.get("/weeks/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;
@@ -63278,8 +63314,7 @@ router4.get("/weeks/:id", requireAuth, async (req, res) => {
   }
   const trades = await db.select().from(tradesTable).where(and(eq(tradesTable.weekId, id), eq(tradesTable.userId, userId))).orderBy(tradesTable.tradeNumber);
   res.json({
-    ...week,
-    createdAt: week.createdAt.toISOString(),
+    ...serializeWeek(week),
     trades: trades.map((t) => ({ ...t, createdAt: t.createdAt.toISOString() }))
   });
 });
@@ -63292,7 +63327,7 @@ router4.patch("/weeks/:id", requireAuth, async (req, res) => {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  res.json({ ...week, createdAt: week.createdAt.toISOString() });
+  res.json(serializeWeek(week));
 });
 router4.delete("/weeks/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;

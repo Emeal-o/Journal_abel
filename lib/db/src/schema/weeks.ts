@@ -10,8 +10,13 @@ export const weeksTable = pgTable("weeks", {
   startDate: text("start_date").notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  // null = active/current; a timestamp = archived into a named month
+  archivedAt: timestamp("archived_at"),
+  monthLabel: text("month_label"),
 });
 
-export const insertWeekSchema = createInsertSchema(weeksTable).omit({ id: true, createdAt: true, userId: true });
+export const insertWeekSchema = createInsertSchema(weeksTable).omit({
+  id: true, createdAt: true, userId: true, archivedAt: true, monthLabel: true,
+});
 export type InsertWeek = z.infer<typeof insertWeekSchema>;
 export type Week = typeof weeksTable.$inferSelect;

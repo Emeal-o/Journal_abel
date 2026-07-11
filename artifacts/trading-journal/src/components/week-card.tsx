@@ -44,9 +44,11 @@ import { WeekForm } from "./week-form";
 interface WeekCardProps {
   week: Week;
   dragHandle?: React.ReactNode;
+  /** When true, hides edit/delete/add-trade actions — used on the Archive page. */
+  readOnly?: boolean;
 }
 
-export function WeekCard({ week, dragHandle }: WeekCardProps) {
+export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [isTradeFormOpen, setIsTradeFormOpen] = useState(false);
   const [isEditWeekOpen, setIsEditWeekOpen] = useState(false);
@@ -132,37 +134,39 @@ export function WeekCard({ week, dragHandle }: WeekCardProps) {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            size="sm" 
-            variant="secondary" 
-            className="bg-white/5 hover:bg-white/10 text-white"
-            onClick={() => setIsTradeFormOpen(true)}
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Trade
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="w-8 h-8 p-0 text-muted-foreground hover:text-white">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-background border-white/10">
-              <DropdownMenuItem onClick={() => setIsEditWeekOpen(true)} className="cursor-pointer">
-                <Pencil className="w-4 h-4 mr-2" />
-                Edit Week
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setIsDeleteWeekOpen(true)} 
-                className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Week
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="bg-white/5 hover:bg-white/10 text-white"
+              onClick={() => setIsTradeFormOpen(true)}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Trade
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-8 h-8 p-0 text-muted-foreground hover:text-white">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-background border-white/10">
+                <DropdownMenuItem onClick={() => setIsEditWeekOpen(true)} className="cursor-pointer">
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Edit Week
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setIsDeleteWeekOpen(true)}
+                  className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Week
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
 
       <CollapsibleContent className="animate-in fade-in slide-in-from-top-2 duration-300">

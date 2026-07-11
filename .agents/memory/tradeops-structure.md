@@ -19,6 +19,15 @@ description: Architecture and key decisions for the TradeOps trading journal app
 
 **Why:** Vercel project was already Vite+React (not Next.js), so migration skipped Next.js conversion; only needed to register artifact, copy src files, update lib sources, and wire workflows.
 
+## Archive feature (Start New Month)
+- `weeks` table has two nullable columns: `archived_at TIMESTAMP` and `month_label TEXT`; null = active, non-null = archived
+- `GET /api/weeks` returns only active weeks (archived_at IS NULL) by default; `?archived=true` returns archived ones
+- `POST /api/weeks/archive-current-month` body `{ monthLabel }` sets archived_at + month_label on all user's active weeks
+- Frontend: Journal page shows "Start New Month" button only when active weeks > 0; on click fetches archived list to auto-suggest "Month N+1", opens Dialog for label edit, then POSTs archive; invalidates both `getListWeeksQueryKey()` and `["archived-weeks"]` query keys
+- Archive page at `/archive` groups weeks by monthLabel, most-recent group first; uses `WeekCard` with `readOnly` prop
+- `WeekCard` has `readOnly?: boolean` prop — when true hides Add Trade / Edit / Delete actions
+- Stats routes unchanged — they query all weeks/trades regardless of archived_at, so All-Time stats include archived data
+
 ## Replit DATABASE_URL vs PGHOST pitfall
 If a user-supplied `DATABASE_URL` secret contains a stale/unreachable internal hostname (symptom: `getaddrinfo ENOTFOUND eppostgresql` or similar), prefer building the connection from the individual `PGHOST`/`PGPORT`/`PGDATABASE`/`PGUSER`/`PGPASSWORD` runtime env vars instead — those are kept in sync by Replit even when `DATABASE_URL` is stale. Apply this to every driver in use (both `pg.Pool` and `postgres.js`), and gate SSL on `PGSSLMODE` rather than hardcoding it, since Replit's internal Postgres has no TLS but external PGHOST-based DBs might.
 

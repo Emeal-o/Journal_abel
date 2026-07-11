@@ -11,6 +11,7 @@ import {
   History,
   Plus,
   Rows3,
+  ArchiveIcon,
 } from "lucide-react";
 import {
   DndContext,
@@ -27,12 +28,22 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Week } from "@workspace/api-client-react";
+import { getListWeeksQueryKey } from "@workspace/api-client-react";
 
 import { WeekCard } from "@/components/week-card";
 import { WeekForm } from "@/components/week-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +55,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useOrderedWeeks } from "@/hooks/use-ordered-weeks";
 import type { SortMode } from "@/hooks/use-ordered-weeks";
+import { useToast } from "@/hooks/use-toast";
+import { listArchivedWeeks, archiveCurrentMonth } from "@/lib/weeks-api";
 
 // ─── sort config ──────────────────────────────────────────────────────────────
 
@@ -141,6 +154,51 @@ export function JournalPage() {
     useOrderedWeeks();
   const [isAddWeekOpen, setIsAddWeekOpen] = useState(false);
 
+  // ── archive dialog ──────────────────────────────────────────────────────────
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [archiveLabel, setArchiveLabel] = useState("");
+  const [archivePending, setArchivePending] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleOpenArchiveDialog = async () => {
+    // Pre-fill the label with "Month N+1" based on distinct archived months.
+    // Fetch happens on user action so the suggestion is always fresh.
+    let suggestedLabel = "Month 1";
+    try {
+      const archived = await listArchivedWeeks();
+      const distinctLabels = new Set(archived.map((w) => w.monthLabel).filter(Boolean));
+      suggestedLabel = `Month ${distinctLabels.size + 1}`;
+    } catch {
+      // Non-fatal — fall back to "Month 1"
+    }
+    setArchiveLabel(suggestedLabel);
+    setArchiveDialogOpen(true);
+  };
+
+  const handleArchiveConfirm = async () => {
+    if (!archiveLabel.trim()) return;
+    setArchivePending(true);
+    try {
+      const { archivedCount } = await archiveCurrentMonth(archiveLabel.trim());
+      // Invalidate active weeks so the journal empties immediately
+      queryClient.invalidateQueries({ queryKey: getListWeeksQueryKey() });
+      // Also invalidate the archive cache so the Archive page reflects the new month
+      queryClient.invalidateQueries({ queryKey: ["archived-weeks"] });
+      setArchiveDialogOpen(false);
+      toast({ title: `Archived ${archivedCount} week${archivedCount !== 1 ? "s" : ""} as "${archiveLabel.trim()}"` });
+    } catch (err) {
+      toast({
+        title: err instanceof Error ? err.message : "Failed to archive weeks",
+        variant: "destructive",
+      });
+    } finally {
+      setArchivePending(false);
+    }
+  };
+
+  // ── dnd ─────────────────────────────────────────────────────────────────────
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
@@ -156,6 +214,7 @@ export function JournalPage() {
 
   const currentOption = SORT_OPTIONS.find((o) => o.mode === sortMode) ?? SORT_OPTIONS[0];
   const isManual = sortMode === "custom";
+  const hasActiveWeeks = orderedWeeks.length > 0;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -221,6 +280,19 @@ export function JournalPage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Start New Month — only shown when there are active weeks to archive */}
+          {hasActiveWeeks && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenArchiveDialog}
+              className="gap-2 border-white/10 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white"
+            >
+              <ArchiveIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Start New Month</span>
+            </Button>
+          )}
+
           <Button
             onClick={() => setIsAddWeekOpen(true)}
             className="gap-2 shadow-[0_0_15px_rgba(var(--primary),0.2)]"
@@ -279,6 +351,56 @@ export function JournalPage() {
       )}
 
       <WeekForm open={isAddWeekOpen} onOpenChange={setIsAddWeekOpen} />
+
+      {/* ── Start New Month dialog ──────────────────────────────────────────── */}
+      <Dialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+        <DialogContent className="bg-background border-white/10 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Start New Month</DialogTitle>
+            <DialogDescription>
+              This will archive all{" "}
+              <span className="text-white font-medium">{orderedWeeks.length}</span> current
+              week{orderedWeeks.length !== 1 ? "s" : ""} into a named month. Your trades
+              are preserved and will still count toward All-Time stats.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-1.5">
+              Month name
+            </label>
+            <input
+              type="text"
+              value={archiveLabel}
+              onChange={(e) => setArchiveLabel(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !archivePending && handleArchiveConfirm()}
+              className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-muted-foreground/50 outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition"
+              placeholder="e.g. Month 1"
+              autoFocus
+              maxLength={100}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="border-white/10 bg-white/5 hover:bg-white/10 hover:text-white"
+              onClick={() => setArchiveDialogOpen(false)}
+              disabled={archivePending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleArchiveConfirm}
+              disabled={!archiveLabel.trim() || archivePending}
+            >
+              {archivePending
+                ? "Archiving…"
+                : `Archive ${orderedWeeks.length} week${orderedWeeks.length !== 1 ? "s" : ""}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

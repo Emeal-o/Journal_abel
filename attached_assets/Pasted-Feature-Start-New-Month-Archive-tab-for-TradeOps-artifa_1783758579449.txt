@@ -1,0 +1,44 @@
+Feature: "Start New Month" + Archive tab for TradeOps (artifacts/trading-journal + artifacts/api-server)
+
+GOAL
+Let a user manually close out their current active weeks into an archived "month" (a custom trading period, not a calendar month), then view archived months separately in a new "Archive" tab. Nothing is ever deleted — archiving is just a status change.
+
+DATA MODEL CHANGES (api-server, Drizzle schema)
+1. Add two columns to the `weeks` table:
+   - `archived_at` (timestamp, nullable) — null means "active/current," a timestamp means "archived"
+   - `month_label` (text, nullable) — label like "Month 3", set at the moment of archiving
+2. Migration only — do not drop/alter existing data. Existing weeks default to archived_at = null (stay active).
+
+BACKEND (api-server)
+1. New endpoint: `POST /api/weeks/archive-current-month`
+   - Requires auth (existing user_id session middleware)
+   - Body: `{ monthLabel: string }`
+   - Sets `archived_at = now()` and `month_label = monthLabel` on ALL of that user's weeks where `archived_at IS NULL`
+   - Returns count of weeks archived
+   - If the user has 0 active weeks, return an error/no-op response (frontend will disable the button in this case anyway, but guard server-side too)
+2. New/updated endpoint to fetch archived weeks:
+   - `GET /api/weeks?archived=true` returns weeks where `archived_at IS NOT NULL`
+   - Default (no query param) behavior unchanged — still only returns active weeks, don't break current Journal page
+3. New endpoint (or extend existing): return the count of distinct `month_label` values already archived for this user, so the frontend can auto-suggest "Month {count+1}"
+
+FRONTEND (trading-journal)
+1. Journal page: add "Start New Month" button near "Add Week"
+   - Disabled/hidden if the user currently has 0 active weeks (nothing to archive)
+   - Clicking opens a confirm dialog: "This will archive all N current weeks into [auto-suggested label]. You can edit the label. Continue?"
+   - Auto-suggest label as "Month {N}" where N = previously archived month count + 1 (fetched from backend). Let user edit the text field before confirming.
+   - On confirm: call archive endpoint, refresh Journal view (should return to empty state, same as new user)
+2. New nav tab: "Archive" (next to Journal / Stats / Sign out)
+   - Fetches GET /api/weeks?archived=true
+   - Groups by month_label, most recent first, each month collapsible
+   - Read-only for now — same week card component as Journal, no edit/delete actions
+   - Empty state: "No archived months yet."
+
+STATS BEHAVIOR
+Archived weeks should still count toward All-Time stats on the Stats page — archiving is an organizational status, not a deletion, so All-Time totals should include archived weeks' trades.
+
+TESTING
+1. Fresh user still sees normal empty states on Journal/Stats — don't break this.
+2. Log some test weeks, confirm "Start New Month" is enabled, archive them, confirm they disappear from Journal and appear correctly under the right label in Archive.
+3. Confirm auto-suggested label increments correctly across multiple archives (Month 1, Month 2, Month 3...).
+4. Confirm All-Time stats still include trades from archived weeks.
+5. Confirm existing users' pre-existing weeks are unaffected by the migration (still active).

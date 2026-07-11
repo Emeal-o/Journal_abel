@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Activity, BookOpen, LineChart, LogOut } from "lucide-react";
+import { Activity, Archive, BookOpen, LineChart, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -51,6 +51,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
             >
               <LineChart className="w-4 h-4" />
               Stats
+            </Link>
+            <Link
+              href="/archive"
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                location === "/archive"
+                  ? "bg-white/10 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Archive className="w-4 h-4" />
+              Archive
             </Link>
 
             {/* Divider */}
