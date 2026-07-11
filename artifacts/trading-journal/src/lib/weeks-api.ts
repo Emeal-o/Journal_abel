@@ -4,6 +4,8 @@
  * (archivedAt, monthLabel) are outside the original spec — keep them here
  * until the spec is regenerated.
  */
+import { useQuery } from "@tanstack/react-query";
+
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
 
 async function weeksFetch(path: string, init?: RequestInit): Promise<Response> {
@@ -26,6 +28,18 @@ export async function listArchivedWeeks(): Promise<ArchivedWeek[]> {
   const res = await weeksFetch("/api/weeks?archived=true");
   if (!res.ok) throw new Error("Failed to load archived weeks.");
   return res.json() as Promise<ArchivedWeek[]>;
+}
+
+/**
+ * React Query hook that returns the archived weeks list.
+ * Uses the same "archived-weeks" query key as the Archive page cache so the
+ * data is shared — no duplicate network requests.
+ */
+export function useArchivedWeeks() {
+  return useQuery({
+    queryKey: ["archived-weeks"],
+    queryFn: listArchivedWeeks,
+  });
 }
 
 /**

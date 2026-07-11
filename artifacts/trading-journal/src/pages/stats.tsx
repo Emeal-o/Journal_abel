@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { LedgerSheet, THEMES } from "@/components/ledger-sheet";
 import type { LedgerTheme } from "@/components/ledger-sheet";
+import { useArchivedWeeks } from "@/lib/weeks-api";
+import { computeCardLabels } from "@/lib/label-utils";
 
 const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix", "aurora", "goldrush", "sakura", "vapor", "autumn"];
 const FONT = "'Inter','Segoe UI',system-ui,-apple-system,sans-serif";
@@ -19,11 +21,18 @@ export function StatsPage() {
   const cardRef   = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  // ── auto-suggested labels from archived month count ──────────────────────────
+  const { data: archivedWeeks = [] } = useArchivedWeeks();
+  const totalMonths = new Set(
+    archivedWeeks.map((w) => w.monthLabel).filter(Boolean),
+  ).size;
+  const { suggestedMonth, suggestedTag } = computeCardLabels(totalMonths);
+
   const [exporting, setExporting] = useState(false);
   const [theme, setTheme]         = useState<LedgerTheme>("obsidian");
   const [cardTitle, setCardTitle] = useState("");   // empty = auto from date range
-  const [cardTag, setCardTag]     = useState("Y-II");
-  const [cardMonth, setCardMonth] = useState("");
+  const [cardTag, setCardTag]     = useState("");   // empty = use suggestedTag
+  const [cardMonth, setCardMonth] = useState("");   // empty = use suggestedMonth
 
   const isLoading = summaryLoading || weeklyLoading || weeksLoading;
   const t = THEMES[theme];
@@ -217,7 +226,7 @@ export function StatsPage() {
             </label>
             <input
               type="text"
-              placeholder="Month 1"
+              placeholder={suggestedMonth}
               value={cardMonth}
               onChange={(e) => setCardMonth(e.target.value)}
               style={inputStyle}
@@ -234,7 +243,7 @@ export function StatsPage() {
             </label>
             <input
               type="text"
-              placeholder="Y-II"
+              placeholder={suggestedTag}
               value={cardTag}
               onChange={(e) => setCardTag(e.target.value)}
               style={inputStyle}
@@ -328,8 +337,8 @@ export function StatsPage() {
           <LedgerSheet
             theme={theme}
             titleOverride={cardTitle.trim() || undefined}
-            tag={cardTag.trim() || undefined}
-            month={cardMonth.trim() || undefined}
+            tag={cardTag.trim() || suggestedTag}
+            month={cardMonth.trim() || suggestedMonth}
           />
 
           {/* Card footer */}
