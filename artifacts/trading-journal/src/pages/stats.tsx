@@ -26,7 +26,7 @@ export function StatsPage() {
   const totalMonths = new Set(
     archivedWeeks.map((w) => w.monthLabel).filter(Boolean),
   ).size;
-  const { suggestedMonth, suggestedTag } = computeCardLabels(totalMonths);
+  const { suggestedMonth, suggestedTag } = computeCardLabels(totalMonths + 1);
 
   const [exporting, setExporting] = useState(false);
   const [theme, setTheme]         = useState<LedgerTheme>("obsidian");

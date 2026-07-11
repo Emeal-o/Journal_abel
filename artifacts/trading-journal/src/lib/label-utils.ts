@@ -37,12 +37,14 @@ export interface CardLabelSuggestion {
 }
 
 /**
- * Derives auto-suggested card labels from the count of months archived so far.
+ * Derives auto-suggested card labels from the total month index.
  *
- * @param totalMonths  Number of distinct months already archived (≥ 0).
+ * @param totalMonths  The 1-based index of the current/upcoming month
+ *                      (i.e. archivedMonthCount + 1 — once a month is
+ *                      archived, the user has moved on to the next one).
  *
  * With 13-month years:
- *   totalMonths 0  → Month 1, Y-I   (nothing archived yet — user is in month 1)
+ *   totalMonths 1  → Month 1, Y-I   (nothing archived yet — user is in month 1)
  *   totalMonths 6  → Month 6, Y-I
  *   totalMonths 13 → Month 13, Y-I
  *   totalMonths 14 → Month 1,  Y-II

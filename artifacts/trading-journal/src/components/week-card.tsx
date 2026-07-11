@@ -184,7 +184,9 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                   <th className="px-6 py-3 font-medium text-right">RRR</th>
                   <th className="px-6 py-3 font-medium text-right">Pips</th>
                   <th className="px-6 py-3 font-medium">Notes</th>
-                  <th className="px-6 py-3 font-medium text-right">Actions</th>
+                  {!readOnly && (
+                    <th className="px-6 py-3 font-medium text-right">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -221,8 +223,8 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                     <td className="px-6 py-4 text-muted-foreground truncate max-w-[200px]">
                       {trade.notes || "-"}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      {!readOnly && (
+                    {!readOnly && (
+                      <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-white" onClick={() => handleEditTrade(trade)}>
                             <Pencil className="w-4 h-4" />
@@ -231,8 +233,8 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                      )}
-                    </td>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
