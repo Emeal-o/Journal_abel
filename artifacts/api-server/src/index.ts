@@ -43,6 +43,54 @@ async function runStartupMigrations() {
       ON weeks(user_id, archived_at)
       WHERE archived_at IS NOT NULL
   `);
+
+  // Absolute, never-resetting per-user sequence number assigned at archive
+  // time — replaces "count distinct month_label" as the source of truth for
+  // ordering/grouping/rollover (see label-utils.ts). Idempotent: only ever
+  // fills rows where month_index IS NULL.
+  await db.execute(sql`ALTER TABLE weeks ADD COLUMN IF NOT EXISTS month_index INTEGER`);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS idx_weeks_month_index
+      ON weeks(user_id, month_index)
+      WHERE month_index IS NOT NULL
+  `);
+
+  // Backfill: for already-archived weeks with no month_index yet, group by
+  // (user_id, month_label), order each user's groups chronologically by the
+  // earliest created_at in the group, and assign sequential integers 1, 2, 3...
+  const backfilled = await db.execute(sql`
+    WITH grouped AS (
+      SELECT user_id, month_label, MIN(created_at) AS first_created
+      FROM weeks
+      WHERE archived_at IS NOT NULL AND month_label IS NOT NULL
+      GROUP BY user_id, month_label
+    ),
+    ranked AS (
+      SELECT user_id, month_label,
+             ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY first_created ASC) AS idx
+      FROM grouped
+    )
+    UPDATE weeks w
+    SET month_index = ranked.idx
+    FROM ranked
+    WHERE w.user_id = ranked.user_id
+      AND w.month_label = ranked.month_label
+      AND w.archived_at IS NOT NULL
+      AND w.month_index IS NULL
+    RETURNING w.user_id, w.month_label, w.month_index
+  `);
+  if (backfilled.length > 0) {
+    const distinctMapping = Array.from(
+      new Map(
+        backfilled.map((r: any) => [`${r.user_id}:${r.month_label}`, r]),
+      ).values(),
+    );
+    logger.info(
+      { mapping: distinctMapping.map((r: any) => ({ userId: r.user_id, monthLabel: r.month_label, monthIndex: r.month_index })) },
+      "Backfilled month_index for archived weeks.",
+    );
+  }
+
   logger.info("Startup migrations complete.");
 }
 

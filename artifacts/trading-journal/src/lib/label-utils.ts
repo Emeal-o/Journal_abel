@@ -1,11 +1,14 @@
 /**
- * Utilities for computing auto-suggested Stats card labels from the
- * user's archived month count.
+ * Utilities for deriving Year / Month-in-Year labels from a week's absolute
+ * `monthIndex` (1, 2, 3... forever, assigned once at archive time — see
+ * lib/db/src/schema/weeks.ts). This is the single source of truth used by
+ * the Archive page, the "Start New Month" dialog, and the Stats page, so
+ * all three stay in sync.
  *
- * System: 13 archived months = 1 Year. The stats card labels reflect
- * the most recently archived month, not the current active one.
+ * System: 13 months = 1 Year, then month-in-year rolls back to 1 and the
+ * year increments (displayed as a Roman numeral).
  *
- * Edge case: 0 months archived → treated as month 1 of year 1.
+ * Edge case: monthIndex < 1 is clamped to 1.
  */
 
 const ROMAN_TABLE: [number, string][] = [
@@ -36,26 +39,35 @@ export interface CardLabelSuggestion {
   suggestedTag: string;
 }
 
+/** Year number (1-based) for an absolute monthIndex, with 13 months per year. */
+export function yearIndexFromMonthIndex(monthIndex: number): number {
+  const n = Math.max(1, Math.floor(monthIndex));
+  return Math.ceil(n / 13);
+}
+
+/** Month-in-year (1–13) for an absolute monthIndex, rolling over every 13. */
+export function monthInYearFromMonthIndex(monthIndex: number): number {
+  const n = Math.max(1, Math.floor(monthIndex));
+  return ((n - 1) % 13) + 1;
+}
+
 /**
- * Derives auto-suggested card labels from the total month index.
+ * Derives auto-suggested card labels from an absolute monthIndex.
  *
- * @param totalMonths  The 1-based index of the current/upcoming month
- *                      (i.e. archivedMonthCount + 1 — once a month is
- *                      archived, the user has moved on to the next one).
+ * @param monthIndex  The 1-based, never-resetting index of the
+ *                     current/upcoming month (i.e. max archived monthIndex + 1
+ *                     — once a month is archived, the user has moved on to
+ *                     the next one).
  *
  * With 13-month years:
- *   totalMonths 1  → Month 1, Y-I   (nothing archived yet — user is in month 1)
- *   totalMonths 6  → Month 6, Y-I
- *   totalMonths 13 → Month 13, Y-I
- *   totalMonths 14 → Month 1,  Y-II
+ *   monthIndex 1  → Month 1, Y-I   (nothing archived yet — user is in month 1)
+ *   monthIndex 6  → Month 6, Y-I
+ *   monthIndex 13 → Month 13, Y-I
+ *   monthIndex 14 → Month 1,  Y-II
  */
-export function computeCardLabels(totalMonths: number): CardLabelSuggestion {
-  // Treat 0 archived months the same as 1 for label purposes.
-  const n = Math.max(1, Math.floor(totalMonths));
-  const yearIndex    = Math.ceil(n / 13);
-  const monthInYear  = ((n - 1) % 13) + 1;
+export function computeCardLabels(monthIndex: number): CardLabelSuggestion {
   return {
-    suggestedMonth: `Month ${monthInYear}`,
-    suggestedTag:   `Y-${toRoman(yearIndex)}`,
+    suggestedMonth: `Month ${monthInYearFromMonthIndex(monthIndex)}`,
+    suggestedTag:   `Y-${toRoman(yearIndexFromMonthIndex(monthIndex))}`,
   };
 }

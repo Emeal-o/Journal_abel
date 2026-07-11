@@ -56,7 +56,8 @@ import {
 import { useOrderedWeeks } from "@/hooks/use-ordered-weeks";
 import type { SortMode } from "@/hooks/use-ordered-weeks";
 import { useToast } from "@/hooks/use-toast";
-import { listArchivedWeeks, archiveCurrentMonth } from "@/lib/weeks-api";
+import { listArchivedWeeks, archiveCurrentMonth, maxMonthIndex } from "@/lib/weeks-api";
+import { monthInYearFromMonthIndex } from "@/lib/label-utils";
 
 // ─── sort config ──────────────────────────────────────────────────────────────
 
@@ -162,13 +163,15 @@ export function JournalPage() {
   const { toast } = useToast();
 
   const handleOpenArchiveDialog = async () => {
-    // Pre-fill the label with "Month N+1" based on distinct archived months.
+    // Pre-fill the label with "Month N" based on the next month_index — the
+    // same source of truth and 13-month rollover formula used by the
+    // Archive page and Stats page, so the suggestion is always in sync.
     // Fetch happens on user action so the suggestion is always fresh.
     let suggestedLabel = "Month 1";
     try {
       const archived = await listArchivedWeeks();
-      const distinctLabels = new Set(archived.map((w) => w.monthLabel).filter(Boolean));
-      suggestedLabel = `Month ${distinctLabels.size + 1}`;
+      const nextMonthIndex = maxMonthIndex(archived) + 1;
+      suggestedLabel = `Month ${monthInYearFromMonthIndex(nextMonthIndex)}`;
     } catch {
       // Non-fatal — fall back to "Month 1"
     }

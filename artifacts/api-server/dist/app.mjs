@@ -57943,14 +57943,22 @@ var weeksTable = pgTable("weeks", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   // null = active/current; a timestamp = archived into a named month
   archivedAt: timestamp("archived_at"),
-  monthLabel: text("month_label")
+  // Free-text display label — defaults to "Month {monthInYearFromMonthIndex(monthIndex)}"
+  // at archive time, but the user may edit it afterward as a display override.
+  monthLabel: text("month_label"),
+  // Absolute, never-resetting sequence number assigned at archive time
+  // (1, 2, 3, 4... forever — no 13-month rollover). This is the source of
+  // truth for ordering/grouping archived weeks; see label-utils.ts for the
+  // year/month-in-year derivation used consistently across the app.
+  monthIndex: integer("month_index")
 });
 var insertWeekSchema = createInsertSchema(weeksTable).omit({
   id: true,
   createdAt: true,
   userId: true,
   archivedAt: true,
-  monthLabel: true
+  monthLabel: true,
+  monthIndex: true
 });
 
 // ../../lib/db/src/schema/trades.ts
@@ -63300,9 +63308,11 @@ router4.post("/weeks/archive-current-month", requireAuth, async (req, res) => {
     res.status(400).json({ error: "No active weeks to archive." });
     return;
   }
+  const [{ maxMonthIndex }] = await db.select({ maxMonthIndex: sql`max(${weeksTable.monthIndex})` }).from(weeksTable).where(eq(weeksTable.userId, userId));
+  const nextMonthIndex = (maxMonthIndex ?? 0) + 1;
   const now = /* @__PURE__ */ new Date();
-  await db.update(weeksTable).set({ archivedAt: now, monthLabel }).where(and(eq(weeksTable.userId, userId), isNull(weeksTable.archivedAt)));
-  res.json({ archivedCount: activeWeeks.length });
+  await db.update(weeksTable).set({ archivedAt: now, monthLabel, monthIndex: nextMonthIndex }).where(and(eq(weeksTable.userId, userId), isNull(weeksTable.archivedAt)));
+  res.json({ archivedCount: activeWeeks.length, monthIndex: nextMonthIndex });
 });
 router4.get("/weeks/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;

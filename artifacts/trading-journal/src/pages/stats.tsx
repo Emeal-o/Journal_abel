@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { LedgerSheet, THEMES } from "@/components/ledger-sheet";
 import type { LedgerTheme } from "@/components/ledger-sheet";
-import { useArchivedWeeks } from "@/lib/weeks-api";
+import { useArchivedWeeks, maxMonthIndex } from "@/lib/weeks-api";
 import { computeCardLabels } from "@/lib/label-utils";
 
 const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix", "aurora", "goldrush", "sakura", "vapor", "autumn"];
@@ -21,12 +21,11 @@ export function StatsPage() {
   const cardRef   = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // ── auto-suggested labels from archived month count ──────────────────────────
+  // ── auto-suggested labels from the next month_index ───────────────────────────
+  // Same source of truth (month_index) and formula as the Archive page and the
+  // "Start New Month" dialog — keeps all three surfaces in sync.
   const { data: archivedWeeks = [] } = useArchivedWeeks();
-  const totalMonths = new Set(
-    archivedWeeks.map((w) => w.monthLabel).filter(Boolean),
-  ).size;
-  const { suggestedMonth, suggestedTag } = computeCardLabels(totalMonths + 1);
+  const { suggestedMonth, suggestedTag } = computeCardLabels(maxMonthIndex(archivedWeeks) + 1);
 
   const [exporting, setExporting] = useState(false);
   const [theme, setTheme]         = useState<LedgerTheme>("obsidian");

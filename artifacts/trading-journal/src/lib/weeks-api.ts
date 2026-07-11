@@ -21,6 +21,8 @@ export interface ArchivedWeek {
   createdAt: string;
   archivedAt: string;
   monthLabel: string;
+  /** Absolute, never-resetting month sequence number assigned at archive time. */
+  monthIndex: number | null;
 }
 
 /** Fetches all archived weeks for the current user (archived_at IS NOT NULL). */
@@ -48,7 +50,7 @@ export function useArchivedWeeks() {
  */
 export async function archiveCurrentMonth(
   monthLabel: string,
-): Promise<{ archivedCount: number }> {
+): Promise<{ archivedCount: number; monthIndex: number }> {
   const res = await weeksFetch("/api/weeks/archive-current-month", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -58,5 +60,10 @@ export async function archiveCurrentMonth(
     const data = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(data.error ?? "Failed to archive weeks.");
   }
-  return res.json() as Promise<{ archivedCount: number }>;
+  return res.json() as Promise<{ archivedCount: number; monthIndex: number }>;
+}
+
+/** Highest monthIndex among a list of archived weeks (0 if none/unset). */
+export function maxMonthIndex(weeks: ArchivedWeek[]): number {
+  return weeks.reduce((max, w) => Math.max(max, w.monthIndex ?? 0), 0);
 }

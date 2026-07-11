@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and, isNull, isNotNull } from "drizzle-orm";
+import { eq, desc, and, isNull, isNotNull, sql } from "drizzle-orm";
 import { db, weeksTable, tradesTable, type Week, type Trade } from "@workspace/db";
 import {
   CreateWeekBody,
@@ -75,13 +75,22 @@ router.post("/weeks/archive-current-month", requireAuth, async (req, res) => {
     return;
   }
 
+  // month_index is the single source of truth for ordering/grouping/rollover
+  // (see label-utils.ts on the frontend) — assign the next absolute,
+  // never-resetting sequence number for this user: max(month_index) + 1.
+  const [{ maxMonthIndex }] = await db
+    .select({ maxMonthIndex: sql<number | null>`max(${weeksTable.monthIndex})` })
+    .from(weeksTable)
+    .where(eq(weeksTable.userId, userId));
+  const nextMonthIndex = (maxMonthIndex ?? 0) + 1;
+
   const now = new Date();
   await db
     .update(weeksTable)
-    .set({ archivedAt: now, monthLabel })
+    .set({ archivedAt: now, monthLabel, monthIndex: nextMonthIndex })
     .where(and(eq(weeksTable.userId, userId), isNull(weeksTable.archivedAt)));
 
-  res.json({ archivedCount: activeWeeks.length });
+  res.json({ archivedCount: activeWeeks.length, monthIndex: nextMonthIndex });
 });
 
 // GET /api/weeks/:id — fetch a single week with its trades
