@@ -1,10 +1,11 @@
+import { useEffect } from "react";
 import { format, parseISO } from "date-fns";
 import {
   useListTrades,
   useGetStatsSummary,
   useGetWeeklyStats,
 } from "@workspace/api-client-react";
-import type { Week } from "@workspace/api-client-react";
+import type { Week, StatsSummary, WeekStats } from "@workspace/api-client-react";
 import { useOrderedWeeks } from "@/hooks/use-ordered-weeks";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -529,17 +530,46 @@ interface LedgerSheetProps {
   titleOverride?: string;
   tag?: string;
   month?: string;
+  /**
+   * Scoped-data overrides — when provided, the corresponding internal fetch
+   * hook's data is ignored (its result is still fetched to satisfy the
+   * rules-of-hooks, but discarded). Used by the "Download Year" bulk export
+   * on the Archive page to render a card scoped to a single archived
+   * month's own weeks, instead of the current active weeks / all-time totals.
+   */
+  weeksOverride?: Week[];
+  summaryOverride?: StatsSummary;
+  weeklyStatsOverride?: WeekStats[];
+  /** Fires once (after mount) when all data needed to render is ready. */
+  onReady?: () => void;
 }
 
-export function LedgerSheet({ theme = "obsidian", className, titleOverride, tag, month }: LedgerSheetProps) {
-  const { orderedWeeks: weeks,    isLoading: wL  } = useOrderedWeeks();
-  const { data: summary,          isLoading: sL  } = useGetStatsSummary();
-  const { data: weeklyStats = [], isLoading: wsL } = useGetWeeklyStats();
+export function LedgerSheet({
+  theme = "obsidian", className, titleOverride, tag, month,
+  weeksOverride, summaryOverride, weeklyStatsOverride, onReady,
+}: LedgerSheetProps) {
+  const { orderedWeeks: hookWeeks,       isLoading: wL  } = useOrderedWeeks();
+  const { data: hookSummary,             isLoading: sL  } = useGetStatsSummary();
+  const { data: hookWeeklyStats = [],    isLoading: wsL } = useGetWeeklyStats();
   const isMobile = useIsMobile();
 
   const t = THEMES[theme];
 
-  if (wL || sL || wsL) {
+  const weeks       = weeksOverride       ?? hookWeeks;
+  const summary     = summaryOverride     ?? hookSummary;
+  const weeklyStats = weeklyStatsOverride ?? hookWeeklyStats;
+
+  const isLoading =
+    (weeksOverride       ? false : wL) ||
+    (summaryOverride     ? false : sL) ||
+    (weeklyStatsOverride ? false : wsL);
+
+  useEffect(() => {
+    if (!isLoading) onReady?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
+
+  if (isLoading) {
     return (
       <div style={{
         background: t.bg,

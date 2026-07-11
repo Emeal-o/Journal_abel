@@ -1,0 +1,43 @@
+Feature 1: Per-Year Net RR summary on Archive page (artifacts/trading-journal + artifacts/api-server)
+
+GOAL
+On the Archive page, each Year section header (e.g. "Year I  13 months · 15 weeks") should also show that year's total Net RR, computed across all trades within that year's months — regardless of whether the year has 1 month or a full 13.
+
+REQUIREMENTS
+1. Compute Net RR by summing across all trades belonging to weeks with a month_index falling within that year's range (year 1 = month_index 1-13, year 2 = month_index 14-26, etc.) — reuse existing per-week/per-month RR calculation logic, just aggregated at the year level.
+2. Display compactly in the Year section header, e.g. "Year I  13 months · 15 weeks  ·  Net RR: +4.20R" (styling should feel like a natural extension of the existing header line — small, clean, not a separate stat block).
+3. This should only need to compute client-side from data already being fetched for the Archive page (weeks + trades) — no new API endpoint required unless the existing archive fetch doesn't include enough trade detail, in which case extend the existing endpoint minimally.
+
+TESTING
+1. Confirm Year I (with 13 months) shows a correct summed Net RR across all its trades.
+2. Confirm Year II (currently just 1 month) also shows a correct Net RR for just that month's trades.
+3. Confirm this updates correctly as more months get archived into a year.
+
+---
+
+Feature 2: Bulk "Download Year" export on the Archive page (artifacts/trading-journal)
+
+CONTEXT
+This depends on the month_index field (already in place and backfilled in production) — each archived week has a month_index, and yearIndexFromMonthIndex/monthInYearFromMonthIndex utilities already exist in label-utils.ts.
+
+GOAL
+Each Year section should have a "Download Year {roman numeral}" button. Clicking it lets the user pick a theme, then generates one stats card PNG per month within that year (using that month's own trade data only, not All-Time), bundled into a single ZIP file for download.
+
+REQUIREMENTS
+1. Add JSZip (or similar lightweight client-side zip library) as a dependency for trading-journal.
+2. Add a "Download Year {roman numeral}" button to each Year section header (label dynamically reflects that section's year). Works correctly even for partial/in-progress years (fewer than 13 months archived so far) — exports whatever months exist within that year.
+3. Clicking it opens a small theme picker (reuse the same theme swatches already used on the Stats page — Obsidian, Midnight, Ember, Neon Matrix, Aurora, Gold Rush, Sakura, Vapor, Autumn).
+4. On confirming a theme, for each month within that year:
+   a. Compute that month's own trade stats (wins/losses/BE, win rate, net RR, net pips) — scoped ONLY to weeks with that specific month_index, not all-time.
+   b. Render a stats card using the same card component/styling as the existing "Download Statistics Card" flow, with the chosen theme, Month/Period-Tag labels auto-filled correctly for that specific month (e.g. "Month 3", "Y-I"), and header title reflecting that month's own date range (not the all-time "Auto" range).
+   c. Export it to PNG using the same dom-to-image-more approach and 6x scale already used for the single-card export.
+5. While generating, show a progress indicator (e.g. "Generating Month 4 of 13...") rather than a generic spinner.
+6. Bundle all generated PNGs into a ZIP (named like "Month 1.png", "Month 2.png", etc.) and trigger a single browser download (e.g. "TradeOps - Year I.zip").
+7. Entirely client-side — no backend changes needed, no storage impact, same as the existing single-card export.
+
+TESTING
+1. With Year I fully archived (13 months), click "Download Year I," pick a theme, confirm a ZIP downloads containing 13 correctly-labeled PNGs.
+2. Open a few PNGs and confirm each shows ONLY that month's specific stats, correct Month/Period-Tag label, and correct date-range header.
+3. Test on a partial year (Year II with just 1 month archived) — confirm it exports just that 1 month, no errors.
+4. Confirm the existing single "Download Statistics Card" button (all-time, main Stats page) is unaffected.
+5. Confirm this works even for months with 0 trades (valid card showing zeros).

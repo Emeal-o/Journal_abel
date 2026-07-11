@@ -1,15 +1,16 @@
 import { useRef, useState } from "react";
 import { Download, Pencil } from "lucide-react";
-import domtoimage from "dom-to-image-more";
 import { format } from "date-fns";
 import { useGetStatsSummary, useGetWeeklyStats, useListWeeks } from "@workspace/api-client-react";
 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { LedgerSheet, THEMES } from "@/components/ledger-sheet";
+import { THEMES } from "@/components/ledger-sheet";
 import type { LedgerTheme } from "@/components/ledger-sheet";
+import { StatsCard } from "@/components/stats-card";
 import { useArchivedWeeks, maxMonthIndex } from "@/lib/weeks-api";
 import { computeCardLabels } from "@/lib/label-utils";
+import { captureCardPng, triggerDownload } from "@/lib/card-export";
 
 const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix", "aurora", "goldrush", "sakura", "vapor", "autumn"];
 const FONT = "'Inter','Segoe UI',system-ui,-apple-system,sans-serif";
@@ -36,56 +37,6 @@ export function StatsPage() {
   const isLoading = summaryLoading || weeklyLoading || weeksLoading;
   const t = THEMES[theme];
 
-  // ── capture helpers ──────────────────────────────────────────────────────────
-
-  /** Zero out every inline letter-spacing inside `root`; returns a restore fn. */
-  function stripLetterSpacing(root: HTMLElement): () => void {
-    const saved: Array<[HTMLElement, string]> = [];
-    root.querySelectorAll<HTMLElement>("*").forEach((el) => {
-      if (el.style.letterSpacing) {
-        saved.push([el, el.style.letterSpacing]);
-        el.style.letterSpacing = "normal";
-      }
-    });
-    return () => saved.forEach(([el, v]) => { el.style.letterSpacing = v; });
-  }
-
-  /** Capture `node` as a PNG data-URL at the given logical width + scale. */
-  async function captureCard(node: HTMLElement, logicalWidth: number, scale: number): Promise<string> {
-    node.style.width    = `${logicalWidth}px`;
-    node.style.maxWidth = "none";
-    node.style.setProperty("-webkit-font-smoothing", "antialiased");
-    node.style.setProperty("-moz-osx-font-smoothing", "grayscale");
-
-    const restoreLetterSpacing = stripLetterSpacing(node);
-
-    // Reflow happens when we read scroll dimensions
-    const w = node.scrollWidth;
-    const h = node.scrollHeight;
-
-    try {
-      return await domtoimage.toPng(node, {
-        bgcolor: t.pageBg,
-        width:   w,
-        height:  h,
-        scale,
-        ignoreCSSRuleErrors: true,
-        onImageError: (info: unknown) => console.warn("[dom-to-image-more] resource failed:", info),
-      });
-    } finally {
-      restoreLetterSpacing();
-    }
-  }
-
-  function triggerDownload(dataUrl: string, filename: string) {
-    const link = document.createElement("a");
-    link.href     = dataUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
   // ── main handler ─────────────────────────────────────────────────────────────
 
   const handleDownload = async () => {
@@ -93,16 +44,13 @@ export function StatsPage() {
     setExporting(true);
     const node = cardRef.current;
 
-    const origWidth    = node.style.width;
-    const origMaxWidth = node.style.maxWidth;
-
     try {
       const dateStr = format(new Date(), "yyyy-MM-dd");
 
       // scale:6 × 960 px (5 760 px output) — extra resolution headroom so
       // small text stays legible after Discord's upload compression.
       // Letter-spacing is stripped to reduce SVG foreignObject hinting artefacts.
-      const png = await captureCard(node, 960, 6);
+      const png = await captureCardPng(node, t.pageBg, 960, 6);
       triggerDownload(png, `tradeops-${theme}-${dateStr}.png`);
 
       toast({ title: "Statistics card downloaded" });
@@ -110,10 +58,6 @@ export function StatsPage() {
       console.error("[dom-to-image-more] render failed:", err);
       toast({ title: "Failed to download card", variant: "destructive" });
     } finally {
-      node.style.width    = origWidth;
-      node.style.maxWidth = origMaxWidth;
-      node.style.removeProperty("-webkit-font-smoothing");
-      node.style.removeProperty("-moz-osx-font-smoothing");
       setExporting(false);
     }
   };
@@ -255,113 +199,13 @@ export function StatsPage() {
 
       {/* Card preview — exactly what downloads */}
       <div className="flex justify-center">
-        <div
-          id="ledger-card"
+        <StatsCard
           ref={cardRef}
-          style={{
-            width: 680,
-            background: t.pageBg,
-            padding: "40px 36px 36px",
-            borderRadius: 24,
-            fontFamily: FONT,
-            position: "relative",
-          }}
-        >
-          {/* ── hidden provenance mark ── */}
-          <span
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              bottom: 11,
-              left: 14,
-              fontSize: 6.5,
-              fontWeight: 600,
-              letterSpacing: "0.22em",
-              color: t.textPrimary,
-              opacity: 0.008,
-              fontFamily: FONT,
-              userSelect: "none",
-              pointerEvents: "none",
-            }}
-          >
-            EMEAL
-          </span>
-          {/* Card header branding */}
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 24,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 32, height: 32,
-                borderRadius: 8,
-                background: `linear-gradient(135deg, ${t.accent} 0%, ${t.containerBorder} 100%)`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: `0 0 16px ${t.accent}40`,
-              }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <polyline points="1,12 5,7 9,10 15,3" stroke={t.pageBg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <span style={{
-                fontWeight: 800,
-                fontSize: 17,
-                letterSpacing: "-0.01em",
-                color: t.textPrimary,
-                fontFamily: FONT,
-              }}>
-                Trade<span style={{ color: t.accent }}>Ops</span>
-              </span>
-            </div>
-            <div style={{
-              fontSize: 11,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              color: t.textMuted,
-              padding: "4px 10px",
-              borderRadius: 999,
-              border: `1px solid ${t.divider}`,
-              fontFamily: FONT,
-            }}>
-              {t.name}
-            </div>
-          </div>
-
-          {/* Ledger */}
-          <LedgerSheet
-            theme={theme}
-            titleOverride={cardTitle.trim() || undefined}
-            tag={cardTag.trim() || suggestedTag}
-            month={cardMonth.trim() || suggestedMonth}
-          />
-
-          {/* Card footer */}
-          <div style={{
-            marginTop: 20,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}>
-            <div style={{ flex: 1, height: 1, background: t.divider }} />
-            <span style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: t.textMuted,
-              padding: "0 14px",
-              whiteSpace: "nowrap",
-              letterSpacing: "0.08em",
-              fontFamily: FONT,
-            }}>
-              Generated {format(new Date(), "MMM d, yyyy")}
-            </span>
-            <div style={{ flex: 1, height: 1, background: t.divider }} />
-          </div>
-        </div>
+          theme={theme}
+          titleOverride={cardTitle.trim() || undefined}
+          tag={cardTag.trim() || suggestedTag}
+          month={cardMonth.trim() || suggestedMonth}
+        />
       </div>
     </div>
   );
