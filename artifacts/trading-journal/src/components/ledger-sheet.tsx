@@ -391,13 +391,16 @@ type WeeklyStat = {
   totalTrades: number; winRate: number; netRR: number; netPips: number;
 };
 
-function WeekSection({ week, weeklyStat, t, isMobile }: {
+function WeekSection({ week, weeklyStat, t, isMobile, tradesOverride }: {
   week: Week;
   weeklyStat: WeeklyStat | undefined;
   t: ThemeTokens;
   isMobile: boolean;
+  /** TEMP: preview-only override, bypasses the fetch for mock-data rendering. */
+  tradesOverride?: Trade[];
 }) {
-  const { data: trades = [] } = useListTrades({ weekId: week.id });
+  const { data: fetchedTrades = [] } = useListTrades({ weekId: week.id });
+  const trades = tradesOverride ?? fetchedTrades;
 
   const COLS = isMobile ? COLS_MOBILE : COLS_DESKTOP;
   const hPad = isMobile ? 8 : 20;
