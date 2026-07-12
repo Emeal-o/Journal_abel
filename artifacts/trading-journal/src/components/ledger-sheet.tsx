@@ -7,7 +7,15 @@ import {
 } from "@workspace/api-client-react";
 import type { Week, StatsSummary, WeekStats } from "@workspace/api-client-react";
 import { useOrderedWeeks } from "@/hooks/use-ordered-weeks";
-import { useIsMobile } from "@/hooks/use-mobile";
+
+// NOTE: this sheet is only ever rendered inside StatsCard at a fixed 680px
+// logical design width (the live preview shrinks it visually with a CSS
+// transform, never by reflowing it) — so it must always use the desktop
+// column proportions/labels. Reading the *device* viewport here (via
+// useIsMobile) previously made phone-triggered exports pick up the
+// narrow/abbreviated mobile layout even though the card itself is always
+// 680px wide, which made phone-downloaded cards look stretched/mismatched
+// vs. the same export from a desktop browser.
 
 // ─── theme engine ─────────────────────────────────────────────────────────────
 
@@ -551,7 +559,8 @@ export function LedgerSheet({
   const { orderedWeeks: hookWeeks,       isLoading: wL  } = useOrderedWeeks();
   const { data: hookSummary,             isLoading: sL  } = useGetStatsSummary();
   const { data: hookWeeklyStats = [],    isLoading: wsL } = useGetWeeklyStats();
-  const isMobile = useIsMobile();
+  // Always the desktop layout — see note above the imports.
+  const isMobile = false;
 
   const t = THEMES[theme];
 
