@@ -170,77 +170,144 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
       </div>
 
       <CollapsibleContent className="animate-in fade-in slide-in-from-top-2 duration-300">
-        <div className="p-0 overflow-x-auto">
-          {trades.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">
-              No trades logged this week.
-            </div>
-          ) : (
-            <table className="w-full min-w-[640px] text-sm text-left">
-              <thead className="text-xs text-muted-foreground uppercase bg-white/[0.02] border-b border-white/5">
-                <tr>
-                  <th className="px-6 py-3 font-medium">Trade #</th>
-                  <th className="px-6 py-3 font-medium">Result</th>
-                  <th className="px-6 py-3 font-medium text-right">RRR</th>
-                  <th className="px-6 py-3 font-medium text-right">Pips</th>
-                  <th className="px-6 py-3 font-medium">Notes</th>
+        {trades.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground text-sm">
+            No trades logged this week.
+          </div>
+        ) : (
+          <>
+            {/* Mobile: stacked trade cards (no horizontal scroll needed) */}
+            <div className="sm:hidden divide-y divide-white/5">
+              {trades.map((trade) => (
+                <div key={trade.id} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-white">#{trade.tradeNumber}</span>
+                    {trade.result === TradeResult.Win && (
+                      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20">
+                        <TrendingUp className="w-3 h-3 mr-1" /> Win
+                      </Badge>
+                    )}
+                    {trade.result === TradeResult.Loss && (
+                      <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20">
+                        <TrendingDown className="w-3 h-3 mr-1" /> Loss
+                      </Badge>
+                    )}
+                    {trade.result === TradeResult.BE && (
+                      <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 hover:bg-slate-500/20">
+                        <Minus className="w-3 h-3 mr-1" /> BE
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-0.5">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground/60">RRR</div>
+                      <div className="font-mono text-sm text-muted-foreground">
+                        1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
+                          {Math.abs(Number(trade.rrr)).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-0.5">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground/60">Pips</div>
+                      <div className="font-mono text-sm">
+                        <span className={Number(trade.pips) > 0 ? "text-emerald-400" : Number(trade.pips) < 0 ? "text-rose-400" : "text-muted-foreground"}>
+                          {Number(trade.pips) > 0 ? "+" : ""}{trade.pips}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground/60">Notes</div>
+                    <div className="text-sm text-muted-foreground break-words">{trade.notes || "-"}</div>
+                  </div>
+
                   {!readOnly && (
-                    <th className="px-6 py-3 font-medium text-right">Actions</th>
+                    <div className="space-y-1 pt-1">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground/60">Actions</div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" className="h-8 px-3 text-muted-foreground hover:text-white" onClick={() => handleEditTrade(trade)}>
+                          <Pencil className="w-4 h-4 mr-1.5" /> Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 px-3 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteTrade(trade.id)}>
+                          <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                        </Button>
+                      </div>
+                    </div>
                   )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {trades.map((trade, i) => (
-                  <tr key={trade.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="px-6 py-4 font-medium text-white">#{trade.tradeNumber}</td>
-                    <td className="px-6 py-4">
-                      {trade.result === TradeResult.Win && (
-                        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20">
-                          <TrendingUp className="w-3 h-3 mr-1" /> Win
-                        </Badge>
-                      )}
-                      {trade.result === TradeResult.Loss && (
-                        <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20">
-                          <TrendingDown className="w-3 h-3 mr-1" /> Loss
-                        </Badge>
-                      )}
-                      {trade.result === TradeResult.BE && (
-                        <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 hover:bg-slate-500/20">
-                          <Minus className="w-3 h-3 mr-1" /> BE
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono text-muted-foreground">
-                      1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
-                        {Math.abs(Number(trade.rrr)).toFixed(2)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono">
-                      <span className={Number(trade.pips) > 0 ? "text-emerald-400" : Number(trade.pips) < 0 ? "text-rose-400" : "text-muted-foreground"}>
-                        {Number(trade.pips) > 0 ? "+" : ""}{trade.pips}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground truncate max-w-[200px]">
-                      {trade.notes || "-"}
-                    </td>
+                </div>
+              ))}
+            </div>
+
+            {/* Tablet and up: original table layout */}
+            <div className="hidden sm:block p-0 overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm text-left">
+                <thead className="text-xs text-muted-foreground uppercase bg-white/[0.02] border-b border-white/5">
+                  <tr>
+                    <th className="px-6 py-3 font-medium">Trade #</th>
+                    <th className="px-6 py-3 font-medium">Result</th>
+                    <th className="px-6 py-3 font-medium text-right">RRR</th>
+                    <th className="px-6 py-3 font-medium text-right">Pips</th>
+                    <th className="px-6 py-3 font-medium">Notes</th>
                     {!readOnly && (
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-white" onClick={() => handleEditTrade(trade)}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteTrade(trade.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
+                      <th className="px-6 py-3 font-medium text-right">Actions</th>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {trades.map((trade) => (
+                    <tr key={trade.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-4 font-medium text-white">#{trade.tradeNumber}</td>
+                      <td className="px-6 py-4">
+                        {trade.result === TradeResult.Win && (
+                          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20">
+                            <TrendingUp className="w-3 h-3 mr-1" /> Win
+                          </Badge>
+                        )}
+                        {trade.result === TradeResult.Loss && (
+                          <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20">
+                            <TrendingDown className="w-3 h-3 mr-1" /> Loss
+                          </Badge>
+                        )}
+                        {trade.result === TradeResult.BE && (
+                          <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 hover:bg-slate-500/20">
+                            <Minus className="w-3 h-3 mr-1" /> BE
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-muted-foreground">
+                        1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
+                          {Math.abs(Number(trade.rrr)).toFixed(2)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono">
+                        <span className={Number(trade.pips) > 0 ? "text-emerald-400" : Number(trade.pips) < 0 ? "text-rose-400" : "text-muted-foreground"}>
+                          {Number(trade.pips) > 0 ? "+" : ""}{trade.pips}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground truncate max-w-[200px]">
+                        {trade.notes || "-"}
+                      </td>
+                      {!readOnly && (
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-white" onClick={() => handleEditTrade(trade)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteTrade(trade.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         <div className="bg-white/[0.03] p-4 border-t border-white/5 flex flex-wrap gap-4 text-sm justify-between items-center">
           <div className="flex flex-wrap gap-x-6 gap-y-2">

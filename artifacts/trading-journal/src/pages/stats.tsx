@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { useGetStatsSummary, useGetWeeklyStats, useListWeeks } from "@workspace/api-client-react";
@@ -15,13 +15,40 @@ import { aggregateWeekStats } from "@/lib/stats-utils";
 
 const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix", "aurora", "goldrush", "sakura", "vapor", "autumn"];
 const FONT = "'Inter','Segoe UI',system-ui,-apple-system,sans-serif";
+const CARD_WIDTH = 680;
+
+/**
+ * True below the `sm` breakpoint (640px). Used to switch the stats-card
+ * preview from horizontal-scroll to a scaled-to-fit view. Purely a
+ * display/UX concern — never touches the export path (see card-export.ts).
+ */
+function useIsNarrowViewport(breakpointPx = 640): boolean {
+  const [isNarrow, setIsNarrow] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < breakpointPx
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia(`(max-width: ${breakpointPx - 1}px)`);
+    const handler = () => setIsNarrow(mq.matches);
+    handler();
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [breakpointPx]);
+
+  return isNarrow;
+}
 
 export function StatsPage() {
   const { isLoading: summaryLoading }        = useGetStatsSummary();
   const { data: weeklyStats = [], isLoading: weeklyLoading } = useGetWeeklyStats();
   const { data: activeWeeks = [], isLoading: weeksLoading }  = useListWeeks();
   const cardRef   = useRef<HTMLDivElement>(null);
+  const previewWrapRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const isNarrow = useIsNarrowViewport();
+  const [previewScale, setPreviewScale] = useState(1);
+  const [previewHeight, setPreviewHeight] = useState<number | undefined>(undefined);
 
   // ── auto-suggested labels from the next month_index ───────────────────────────
   // Same source of truth (month_index) and formula as the Archive page and the
@@ -48,6 +75,37 @@ export function StatsPage() {
 
   const isLoading = summaryLoading || weeklyLoading || weeksLoading;
   const t = THEMES[theme];
+
+  // ── on-screen preview scaling (mobile only) ─────────────────────────────────
+  // Purely visual: shrinks the fixed-680px card to fit narrow viewports so the
+  // whole card is visible without side-scrolling. Never touches cardRef's own
+  // inline styles — captureCardPng() (card-export.ts) sets/restores those
+  // itself during export, independent of this transform.
+  useEffect(() => {
+    if (!isNarrow) {
+      setPreviewScale(1);
+      setPreviewHeight(undefined);
+      return;
+    }
+    const wrap = previewWrapRef.current;
+    const card = cardRef.current;
+    if (!wrap || !card) return;
+
+    const update = () => {
+      const wrapWidth = wrap.clientWidth;
+      const nextScale = wrapWidth > 0 ? Math.min(1, wrapWidth / CARD_WIDTH) : 1;
+      setPreviewScale(nextScale);
+      setPreviewHeight(card.scrollHeight * nextScale);
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(wrap);
+    ro.observe(card);
+    return () => ro.disconnect();
+    // Re-measure whenever content that can change the card's rendered size changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNarrow, theme, cardTitle, cardTag, cardMonth, summaryOverride, isLoading]);
 
   // ── main handler ─────────────────────────────────────────────────────────────
 
@@ -210,10 +268,18 @@ export function StatsPage() {
       </div>
 
       {/* Card preview — exactly what downloads. The card itself has a fixed
-          680px width (see StatsCard); on narrow viewports this container
-          scrolls horizontally rather than the card overflowing the page. */}
-      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="flex justify-center w-fit mx-auto">
+          680px width (see StatsCard). On narrow viewports it's scaled down
+          (CSS transform, display-only) to fit the screen without side-
+          scrolling; at sm+ it renders at full size, centered. */}
+      <div
+        ref={previewWrapRef}
+        className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0"
+        style={isNarrow ? { height: previewHeight, overflow: "hidden" } : undefined}
+      >
+        <div
+          className={isNarrow ? undefined : "flex justify-center w-fit mx-auto"}
+          style={isNarrow ? { transform: `scale(${previewScale})`, transformOrigin: "top left", width: CARD_WIDTH } : undefined}
+        >
           <StatsCard
             ref={cardRef}
             theme={theme}
