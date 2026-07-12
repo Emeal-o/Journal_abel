@@ -208,7 +208,7 @@ function DownloadYearButton({
             try {
               const node = hiddenCardRef.current;
               if (!node) throw new Error("Export card failed to mount.");
-              const png = await captureCardPng(node, THEMES[job.theme].pageBg, 960, 6);
+              const png = await captureCardPng(node, THEMES[job.theme].pageBg, 680, 8);
               resolve(png);
             } catch (err) {
               reject(err);

@@ -117,10 +117,10 @@ export function StatsPage() {
     try {
       const dateStr = format(new Date(), "yyyy-MM-dd");
 
-      // scale:6 × 960 px (5 760 px output) — extra resolution headroom so
+      // scale:8 × 680 px (5 440 px output) — extra resolution headroom so
       // small text stays legible after Discord's upload compression.
       // Letter-spacing is stripped to reduce SVG foreignObject hinting artefacts.
-      const png = await captureCardPng(node, t.pageBg, 960, 6);
+      const png = await captureCardPng(node, t.pageBg, 680, 8);
       triggerDownload(png, `tradeops-${theme}-${dateStr}.png`);
 
       toast({ title: "Statistics card downloaded" });
