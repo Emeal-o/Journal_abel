@@ -11,14 +11,15 @@ import { StatsCard } from "@/components/stats-card";
 import { useArchivedWeeks, maxMonthIndex } from "@/lib/weeks-api";
 import { computeCardLabels } from "@/lib/label-utils";
 import { captureCardPng, triggerDownload } from "@/lib/card-export";
+import { aggregateWeekStats } from "@/lib/stats-utils";
 
 const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix", "aurora", "goldrush", "sakura", "vapor", "autumn"];
 const FONT = "'Inter','Segoe UI',system-ui,-apple-system,sans-serif";
 
 export function StatsPage() {
-  const { isLoading: summaryLoading } = useGetStatsSummary();
-  const { isLoading: weeklyLoading }  = useGetWeeklyStats();
-  const { isLoading: weeksLoading }   = useListWeeks();
+  const { isLoading: summaryLoading }        = useGetStatsSummary();
+  const { data: weeklyStats = [], isLoading: weeklyLoading } = useGetWeeklyStats();
+  const { data: activeWeeks = [], isLoading: weeksLoading }  = useListWeeks();
   const cardRef   = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -27,6 +28,17 @@ export function StatsPage() {
   // "Start New Month" dialog — keeps all three surfaces in sync.
   const { data: archivedWeeks = [] } = useArchivedWeeks();
   const { suggestedMonth, suggestedTag } = computeCardLabels(maxMonthIndex(archivedWeeks) + 1);
+
+  // ── Grand Total scope — must mirror the card header's own logic ────────────────
+  // deriveMonthLabel() (ledger-sheet.tsx) shows "All Time" when there are 0 active
+  // weeks, or a specific date range when there ARE active weeks. The Grand Total
+  // needs to match: sum only the active weeks' trades when any exist, otherwise
+  // fall back to true all-time (every archived week too).
+  const activeWeekIds  = new Set(activeWeeks.map((w) => w.id));
+  const scopedWeekStats = activeWeeks.length > 0
+    ? weeklyStats.filter((s) => activeWeekIds.has(s.weekId))
+    : weeklyStats;
+  const summaryOverride = aggregateWeekStats(scopedWeekStats);
 
   const [exporting, setExporting] = useState(false);
   const [theme, setTheme]         = useState<LedgerTheme>("obsidian");
@@ -197,15 +209,20 @@ export function StatsPage() {
         </div>
       </div>
 
-      {/* Card preview — exactly what downloads */}
-      <div className="flex justify-center">
-        <StatsCard
-          ref={cardRef}
-          theme={theme}
-          titleOverride={cardTitle.trim() || undefined}
-          tag={cardTag.trim() || suggestedTag}
-          month={cardMonth.trim() || suggestedMonth}
-        />
+      {/* Card preview — exactly what downloads. The card itself has a fixed
+          680px width (see StatsCard); on narrow viewports this container
+          scrolls horizontally rather than the card overflowing the page. */}
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex justify-center w-fit mx-auto">
+          <StatsCard
+            ref={cardRef}
+            theme={theme}
+            titleOverride={cardTitle.trim() || undefined}
+            tag={cardTag.trim() || suggestedTag}
+            month={cardMonth.trim() || suggestedMonth}
+            summaryOverride={summaryOverride}
+          />
+        </div>
       </div>
     </div>
   );

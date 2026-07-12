@@ -351,15 +351,15 @@ function YearSection({
   return (
     <div className="border border-white/10 rounded-xl overflow-hidden bg-white/[0.01]">
       <button
-        className="w-full flex items-center justify-between px-5 py-4 bg-white/[0.04] hover:bg-white/[0.06] transition-colors gap-3"
+        className="w-full flex flex-col sm:flex-row sm:items-center justify-between px-5 py-4 bg-white/[0.04] hover:bg-white/[0.06] transition-colors gap-3"
         onClick={() => setOpen((o) => !o)}
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-x-3 gap-y-1 flex-wrap min-w-0 text-left">
           {open
             ? <ChevronDown className="w-5 h-5 text-muted-foreground flex-shrink-0" />
             : <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />}
           <span className="text-white font-bold text-xl flex-shrink-0">{label}</span>
-          <span className="text-xs text-muted-foreground/60 font-normal truncate">
+          <span className="text-xs text-muted-foreground/60 font-normal break-words">
             {months.length} month{months.length !== 1 ? "s" : ""} · {totalWeeks} week{totalWeeks !== 1 ? "s" : ""}
             {totalWeeks > 0 && (
               <>
@@ -374,7 +374,7 @@ function YearSection({
         </div>
 
         {yearIndex != null && (
-          <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
+          <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0 self-start sm:self-auto">
             <DownloadYearButton yearIndex={yearIndex} months={months} weeklyStats={weeklyStats} />
           </div>
         )}

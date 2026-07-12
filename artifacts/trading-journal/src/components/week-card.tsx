@@ -113,29 +113,29 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
       onOpenChange={setIsOpen}
       className="border border-white/10 bg-white/[0.02] backdrop-blur-xl rounded-xl overflow-hidden shadow-[0_4px_24px_-8px_rgba(0,0,0,0.5)] transition-all duration-300"
     >
-      <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/[0.01]">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-white/5 bg-white/[0.01]">
+        <div className="flex items-center gap-4 min-w-0">
           {dragHandle}
           <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="w-8 h-8 p-0 hover:bg-white/10">
+            <Button variant="ghost" size="sm" className="w-8 h-8 p-0 hover:bg-white/10 flex-shrink-0">
               {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </Button>
           </CollapsibleTrigger>
-          <div>
-            <h3 className="text-lg font-semibold text-white">{week.label}</h3>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-              <span>{format(new Date(week.startDate), "MMM d, yyyy")}</span>
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold text-white truncate">{week.label}</h3>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 min-w-0">
+              <span className="flex-shrink-0">{format(new Date(week.startDate), "MMM d, yyyy")}</span>
               {week.notes && (
                 <>
-                  <span>•</span>
-                  <span className="truncate max-w-[200px] sm:max-w-[400px]">{week.notes}</span>
+                  <span className="flex-shrink-0">•</span>
+                  <span className="truncate max-w-[160px] sm:max-w-[400px]">{week.notes}</span>
                 </>
               )}
             </div>
           </div>
         </div>
         {!readOnly && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button
               size="sm"
               variant="secondary"
@@ -176,7 +176,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
               No trades logged this week.
             </div>
           ) : (
-            <table className="w-full text-sm text-left">
+            <table className="w-full min-w-[640px] text-sm text-left">
               <thead className="text-xs text-muted-foreground uppercase bg-white/[0.02] border-b border-white/5">
                 <tr>
                   <th className="px-6 py-3 font-medium">Trade #</th>
