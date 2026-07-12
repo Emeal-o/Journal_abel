@@ -270,25 +270,52 @@ export function StatsPage() {
       {/* Card preview — exactly what downloads. The card itself has a fixed
           680px width (see StatsCard). On narrow viewports it's scaled down
           (CSS transform, display-only) to fit the screen without side-
-          scrolling; at sm+ it renders at full size, centered. */}
+          scrolling; at sm+ it renders at full size, centered.
+
+          The scaling wrapper below uses the standard "reserve the post-scale
+          box, transform the pre-scale content inside it" pattern: the outer
+          box's layout width/height are set to the ALREADY-SCALED dimensions,
+          so `margin: 0 auto` centers it correctly using real layout math.
+          The inner box keeps the card's true 680px size and is visually
+          shrunk with `transform: scale()` anchored at its own top-left
+          corner — which lines up exactly with the outer box's top-left
+          corner, so the two boxes coincide on screen. */}
       <div
         ref={previewWrapRef}
         className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0"
-        style={isNarrow ? { height: previewHeight, overflow: "hidden" } : undefined}
       >
-        <div
-          className={isNarrow ? undefined : "flex justify-center w-fit mx-auto"}
-          style={isNarrow ? { transform: `scale(${previewScale})`, transformOrigin: "top left", width: CARD_WIDTH } : undefined}
-        >
-          <StatsCard
-            ref={cardRef}
-            theme={theme}
-            titleOverride={cardTitle.trim() || undefined}
-            tag={cardTag.trim() || suggestedTag}
-            month={cardMonth.trim() || suggestedMonth}
-            summaryOverride={summaryOverride}
-          />
-        </div>
+        {isNarrow ? (
+          <div
+            style={{
+              width: CARD_WIDTH * previewScale,
+              height: previewHeight,
+              margin: "0 auto",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ transform: `scale(${previewScale})`, transformOrigin: "top left", width: CARD_WIDTH }}>
+              <StatsCard
+                ref={cardRef}
+                theme={theme}
+                titleOverride={cardTitle.trim() || undefined}
+                tag={cardTag.trim() || suggestedTag}
+                month={cardMonth.trim() || suggestedMonth}
+                summaryOverride={summaryOverride}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center w-fit mx-auto">
+            <StatsCard
+              ref={cardRef}
+              theme={theme}
+              titleOverride={cardTitle.trim() || undefined}
+              tag={cardTag.trim() || suggestedTag}
+              month={cardMonth.trim() || suggestedMonth}
+              summaryOverride={summaryOverride}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
