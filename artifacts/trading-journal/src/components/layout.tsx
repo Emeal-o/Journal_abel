@@ -27,42 +27,42 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <span className="font-semibold tracking-tight text-lg">Trade<span className="text-primary">Ops</span></span>
           </div>
 
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-0.5 sm:gap-1">
             <Link
               href="/"
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                "flex items-center gap-2 px-2.5 sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
                 location === "/"
                   ? "bg-white/10 text-white shadow-sm"
                   : "text-muted-foreground hover:text-white hover:bg-white/5"
               )}
             >
               <BookOpen className="w-4 h-4" />
-              Journal
+              <span className="hidden sm:inline">Journal</span>
             </Link>
             <Link
               href="/stats"
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                "flex items-center gap-2 px-2.5 sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
                 location === "/stats"
                   ? "bg-white/10 text-white shadow-sm"
                   : "text-muted-foreground hover:text-white hover:bg-white/5"
               )}
             >
               <LineChart className="w-4 h-4" />
-              Stats
+              <span className="hidden sm:inline">Stats</span>
             </Link>
             <Link
               href="/archive"
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                "flex items-center gap-2 px-2.5 sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
                 location === "/archive"
                   ? "bg-white/10 text-white shadow-sm"
                   : "text-muted-foreground hover:text-white hover:bg-white/5"
               )}
             >
               <Archive className="w-4 h-4" />
-              Archive
+              <span className="hidden sm:inline">Archive</span>
             </Link>
 
             {/* Divider */}
@@ -70,7 +70,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition-all duration-200"
+              className="flex items-center gap-2 px-2.5 sm:px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition-all duration-200"
               title="Sign out"
             >
               <LogOut className="w-4 h-4" />
