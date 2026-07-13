@@ -57972,6 +57972,7 @@ var tradesTable = pgTable("trades", {
   rrr: real("rrr").notNull(),
   pips: real("pips").notNull(),
   notes: text("notes"),
+  flagEmoji: text("flag_emoji"),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 var insertTradeSchema = createInsertSchema(tradesTable).omit({ id: true, tradeNumber: true, createdAt: true, userId: true });
@@ -61960,6 +61961,7 @@ var GetWeekResponse = objectType({
     "rrr": numberType().describe("Risk-reward ratio (e.g. 1.5 means 1.5R)"),
     "pips": numberType().describe("Pips gained (positive) or lost (negative)"),
     "notes": stringType().nullish(),
+    "flagEmoji": stringType().nullish(),
     "createdAt": stringType()
   }))
 });
@@ -61993,6 +61995,7 @@ var ListTradesResponseItem = objectType({
   "rrr": numberType().describe("Risk-reward ratio (e.g. 1.5 means 1.5R)"),
   "pips": numberType().describe("Pips gained (positive) or lost (negative)"),
   "notes": stringType().nullish(),
+  "flagEmoji": stringType().nullish(),
   "createdAt": stringType()
 });
 var ListTradesResponse = arrayType(ListTradesResponseItem);
@@ -62001,7 +62004,8 @@ var CreateTradeBody = objectType({
   "result": enumType(["Win", "Loss", "BE"]),
   "rrr": numberType(),
   "pips": numberType(),
-  "notes": stringType().optional()
+  "notes": stringType().optional(),
+  "flagEmoji": stringType().optional()
 });
 var CreateTradeResponse = objectType({
   "id": numberType(),
@@ -62011,6 +62015,7 @@ var CreateTradeResponse = objectType({
   "rrr": numberType().describe("Risk-reward ratio (e.g. 1.5 means 1.5R)"),
   "pips": numberType().describe("Pips gained (positive) or lost (negative)"),
   "notes": stringType().nullish(),
+  "flagEmoji": stringType().nullish(),
   "createdAt": stringType()
 });
 var GetTradeParams = objectType({
@@ -62024,6 +62029,7 @@ var GetTradeResponse = objectType({
   "rrr": numberType().describe("Risk-reward ratio (e.g. 1.5 means 1.5R)"),
   "pips": numberType().describe("Pips gained (positive) or lost (negative)"),
   "notes": stringType().nullish(),
+  "flagEmoji": stringType().nullish(),
   "createdAt": stringType()
 });
 var UpdateTradeParams = objectType({
@@ -62033,7 +62039,8 @@ var UpdateTradeBody = objectType({
   "result": enumType(["Win", "Loss", "BE"]).optional(),
   "rrr": numberType().optional(),
   "pips": numberType().optional(),
-  "notes": stringType().nullish()
+  "notes": stringType().nullish(),
+  "flagEmoji": stringType().nullish()
 });
 var UpdateTradeResponse = objectType({
   "id": numberType(),
@@ -62043,6 +62050,7 @@ var UpdateTradeResponse = objectType({
   "rrr": numberType().describe("Risk-reward ratio (e.g. 1.5 means 1.5R)"),
   "pips": numberType().describe("Pips gained (positive) or lost (negative)"),
   "notes": stringType().nullish(),
+  "flagEmoji": stringType().nullish(),
   "createdAt": stringType()
 });
 var DeleteTradeParams = objectType({
@@ -63390,7 +63398,8 @@ router5.post("/trades", requireAuth, async (req, res) => {
     result: body.result,
     rrr: body.rrr,
     pips: body.pips,
-    notes: body.notes ?? null
+    notes: body.notes ?? null,
+    flagEmoji: body.flagEmoji ?? null
   }).returning();
   res.status(201).json({ ...trade, createdAt: trade.createdAt.toISOString() });
 });

@@ -17,6 +17,8 @@ export interface StatsCardProps {
   summaryOverride?: StatsSummary;
   weeklyStatsOverride?: WeekStats[];
   onReady?: () => void;
+  /** See LedgerSheetProps.showFlagEmoji — defaults to false (unchanged export). */
+  showFlagEmoji?: boolean;
 }
 
 /**
@@ -27,7 +29,7 @@ export interface StatsCardProps {
  * month) — both render this same component so the two stay pixel-identical.
  */
 export const StatsCard = forwardRef<HTMLDivElement, StatsCardProps>(function StatsCard(
-  { theme, titleOverride, tag, month, weeksOverride, summaryOverride, weeklyStatsOverride, onReady },
+  { theme, titleOverride, tag, month, weeksOverride, summaryOverride, weeklyStatsOverride, onReady, showFlagEmoji },
   ref,
 ) {
   const t = THEMES[theme];
@@ -119,6 +121,7 @@ export const StatsCard = forwardRef<HTMLDivElement, StatsCardProps>(function Sta
         summaryOverride={summaryOverride}
         weeklyStatsOverride={weeklyStatsOverride}
         onReady={onReady}
+        showFlagEmoji={showFlagEmoji}
       />
 
       {/* Card footer */}

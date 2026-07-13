@@ -39,6 +39,8 @@ export interface Trade {
   pips: number;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  flagEmoji?: string | null;
   createdAt: string;
 }
 
@@ -82,6 +84,7 @@ export interface TradeInput {
   rrr: number;
   pips: number;
   notes?: string;
+  flagEmoji?: string;
 }
 
 export type TradeUpdateResult = typeof TradeUpdateResult[keyof typeof TradeUpdateResult];
@@ -99,6 +102,8 @@ export interface TradeUpdate {
   pips?: number;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  flagEmoji?: string | null;
 }
 
 export interface StatsSummary {

@@ -13,6 +13,7 @@ export const tradesTable = pgTable("trades", {
   rrr: real("rrr").notNull(),
   pips: real("pips").notNull(),
   notes: text("notes"),
+  flagEmoji: text("flag_emoji"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

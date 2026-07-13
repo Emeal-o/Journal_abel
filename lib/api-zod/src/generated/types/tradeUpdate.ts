@@ -13,4 +13,6 @@ export interface TradeUpdate {
   pips?: number;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  flagEmoji?: string | null;
 }

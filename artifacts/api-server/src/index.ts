@@ -35,6 +35,9 @@ async function runStartupMigrations() {
     CREATE INDEX IF NOT EXISTS idx_login_events_created_at
       ON login_events(created_at DESC)
   `);
+  // Optional emoji flag on trades — idempotent; existing rows default to NULL (no flag).
+  await db.execute(sql`ALTER TABLE trades ADD COLUMN IF NOT EXISTS flag_emoji TEXT`);
+
   // Archive columns on weeks — idempotent; existing rows default to NULL (active).
   await db.execute(sql`ALTER TABLE weeks ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP`);
   await db.execute(sql`ALTER TABLE weeks ADD COLUMN IF NOT EXISTS month_label TEXT`);

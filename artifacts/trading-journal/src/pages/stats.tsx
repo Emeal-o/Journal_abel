@@ -72,6 +72,7 @@ export function StatsPage() {
   const [cardTitle, setCardTitle] = useState("");   // empty = auto from date range
   const [cardTag, setCardTag]     = useState("");   // empty = use suggestedTag
   const [cardMonth, setCardMonth] = useState("");   // empty = use suggestedMonth
+  const [includeEmojiFlags, setIncludeEmojiFlags] = useState(false); // default OFF — export unchanged unless opted in
 
   const isLoading = summaryLoading || weeklyLoading || weeksLoading;
   const t = THEMES[theme];
@@ -105,7 +106,7 @@ export function StatsPage() {
     return () => ro.disconnect();
     // Re-measure whenever content that can change the card's rendered size changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNarrow, theme, cardTitle, cardTag, cardMonth, summaryOverride, isLoading]);
+  }, [isNarrow, theme, cardTitle, cardTag, cardMonth, summaryOverride, isLoading, includeEmojiFlags]);
 
   // ── main handler ─────────────────────────────────────────────────────────────
 
@@ -154,14 +155,25 @@ export function StatsPage() {
           <h1 className="text-3xl font-bold tracking-tight text-white">Performance Stats</h1>
           <p className="text-muted-foreground mt-1">Export your stats as a premium shareable card.</p>
         </div>
-        <Button
-          onClick={handleDownload}
-          disabled={isLoading || exporting}
-          className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_20px_rgba(99,102,241,0.4)] border border-primary-foreground/10"
-        >
-          <Download className="w-4 h-4" />
-          {exporting ? "Generating…" : "Download Statistics Card"}
-        </Button>
+        <div className="flex flex-col items-end gap-2">
+          <Button
+            onClick={handleDownload}
+            disabled={isLoading || exporting}
+            className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_20px_rgba(99,102,241,0.4)] border border-primary-foreground/10"
+          >
+            <Download className="w-4 h-4" />
+            {exporting ? "Generating…" : "Download Statistics Card"}
+          </Button>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground/70 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={includeEmojiFlags}
+              onChange={(e) => setIncludeEmojiFlags(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-white/20 bg-white/5 accent-primary"
+            />
+            Include emoji flags in export
+          </label>
+        </div>
       </div>
 
       {/* Theme selector */}
@@ -301,6 +313,7 @@ export function StatsPage() {
                 tag={cardTag.trim() || suggestedTag}
                 month={cardMonth.trim() || suggestedMonth}
                 summaryOverride={summaryOverride}
+                showFlagEmoji={includeEmojiFlags}
               />
             </div>
           </div>
@@ -313,6 +326,7 @@ export function StatsPage() {
               tag={cardTag.trim() || suggestedTag}
               month={cardMonth.trim() || suggestedMonth}
               summaryOverride={summaryOverride}
+              showFlagEmoji={includeEmojiFlags}
             />
           </div>
         )}

@@ -13,4 +13,5 @@ export interface TradeInput {
   rrr: number;
   pips: number;
   notes?: string;
+  flagEmoji?: string;
 }

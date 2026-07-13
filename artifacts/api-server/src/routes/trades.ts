@@ -71,6 +71,7 @@ router.post("/trades", requireAuth, async (req, res) => {
     rrr: body.rrr,
     pips: body.pips,
     notes: body.notes ?? null,
+    flagEmoji: body.flagEmoji ?? null,
   }).returning();
   res.status(201).json({ ...trade!, createdAt: trade!.createdAt.toISOString() });
 });

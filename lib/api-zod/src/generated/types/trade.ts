@@ -18,5 +18,7 @@ export interface Trade {
   pips: number;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  flagEmoji?: string | null;
   createdAt: string;
 }

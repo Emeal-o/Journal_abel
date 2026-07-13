@@ -331,6 +331,8 @@ components:
           description: Pips gained (positive) or lost (negative)
         notes:
           type: ["string", "null"]
+        flagEmoji:
+          type: ["string", "null"]
         createdAt:
           type: string
 
@@ -349,6 +351,8 @@ components:
           type: number
         notes:
           type: string
+        flagEmoji:
+          type: string
 
     TradeUpdate:
       type: object
@@ -361,6 +365,8 @@ components:
         pips:
           type: number
         notes:
+          type: ["string", "null"]
+        flagEmoji:
           type: ["string", "null"]
 
     StatsSummary:

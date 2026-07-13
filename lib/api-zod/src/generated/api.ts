@@ -71,6 +71,7 @@ export const GetWeekResponse = zod.object({
   "rrr": zod.number().describe('Risk-reward ratio (e.g. 1.5 means 1.5R)'),
   "pips": zod.number().describe('Pips gained (positive) or lost (negative)'),
   "notes": zod.string().nullish(),
+  "flagEmoji": zod.string().nullish(),
   "createdAt": zod.string()
 }))
 })
@@ -126,6 +127,7 @@ export const ListTradesResponseItem = zod.object({
   "rrr": zod.number().describe('Risk-reward ratio (e.g. 1.5 means 1.5R)'),
   "pips": zod.number().describe('Pips gained (positive) or lost (negative)'),
   "notes": zod.string().nullish(),
+  "flagEmoji": zod.string().nullish(),
   "createdAt": zod.string()
 })
 export const ListTradesResponse = zod.array(ListTradesResponseItem)
@@ -139,7 +141,8 @@ export const CreateTradeBody = zod.object({
   "result": zod.enum(['Win', 'Loss', 'BE']),
   "rrr": zod.number(),
   "pips": zod.number(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "flagEmoji": zod.string().optional()
 })
 
 export const CreateTradeResponse = zod.object({
@@ -150,6 +153,7 @@ export const CreateTradeResponse = zod.object({
   "rrr": zod.number().describe('Risk-reward ratio (e.g. 1.5 means 1.5R)'),
   "pips": zod.number().describe('Pips gained (positive) or lost (negative)'),
   "notes": zod.string().nullish(),
+  "flagEmoji": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -169,6 +173,7 @@ export const GetTradeResponse = zod.object({
   "rrr": zod.number().describe('Risk-reward ratio (e.g. 1.5 means 1.5R)'),
   "pips": zod.number().describe('Pips gained (positive) or lost (negative)'),
   "notes": zod.string().nullish(),
+  "flagEmoji": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -184,7 +189,8 @@ export const UpdateTradeBody = zod.object({
   "result": zod.enum(['Win', 'Loss', 'BE']).optional(),
   "rrr": zod.number().optional(),
   "pips": zod.number().optional(),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "flagEmoji": zod.string().nullish()
 })
 
 export const UpdateTradeResponse = zod.object({
@@ -195,6 +201,7 @@ export const UpdateTradeResponse = zod.object({
   "rrr": zod.number().describe('Risk-reward ratio (e.g. 1.5 means 1.5R)'),
   "pips": zod.number().describe('Pips gained (positive) or lost (negative)'),
   "notes": zod.string().nullish(),
+  "flagEmoji": zod.string().nullish(),
   "createdAt": zod.string()
 })
 

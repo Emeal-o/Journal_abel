@@ -44,6 +44,7 @@ const tradeSchema = z.object({
   rrr: z.coerce.number().min(-100).max(100),
   pips: z.coerce.number().min(-10000).max(10000),
   notes: z.string().optional(),
+  flagEmoji: z.string().optional(),
 });
 
 type TradeFormValues = z.infer<typeof tradeSchema>;
@@ -70,6 +71,7 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
       rrr: 0,
       pips: 0,
       notes: "",
+      flagEmoji: "",
     },
   });
 
@@ -80,6 +82,7 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
         rrr: Number(trade.rrr),
         pips: Number(trade.pips),
         notes: trade.notes || "",
+        flagEmoji: trade.flagEmoji || "",
       });
     } else if (open && !trade) {
       form.reset({
@@ -87,6 +90,7 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
         rrr: 0,
         pips: 0,
         notes: "",
+        flagEmoji: "",
       });
     }
   }, [open, trade, form]);
@@ -204,6 +208,25 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
                       placeholder="Why did you take this trade? Any mistakes?" 
                       className="resize-none bg-white/5 border-white/10 min-h-[100px]" 
                       {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="flagEmoji"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Flag emoji (optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. 🔥"
+                      maxLength={8}
+                      className="bg-white/5 border-white/10 w-24"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />

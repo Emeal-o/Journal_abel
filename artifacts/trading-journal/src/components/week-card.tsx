@@ -182,21 +182,26 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                 <div key={trade.id} className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-white">#{trade.tradeNumber}</span>
-                    {trade.result === TradeResult.Win && (
-                      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20">
-                        <TrendingUp className="w-3 h-3 mr-1" /> Win
-                      </Badge>
-                    )}
-                    {trade.result === TradeResult.Loss && (
-                      <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20">
-                        <TrendingDown className="w-3 h-3 mr-1" /> Loss
-                      </Badge>
-                    )}
-                    {trade.result === TradeResult.BE && (
-                      <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 hover:bg-slate-500/20">
-                        <Minus className="w-3 h-3 mr-1" /> BE
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {trade.result === TradeResult.Win && (
+                        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20">
+                          <TrendingUp className="w-3 h-3 mr-1" /> Win
+                        </Badge>
+                      )}
+                      {trade.result === TradeResult.Loss && (
+                        <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20">
+                          <TrendingDown className="w-3 h-3 mr-1" /> Loss
+                        </Badge>
+                      )}
+                      {trade.result === TradeResult.BE && (
+                        <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 hover:bg-slate-500/20">
+                          <Minus className="w-3 h-3 mr-1" /> BE
+                        </Badge>
+                      )}
+                      {trade.flagEmoji && (
+                        <span className="text-sm leading-none" title="Flag">{trade.flagEmoji}</span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -260,21 +265,26 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                     <tr key={trade.id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="px-6 py-4 font-medium text-white">#{trade.tradeNumber}</td>
                       <td className="px-6 py-4">
-                        {trade.result === TradeResult.Win && (
-                          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20">
-                            <TrendingUp className="w-3 h-3 mr-1" /> Win
-                          </Badge>
-                        )}
-                        {trade.result === TradeResult.Loss && (
-                          <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20">
-                            <TrendingDown className="w-3 h-3 mr-1" /> Loss
-                          </Badge>
-                        )}
-                        {trade.result === TradeResult.BE && (
-                          <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 hover:bg-slate-500/20">
-                            <Minus className="w-3 h-3 mr-1" /> BE
-                          </Badge>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          {trade.result === TradeResult.Win && (
+                            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20">
+                              <TrendingUp className="w-3 h-3 mr-1" /> Win
+                            </Badge>
+                          )}
+                          {trade.result === TradeResult.Loss && (
+                            <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20">
+                              <TrendingDown className="w-3 h-3 mr-1" /> Loss
+                            </Badge>
+                          )}
+                          {trade.result === TradeResult.BE && (
+                            <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 hover:bg-slate-500/20">
+                              <Minus className="w-3 h-3 mr-1" /> BE
+                            </Badge>
+                          )}
+                          {trade.flagEmoji && (
+                            <span className="text-sm leading-none" title="Flag">{trade.flagEmoji}</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right font-mono text-muted-foreground">
                         1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>

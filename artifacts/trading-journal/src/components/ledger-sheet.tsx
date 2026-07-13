@@ -359,7 +359,7 @@ function deriveMonthLabel(weeks: Week[]): string {
 
 function sign(v: number) { return v > 0 ? "+" : ""; }
 
-function ResultPill({ result, t }: { result: string; t: ThemeTokens }) {
+function ResultPill({ result, t, flagEmoji }: { result: string; t: ThemeTokens; flagEmoji?: string | null }) {
   const map: Record<string, { label: string; color: string; bg: string }> = {
     Win:  { label: "Win",  color: t.win,  bg: t.winBg  },
     Loss: { label: "Loss", color: t.loss, bg: t.lossBg },
@@ -367,18 +367,26 @@ function ResultPill({ result, t }: { result: string; t: ThemeTokens }) {
   };
   const s = map[result] ?? map.BE;
   return (
-    <span style={{
-      display: "inline-block",
-      padding: "3px 11px",
-      borderRadius: 999,
-      fontSize: 12,
-      fontWeight: 700,
-      letterSpacing: "0.05em",
-      color: s.color,
-      background: s.bg,
-      fontFamily: FONT,
-    }}>
-      {s.label}
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span style={{
+        display: "inline-block",
+        padding: "3px 11px",
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: "0.05em",
+        color: s.color,
+        background: s.bg,
+        fontFamily: FONT,
+      }}>
+        {s.label}
+      </span>
+      {/* Optional emoji flag — only rendered when the caller explicitly opts
+          in (see `showFlagEmoji` on LedgerSheet/StatsCard). Default export
+          behavior never passes this, so existing exports are unaffected. */}
+      {flagEmoji && (
+        <span style={{ fontSize: 13, lineHeight: 1 }}>{flagEmoji}</span>
+      )}
     </span>
   );
 }
@@ -391,13 +399,14 @@ type WeeklyStat = {
   totalTrades: number; winRate: number; netRR: number; netPips: number;
 };
 
-function WeekSection({ week, weeklyStat, t, isMobile, tradesOverride }: {
+function WeekSection({ week, weeklyStat, t, isMobile, tradesOverride, showFlagEmoji }: {
   week: Week;
   weeklyStat: WeeklyStat | undefined;
   t: ThemeTokens;
   isMobile: boolean;
   /** TEMP: preview-only override, bypasses the fetch for mock-data rendering. */
   tradesOverride?: Trade[];
+  showFlagEmoji: boolean;
 }) {
   const { data: fetchedTrades = [] } = useListTrades({ weekId: week.id });
   const trades = tradesOverride ?? fetchedTrades;
@@ -470,7 +479,7 @@ function WeekSection({ week, weeklyStat, t, isMobile, tradesOverride }: {
             {trade.tradeNumber}
           </div>
           <div style={cell}>
-            <ResultPill result={trade.result} t={t} />
+            <ResultPill result={trade.result} t={t} flagEmoji={showFlagEmoji ? trade.flagEmoji : undefined} />
           </div>
           <div style={{ ...cell, fontFamily: MONO, fontSize: 13, color: t.textSecond, whiteSpace: "nowrap", overflow: "hidden" }}>
             {isMobile ? `1/${trade.rrr.toFixed(2)}` : `1 / ${trade.rrr.toFixed(2)}`}
@@ -553,11 +562,19 @@ interface LedgerSheetProps {
   weeklyStatsOverride?: WeekStats[];
   /** Fires once (after mount) when all data needed to render is ready. */
   onReady?: () => void;
+  /**
+   * When true, renders each trade's optional flag_emoji next to its Result
+   * pill. Defaults to false so existing exports/previews are byte-for-byte
+   * unchanged unless the caller (the Stats page's "Include emoji flags in
+   * export" toggle) explicitly opts in.
+   */
+  showFlagEmoji?: boolean;
 }
 
 export function LedgerSheet({
   theme = "obsidian", className, titleOverride, tag, month,
   weeksOverride, summaryOverride, weeklyStatsOverride, onReady,
+  showFlagEmoji = false,
 }: LedgerSheetProps) {
   const { orderedWeeks: hookWeeks,       isLoading: wL  } = useOrderedWeeks();
   const { data: hookSummary,             isLoading: sL  } = useGetStatsSummary();
@@ -713,7 +730,7 @@ export function LedgerSheet({
       {/* Week blocks */}
       {weeks.map((week) => {
         const weeklyStat = weeklyStats.find((s) => s.weekId === week.id) as WeeklyStat | undefined;
-        return <WeekSection key={week.id} week={week} weeklyStat={weeklyStat} t={t} isMobile={isMobile} />;
+        return <WeekSection key={week.id} week={week} weeklyStat={weeklyStat} t={t} isMobile={isMobile} showFlagEmoji={showFlagEmoji} />;
       })}
 
       {/* Grand Total */}
