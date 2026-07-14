@@ -19,7 +19,9 @@ Required secrets (all set in Replit Secrets):
 - `SESSION_SECRET` — session signing secret
 - `ADMIN_SECRET` — password for the /admin panel (create/manage user access codes)
 
-Dev database note: this Repl's `DATABASE_URL` points to a fresh Replit-provisioned Postgres instance, not the production Neon DB. It starts empty — use the `/admin` panel (with `ADMIN_SECRET`) to create a user access code before logging in.
+Dev database note: this Repl's `DATABASE_URL` points to a fresh Replit-provisioned Postgres instance, not the production Neon DB. It starts empty — use the `/admin` panel (with `ADMIN_SECRET`) to create a user access code before logging in, or run `pnpm --filter @workspace/api-server run create-user`.
+
+Setup status: dependencies installed, schema tables (`users`, `weeks`, `trades`, `login_events`) created, `ADMIN_SECRET` configured, and all three workflows (API Server, Trading Journal web, Canvas/mockup sandbox) are running. One access code has already been created for initial login (see chat for the code — it is not recoverable, generate a new one via the admin panel or `create-user` script if lost).
 
 ## Stack
 
