@@ -51,6 +51,15 @@ export const CreateWeekResponse = zod.object({
 
 
 /**
+ * @summary Suggested Week Label and Start Date for a new week, derived from the single most recent week (active or archived) across the whole journal
+ */
+export const GetWeekSuggestionResponse = zod.object({
+  "label": zod.string().describe('Suggested Week Label for the next new week'),
+  "startDate": zod.string().describe('Suggested Start Date (YYYY-MM-DD) for the next new week')
+})
+
+
+/**
  * @summary Get a week with its trades
  */
 export const GetWeekParams = zod.object({

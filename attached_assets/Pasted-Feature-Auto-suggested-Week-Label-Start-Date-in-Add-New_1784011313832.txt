@@ -1,0 +1,27 @@
+Feature: Auto-suggested Week Label + Start Date in "Add New Week" dialog
+
+When the "Add New Week" dialog opens, pre-fill both the Week Label and Start Date fields with suggested values, calculated the same way, based on the single most recent week across the ENTIRE journal -- active weeks AND archived weeks combined, not just what's currently visible in the active Journal tab.
+
+1. Find the most recent week
+Query both active weeks and archived weeks, combined, and determine the single most recent one by its start date (the latest chronological week, regardless of active/archived status).
+
+CRITICAL: This app is multi-user with isolated per-user journals. The "most recent week" query MUST be scoped to the currently logged-in user only (same user-scoping already used everywhere else in the app, e.g. how the Journal/Archive/Stats pages already filter by user). Under no circumstances should this suggestion be calculated from, or leak data across, another user's journal.
+
+2. Week Label suggestion
+- Parse the trailing number from that week's label (e.g. "Week 8" -> 8, "YIIWeek3" -> 3).
+- Suggest trailing_number + 1, formatted consistently with how existing labels are typically written (e.g. "Week 9"). Match the existing label's format/prefix style where reasonably possible, otherwise default to "Week {n}".
+- If the label has no parseable trailing number (e.g. a custom label like "H"), fall back to: (total count of all weeks, active + archived) + 1.
+- If there are zero weeks in the entire journal (first ever week), suggest "1" (or "Week 1", matching existing convention).
+
+3. Start Date suggestion
+- Suggest (most recent week's start date) + 7 days. Always calculate this way, even if the result lands in the past (e.g. if the user is backfilling old weeks or logging late) -- do NOT fall back to today's date in that case. This is intentional: the feature must support backfilling historical weeks, not just live logging.
+- If there are zero weeks in the entire journal (first ever week), default the Start Date field to today's date (current existing behavior), since there's nothing to calculate from.
+- No fixed weekday enforcement of any kind -- do not snap or round the suggested date to a particular day of the week. Whatever weekday the last week started on, the suggestion should land on the same weekday, 7 days later.
+
+4. Both suggestions should be pre-filled into their respective form fields when the dialog opens, but must remain fully editable -- the user can overwrite either value before saving, same as any other field.
+
+Guardrails:
+- Do not change how Week Label or Start Date are stored, validated, or displayed elsewhere in the app -- this only affects the pre-filled default shown when the "Add New Week" dialog first opens.
+- Do not touch the Notes field or any other part of this dialog.
+- Do not modify archived week behavior, immutability, or the Archive page display in any way -- this feature only reads from archived weeks to calculate the suggestion, it must never write to or modify them.
+- After deploying, verify in the Neon SQL console (if any schema change was needed) that everything applied correctly in production before assuming it works -- do not rely on the dev environment alone.

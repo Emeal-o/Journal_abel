@@ -61,6 +61,13 @@ export interface WeekInput {
   notes?: string;
 }
 
+export interface WeekSuggestion {
+  /** Suggested Week Label for the next new week */
+  label: string;
+  /** Suggested Start Date (YYYY-MM-DD) for the next new week */
+  startDate: string;
+}
+
 export interface WeekUpdate {
   /** @minLength 1 */
   label?: string;

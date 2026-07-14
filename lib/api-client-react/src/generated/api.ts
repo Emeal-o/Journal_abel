@@ -29,6 +29,7 @@ import type {
   Week,
   WeekInput,
   WeekStats,
+  WeekSuggestion,
   WeekUpdate,
   WeekWithTrades
 } from './api.schemas';
@@ -283,6 +284,83 @@ export const useCreateWeek = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getCreateWeekMutationOptions(options));
     }
+
+export const getGetWeekSuggestionUrl = () => {
+
+
+
+
+  return `/api/weeks/suggestion`
+}
+
+/**
+ * @summary Suggested Week Label and Start Date for a new week, derived from the single most recent week (active or archived) across the whole journal
+ */
+export const getWeekSuggestion = async ( options?: RequestInit): Promise<WeekSuggestion> => {
+
+  return customFetch<WeekSuggestion>(getGetWeekSuggestionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWeekSuggestionQueryKey = () => {
+    return [
+    `/api/weeks/suggestion`
+    ] as const;
+    }
+
+
+export const getGetWeekSuggestionQueryOptions = <TData = Awaited<ReturnType<typeof getWeekSuggestion>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWeekSuggestion>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWeekSuggestionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWeekSuggestion>>> = ({ signal }) => getWeekSuggestion({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWeekSuggestion>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWeekSuggestionQueryResult = NonNullable<Awaited<ReturnType<typeof getWeekSuggestion>>>
+export type GetWeekSuggestionQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Suggested Week Label and Start Date for a new week, derived from the single most recent week (active or archived) across the whole journal
+ */
+
+export function useGetWeekSuggestion<TData = Awaited<ReturnType<typeof getWeekSuggestion>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWeekSuggestion>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWeekSuggestionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetWeekUrl = (id: number,) => {
 

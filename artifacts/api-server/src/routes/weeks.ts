@@ -93,6 +93,53 @@ router.post("/weeks/archive-current-month", requireAuth, async (req, res) => {
   res.json({ archivedCount: activeWeeks.length, monthIndex: nextMonthIndex });
 });
 
+// GET /api/weeks/suggestion
+// Suggested Week Label + Start Date for the "Add New Week" dialog, derived
+// from the single most recent week (active OR archived) across the user's
+// ENTIRE journal. Registered before /weeks/:id so "suggestion" isn't parsed
+// as an :id.
+router.get("/weeks/suggestion", requireAuth, async (req, res) => {
+  const userId = req.session.userId!;
+
+  const allWeeks = await db
+    .select({ label: weeksTable.label, startDate: weeksTable.startDate })
+    .from(weeksTable)
+    .where(eq(weeksTable.userId, userId));
+
+  if (allWeeks.length === 0) {
+    res.json({
+      label: "Week 1",
+      startDate: new Date().toISOString().split("T")[0],
+    });
+    return;
+  }
+
+  // startDate is stored as "YYYY-MM-DD" text — lexicographic order matches
+  // chronological order, so a plain string max is safe and avoids timezone
+  // parsing pitfalls.
+  const mostRecent = allWeeks.reduce((latest, w) =>
+    w.startDate > latest.startDate ? w : latest
+  );
+
+  // Week Label: increment the trailing number, preserving the rest of the
+  // label's prefix/format (e.g. "Week 8" -> "Week 9", "YIIWeek3" -> "YIIWeek4").
+  // Falls back to (total week count) + 1 if no trailing number is found.
+  const trailingNumberMatch = mostRecent.label.match(/^(.*?)(\d+)(\s*)$/);
+  const suggestedLabel = trailingNumberMatch
+    ? `${trailingNumberMatch[1]}${Number(trailingNumberMatch[2]) + 1}${trailingNumberMatch[3]}`
+    : `Week ${allWeeks.length + 1}`;
+
+  // Start Date: most recent week's start date + 7 days, computed on the
+  // plain "YYYY-MM-DD" string via UTC so no local-timezone drift can shift
+  // the date — even if the result lands in the past (backfilling is intentional).
+  const [year, month, day] = mostRecent.startDate.split("-").map(Number);
+  const nextDate = new Date(Date.UTC(year!, month! - 1, day!));
+  nextDate.setUTCDate(nextDate.getUTCDate() + 7);
+  const suggestedStartDate = nextDate.toISOString().split("T")[0];
+
+  res.json({ label: suggestedLabel, startDate: suggestedStartDate });
+});
+
 // GET /api/weeks/:id — fetch a single week with its trades
 router.get("/weeks/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId!;

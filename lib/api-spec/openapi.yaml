@@ -62,6 +62,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/Week"
 
+  /weeks/suggestion:
+    get:
+      operationId: getWeekSuggestion
+      tags: [weeks]
+      summary: Suggested Week Label and Start Date for a new week, derived from the single most recent week (active or archived) across the whole journal
+      responses:
+        "200":
+          description: Suggested values for the "Add New Week" dialog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekSuggestion"
+
   /weeks/{id}:
     get:
       operationId: getWeek
@@ -298,6 +311,17 @@ components:
           type: string
         notes:
           type: string
+
+    WeekSuggestion:
+      type: object
+      required: [label, startDate]
+      properties:
+        label:
+          type: string
+          description: Suggested Week Label for the next new week
+        startDate:
+          type: string
+          description: Suggested Start Date (YYYY-MM-DD) for the next new week
 
     WeekUpdate:
       type: object

@@ -18,5 +18,6 @@ export * from './tradeUpdateResult';
 export * from './week';
 export * from './weekInput';
 export * from './weekStats';
+export * from './weekSuggestion';
 export * from './weekUpdate';
 export * from './weekWithTrades';

@@ -61944,6 +61944,10 @@ var CreateWeekResponse = objectType({
   "notes": stringType().nullish(),
   "createdAt": stringType()
 });
+var GetWeekSuggestionResponse = objectType({
+  "label": stringType().describe("Suggested Week Label for the next new week"),
+  "startDate": stringType().describe("Suggested Start Date (YYYY-MM-DD) for the next new week")
+});
 var GetWeekParams = objectType({
   "id": coerce.number()
 });
@@ -63321,6 +63325,27 @@ router4.post("/weeks/archive-current-month", requireAuth, async (req, res) => {
   const now = /* @__PURE__ */ new Date();
   await db.update(weeksTable).set({ archivedAt: now, monthLabel, monthIndex: nextMonthIndex }).where(and(eq(weeksTable.userId, userId), isNull(weeksTable.archivedAt)));
   res.json({ archivedCount: activeWeeks.length, monthIndex: nextMonthIndex });
+});
+router4.get("/weeks/suggestion", requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const allWeeks = await db.select({ label: weeksTable.label, startDate: weeksTable.startDate }).from(weeksTable).where(eq(weeksTable.userId, userId));
+  if (allWeeks.length === 0) {
+    res.json({
+      label: "Week 1",
+      startDate: (/* @__PURE__ */ new Date()).toISOString().split("T")[0]
+    });
+    return;
+  }
+  const mostRecent = allWeeks.reduce(
+    (latest, w) => w.startDate > latest.startDate ? w : latest
+  );
+  const trailingNumberMatch = mostRecent.label.match(/^(.*?)(\d+)(\s*)$/);
+  const suggestedLabel = trailingNumberMatch ? `${trailingNumberMatch[1]}${Number(trailingNumberMatch[2]) + 1}${trailingNumberMatch[3]}` : `Week ${allWeeks.length + 1}`;
+  const [year, month, day] = mostRecent.startDate.split("-").map(Number);
+  const nextDate = new Date(Date.UTC(year, month - 1, day));
+  nextDate.setUTCDate(nextDate.getUTCDate() + 7);
+  const suggestedStartDate = nextDate.toISOString().split("T")[0];
+  res.json({ label: suggestedLabel, startDate: suggestedStartDate });
 });
 router4.get("/weeks/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;

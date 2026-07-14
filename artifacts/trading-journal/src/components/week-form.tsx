@@ -5,6 +5,8 @@ import { Week } from "@workspace/api-client-react";
 import { 
   useCreateWeek, 
   useUpdateWeek,
+  useGetWeekSuggestion,
+  getGetWeekSuggestionQueryKey,
   getListWeeksQueryKey
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -56,6 +58,14 @@ export function WeekForm({ week, open, onOpenChange }: WeekFormProps) {
   const createWeek = useCreateWeek();
   const updateWeek = useUpdateWeek();
 
+  // Auto-suggested Week Label + Start Date for a brand-new week, derived
+  // server-side from the single most recent week (active or archived)
+  // across the user's entire journal. Only fetched when the dialog is
+  // open to create a new week (not when editing an existing one).
+  const { data: suggestion } = useGetWeekSuggestion({
+    query: { queryKey: getGetWeekSuggestionQueryKey(), enabled: open && !week },
+  });
+
   const form = useForm<WeekFormValues>({
     resolver: zodResolver(weekSchema),
     defaultValues: {
@@ -74,12 +84,19 @@ export function WeekForm({ week, open, onOpenChange }: WeekFormProps) {
       });
     } else if (open && !week) {
       form.reset({
-        label: "",
-        startDate: new Date(),
+        label: suggestion?.label ?? "",
+        // Parse "YYYY-MM-DD" as a local date, not UTC, to avoid the date
+        // shifting a day when the browser's timezone is behind UTC.
+        startDate: suggestion?.startDate
+          ? new Date(`${suggestion.startDate}T00:00:00`)
+          : new Date(),
         notes: "",
       });
     }
-  }, [open, week, form]);
+    // Re-run once the suggestion arrives (it loads async after the dialog
+    // opens) so the fields still get pre-filled, while remaining fully
+    // editable afterward — this effect doesn't run again once the user types.
+  }, [open, week, form, suggestion]);
 
   const onSubmit = (data: WeekFormValues) => {
     const formattedData = {
