@@ -15,9 +15,11 @@ One-off commands:
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only, non-interactive)
 
 Required secrets (all set in Replit Secrets):
-- `DATABASE_URL` — Postgres connection string (Replit-managed)
+- `DATABASE_URL` — Postgres connection string (Replit-managed dev database, separate from the production Neon DB used by the Vercel deployment)
 - `SESSION_SECRET` — session signing secret
 - `ADMIN_SECRET` — password for the /admin panel (create/manage user access codes)
+
+Dev database note: this Repl's `DATABASE_URL` points to a fresh Replit-provisioned Postgres instance, not the production Neon DB. It starts empty — use the `/admin` panel (with `ADMIN_SECRET`) to create a user access code before logging in.
 
 ## Stack
 
