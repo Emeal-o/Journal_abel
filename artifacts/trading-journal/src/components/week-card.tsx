@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { 
   ChevronDown, 
   ChevronRight, 
@@ -124,7 +124,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
           <div className="min-w-0">
             <h3 className="text-lg font-semibold text-white truncate">{week.label}</h3>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 min-w-0">
-              <span className="flex-shrink-0">{format(new Date(week.startDate), "MMM d, yyyy")}</span>
+              <span className="flex-shrink-0">{format(parseISO(week.startDate), "MMM d, yyyy")}</span>
               {week.notes && (
                 <>
                   <span className="flex-shrink-0">•</span>

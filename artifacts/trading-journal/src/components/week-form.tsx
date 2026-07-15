@@ -10,7 +10,7 @@ import {
   getListWeeksQueryKey
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
 import {
@@ -79,16 +79,18 @@ export function WeekForm({ week, open, onOpenChange }: WeekFormProps) {
     if (open && week) {
       form.reset({
         label: week.label,
-        startDate: new Date(week.startDate),
+        // Parse "YYYY-MM-DD" as a local date, not UTC (parseISO treats a
+        // date-only string as local midnight), to avoid the date shifting
+        // a day when the browser's timezone is behind UTC.
+        startDate: parseISO(week.startDate),
         notes: week.notes || "",
       });
     } else if (open && !week) {
       form.reset({
         label: suggestion?.label ?? "",
-        // Parse "YYYY-MM-DD" as a local date, not UTC, to avoid the date
-        // shifting a day when the browser's timezone is behind UTC.
+        // Same local-date parsing as above.
         startDate: suggestion?.startDate
-          ? new Date(`${suggestion.startDate}T00:00:00`)
+          ? parseISO(suggestion.startDate)
           : new Date(),
         notes: "",
       });
@@ -101,7 +103,10 @@ export function WeekForm({ week, open, onOpenChange }: WeekFormProps) {
   const onSubmit = (data: WeekFormValues) => {
     const formattedData = {
       ...data,
-      startDate: data.startDate.toISOString().split("T")[0],
+      // Format using local date parts (not toISOString, which converts to
+      // UTC and can shift the calendar day backward for timezones ahead of
+      // UTC's negative offsets... i.e. any timezone behind UTC at midnight).
+      startDate: format(data.startDate, "yyyy-MM-dd"),
     };
 
     if (isEditing) {
