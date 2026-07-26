@@ -20,6 +20,10 @@ author = "agent"
 task = "workflow.run"
 args = "artifacts/api-server: API Server"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "artifacts/trading-journal: web"
+
 [[workflows.workflow]]
 name = "artifacts/api-server: API Server"
 author = "agent"
@@ -31,6 +35,14 @@ waitForPort = 8080
 
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow]]
+name = "artifacts/trading-journal: web"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/trading-journal run dev"
 
 [agent]
 stack = "PNPM_WORKSPACE"
