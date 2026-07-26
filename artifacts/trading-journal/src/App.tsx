@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import { JournalPage } from "@/pages/journal";
 import { StatsPage } from "@/pages/stats";
 import { ArchivePage } from "@/pages/archive";
+import { AnalysisPage } from "@/pages/analysis";
 import { LoginPage } from "@/pages/login";
 import { AdminPage } from "@/pages/admin";
 import { Layout } from "@/components/layout";
@@ -38,6 +39,7 @@ function AuthGate() {
         <Route path="/" component={JournalPage} />
         <Route path="/stats" component={StatsPage} />
         <Route path="/archive" component={ArchivePage} />
+        <Route path="/analysis" component={AnalysisPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

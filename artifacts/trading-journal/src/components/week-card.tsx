@@ -49,7 +49,7 @@ interface WeekCardProps {
 }
 
 export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [isTradeFormOpen, setIsTradeFormOpen] = useState(false);
   const [isEditWeekOpen, setIsEditWeekOpen] = useState(false);
   const [isDeleteWeekOpen, setIsDeleteWeekOpen] = useState(false);

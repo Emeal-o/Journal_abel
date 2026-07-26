@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, Archive, Download } from "lucide-react";
+import { useLocation } from "wouter";
+import { ChevronDown, ChevronRight, Archive, Download, TrendingUp, ChevronRight as ChevronRightIcon } from "lucide-react";
 import JSZip from "jszip";
 import {
   useGetWeeklyStats,
@@ -22,6 +23,55 @@ import type { LedgerTheme } from "@/components/ledger-sheet";
 import { listArchivedWeeks, type ArchivedWeek } from "@/lib/weeks-api";
 import { yearIndexFromMonthIndex, monthInYearFromMonthIndex, toRoman, computeCardLabels } from "@/lib/label-utils";
 import { aggregateWeekStats } from "@/lib/stats-utils";
+
+// ─── all-time snapshot card ───────────────────────────────────────────────────
+
+function AllTimeCard({ weeklyStats }: { weeklyStats: import("@workspace/api-client-react").WeekStats[] }) {
+  const [, navigate] = useLocation();
+  const summary = aggregateWeekStats(weeklyStats);
+  if (weeklyStats.length === 0) return null;
+
+  const netRRColor = summary.netRR > 0 ? "text-emerald-400" : summary.netRR < 0 ? "text-rose-400" : "text-slate-400";
+  const netRRStr = `${summary.netRR > 0 ? "+" : ""}${summary.netRR.toFixed(2)}R`;
+
+  return (
+    <button
+      onClick={() => navigate("/analysis")}
+      className="w-full text-left rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all duration-200 px-5 py-4 group"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="w-4 h-4 text-sky-400" />
+          <span className="text-xs font-semibold text-sky-400 uppercase tracking-wider">All-Time Snapshot</span>
+        </div>
+        <ChevronRightIcon className="w-4 h-4 text-muted-foreground group-hover:text-white transition-colors mb-3" />
+      </div>
+      <div className="grid grid-cols-4 gap-4">
+        <div>
+          <p className="text-xs text-muted-foreground mb-0.5">Trades</p>
+          <p className="text-white font-bold">{summary.totalTrades}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-0.5">Win Rate</p>
+          <p className={`font-bold ${summary.winRate >= 50 ? "text-emerald-400" : "text-rose-400"}`}>{summary.winRate}%</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-0.5">Net RR</p>
+          <p className={`font-bold font-mono ${netRRColor}`}>{netRRStr}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-0.5">Net Pips</p>
+          <p className={`font-bold font-mono ${summary.netPips > 0 ? "text-emerald-400" : summary.netPips < 0 ? "text-rose-400" : "text-slate-400"}`}>
+            {summary.netPips > 0 ? "+" : ""}{summary.netPips}
+          </p>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground mt-3 group-hover:text-white/60 transition-colors">
+        Tap to open full analysis →
+      </p>
+    </button>
+  );
+}
 import { captureCardPng, dataUrlToBlob, triggerDownload } from "@/lib/card-export";
 
 const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix", "aurora", "goldrush", "sakura", "vapor", "autumn"];
@@ -101,7 +151,7 @@ function netRRColorClass(v: number): string {
 // ─── month group ──────────────────────────────────────────────────────────────
 
 function MonthGroup({ label, weeks }: { label: string; weeks: ArchivedWeek[] }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   return (
     <div className="border border-white/10 rounded-xl overflow-hidden">
       <button
@@ -337,7 +387,7 @@ function YearSection({
   months: MonthGroupData[];
   weeklyStats: WeekStats[];
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const label = yearIndex == null ? "Uncategorised" : `Year ${toRoman(yearIndex)}`;
   const allWeeks = months.flatMap((m) => m.weeks);
   const totalWeeks = allWeeks.length;
@@ -412,6 +462,9 @@ export function ArchivePage() {
         <h1 className="text-3xl font-bold tracking-tight text-white">Archive</h1>
         <p className="text-muted-foreground mt-1">Past months, preserved for reference.</p>
       </div>
+
+      {/* All-time snapshot — always shown at the top when there are any weeks */}
+      {weeklyStats.length > 0 && <AllTimeCard weeklyStats={weeklyStats} />}
 
       {isLoading ? (
         <div className="space-y-4">

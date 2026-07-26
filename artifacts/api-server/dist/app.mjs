@@ -63479,6 +63479,40 @@ var trades_default = router5;
 
 // src/routes/stats.ts
 var import_express6 = __toESM(require_express2(), 1);
+function yearIndexFromMonthIndex(mi) {
+  const n = Math.max(1, Math.floor(mi));
+  return Math.ceil(n / 13);
+}
+function monthInYearFromMonthIndex(mi) {
+  const n = Math.max(1, Math.floor(mi));
+  return (n - 1) % 13 + 1;
+}
+var ROMAN_TABLE = [
+  [1e3, "M"],
+  [900, "CM"],
+  [500, "D"],
+  [400, "CD"],
+  [100, "C"],
+  [90, "XC"],
+  [50, "L"],
+  [40, "XL"],
+  [10, "X"],
+  [9, "IX"],
+  [5, "V"],
+  [4, "IV"],
+  [1, "I"]
+];
+function toRoman(n) {
+  if (!Number.isInteger(n) || n < 1) return "I";
+  let result = "", remaining = n;
+  for (const [value, numeral] of ROMAN_TABLE) {
+    while (remaining >= value) {
+      result += numeral;
+      remaining -= value;
+    }
+  }
+  return result;
+}
 var router6 = (0, import_express6.Router)();
 function computeStats(trades) {
   const totalTrades = trades.length;
@@ -63511,6 +63545,174 @@ router6.get("/stats/weekly", requireAuth, async (req, res) => {
     };
   }));
   res.json(result);
+});
+router6.get("/stats/analysis", requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const weeks = await db.select().from(weeksTable).where(eq(weeksTable.userId, userId)).orderBy(weeksTable.createdAt);
+  const allTrades = await db.select({ id: tradesTable.id, weekId: tradesTable.weekId, result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips, createdAt: tradesTable.createdAt }).from(tradesTable).where(eq(tradesTable.userId, userId)).orderBy(tradesTable.createdAt);
+  const tradesByWeek = /* @__PURE__ */ new Map();
+  for (const t of allTrades) {
+    if (!tradesByWeek.has(t.weekId)) tradesByWeek.set(t.weekId, []);
+    tradesByWeek.get(t.weekId).push(t);
+  }
+  const weekStats = weeks.map((w) => {
+    const trades = tradesByWeek.get(w.id) ?? [];
+    return { week: w, trades, ...computeStats(trades) };
+  });
+  const allTime = computeStats(allTrades);
+  const yearMap = /* @__PURE__ */ new Map();
+  for (const ws of weekStats) {
+    const key = ws.week.monthIndex != null ? yearIndexFromMonthIndex(ws.week.monthIndex) : "active";
+    if (!yearMap.has(key)) yearMap.set(key, []);
+    yearMap.get(key).push(ws);
+  }
+  const byYear = Array.from(yearMap.entries()).map(([key, wsList]) => {
+    const trades = wsList.flatMap((ws) => ws.trades);
+    return { yearIndex: key === "active" ? null : key, label: key === "active" ? "Active" : `Year ${toRoman(key)}`, ...computeStats(trades) };
+  }).sort((a, b2) => {
+    if (a.yearIndex == null) return 1;
+    if (b2.yearIndex == null) return -1;
+    return a.yearIndex - b2.yearIndex;
+  });
+  const weeksWithTrades = weekStats.filter((ws) => ws.totalTrades > 0);
+  const bestWeek = weeksWithTrades.length > 0 ? (() => {
+    const b2 = weeksWithTrades.reduce((a, c) => c.netRR >= a.netRR ? c : a);
+    return { weekId: b2.week.id, weekLabel: b2.week.label, netRR: b2.netRR, startDate: b2.week.startDate };
+  })() : null;
+  const worstWeek = weeksWithTrades.length > 0 ? (() => {
+    const w = weeksWithTrades.reduce((a, c) => c.netRR <= a.netRR ? c : a);
+    return { weekId: w.week.id, weekLabel: w.week.label, netRR: w.netRR, startDate: w.week.startDate };
+  })() : null;
+  const monthMap = /* @__PURE__ */ new Map();
+  for (const ws of weekStats) {
+    if (ws.week.monthIndex == null) continue;
+    if (!monthMap.has(ws.week.monthIndex)) monthMap.set(ws.week.monthIndex, []);
+    monthMap.get(ws.week.monthIndex).push(ws);
+  }
+  const monthStatsList = Array.from(monthMap.entries()).map(([mi, wsList]) => {
+    const trades = wsList.flatMap((ws) => ws.trades);
+    const label = wsList[0].week.monthLabel || `Month ${monthInYearFromMonthIndex(mi)} (Y-${toRoman(yearIndexFromMonthIndex(mi))})`;
+    return { monthIndex: mi, label, ...computeStats(trades) };
+  });
+  const bestMonth = monthStatsList.length > 0 ? (() => {
+    const b2 = monthStatsList.reduce((a, c) => c.netRR >= a.netRR ? c : a);
+    return { monthIndex: b2.monthIndex, label: b2.label, netRR: b2.netRR };
+  })() : null;
+  const worstMonth = monthStatsList.length > 0 ? (() => {
+    const w = monthStatsList.reduce((a, c) => c.netRR <= a.netRR ? c : a);
+    return { monthIndex: w.monthIndex, label: w.label, netRR: w.netRR };
+  })() : null;
+  const avgRRRByMonth = Array.from(monthMap.entries()).map(([mi, wsList]) => {
+    const trades = wsList.flatMap((ws) => ws.trades);
+    const label = wsList[0].week.monthLabel || `Month ${monthInYearFromMonthIndex(mi)} (Y-${toRoman(yearIndexFromMonthIndex(mi))})`;
+    const avgRRR = trades.length > 0 ? Math.round(trades.reduce((s, t) => s + t.rrr, 0) / trades.length * 100) / 100 : 0;
+    return { monthIndex: mi, label, avgRRR, tradeCount: trades.length };
+  }).sort((a, b2) => a.monthIndex - b2.monthIndex);
+  const yearRRRMap = /* @__PURE__ */ new Map();
+  for (const ws of weekStats) {
+    if (ws.week.monthIndex == null) continue;
+    const yi = yearIndexFromMonthIndex(ws.week.monthIndex);
+    if (!yearRRRMap.has(yi)) yearRRRMap.set(yi, { trades: [], label: `Year ${toRoman(yi)}` });
+    yearRRRMap.get(yi).trades.push(...ws.trades);
+  }
+  const avgRRRByYear = Array.from(yearRRRMap.entries()).map(([yi, { trades, label }]) => {
+    const avgRRR = trades.length > 0 ? Math.round(trades.reduce((s, t) => s + t.rrr, 0) / trades.length * 100) / 100 : 0;
+    return { yearIndex: yi, label, avgRRR, tradeCount: trades.length };
+  }).sort((a, b2) => a.yearIndex - b2.yearIndex);
+  const weekCumRR = [];
+  let cumRR = 0, peak = 0, maxDD = 0, maxDDWeekLabel = null;
+  let troughIdx = -1, peakCumRRAtMaxDD = 0;
+  for (let i = 0; i < weekStats.length; i++) {
+    cumRR = Math.round((cumRR + weekStats[i].netRR) * 100) / 100;
+    weekCumRR.push(cumRR);
+    if (cumRR > peak) peak = cumRR;
+    const dd = Math.round((peak - cumRR) * 100) / 100;
+    if (dd > maxDD) {
+      maxDD = dd;
+      maxDDWeekLabel = weekStats[i].week.label;
+      troughIdx = i;
+      peakCumRRAtMaxDD = peak;
+    }
+  }
+  let recoveryWeeks = null;
+  if (troughIdx >= 0) {
+    for (let i = troughIdx + 1; i < weekCumRR.length; i++) {
+      if (weekCumRR[i] >= peakCumRRAtMaxDD) {
+        recoveryWeeks = i - troughIdx;
+        break;
+      }
+    }
+  }
+  const orderedTrades = weekStats.flatMap((ws) => ws.trades.map((t) => ({ ...t, weekLabel: ws.week.label })));
+  let longestTradeStreak = 0, curTradeStreak = 0;
+  let longestTradeStreakStart = null, longestTradeStreakEnd = null;
+  let curTradeStreakStart = null;
+  for (const t of orderedTrades) {
+    if (t.result !== "Win") {
+      curTradeStreak++;
+      if (curTradeStreakStart == null) curTradeStreakStart = t.weekLabel;
+      if (curTradeStreak > longestTradeStreak) {
+        longestTradeStreak = curTradeStreak;
+        longestTradeStreakStart = curTradeStreakStart;
+        longestTradeStreakEnd = t.weekLabel;
+      }
+    } else {
+      curTradeStreak = 0;
+      curTradeStreakStart = null;
+    }
+  }
+  let longestWeekStreak = 0, curWeekStreak = 0;
+  let longestWeekStreakStart = null, longestWeekStreakEnd = null;
+  let curWeekStreakStart = null;
+  for (const ws of weekStats) {
+    if (ws.totalTrades > 0 && ws.wins === 0) {
+      curWeekStreak++;
+      if (curWeekStreakStart == null) curWeekStreakStart = ws.week.label;
+      if (curWeekStreak > longestWeekStreak) {
+        longestWeekStreak = curWeekStreak;
+        longestWeekStreakStart = curWeekStreakStart;
+        longestWeekStreakEnd = ws.week.label;
+      }
+    } else {
+      curWeekStreak = 0;
+      curWeekStreakStart = null;
+    }
+  }
+  const weeksWithTradesCount = weekStats.filter((ws) => ws.totalTrades > 0).length;
+  const totalWeeks = weekStats.length;
+  const consistency = {
+    weeksWithTrades: weeksWithTradesCount,
+    totalWeeks,
+    rate: totalWeeks > 0 ? Math.round(weeksWithTradesCount / totalWeeks * 1e4) / 100 : 0
+  };
+  cumRR = 0;
+  const cumulativeWeekly = weekStats.map((ws) => {
+    cumRR = Math.round((cumRR + ws.netRR) * 100) / 100;
+    return { weekId: ws.week.id, weekLabel: ws.week.label, startDate: ws.week.startDate, netRR: ws.netRR, cumulativeRR: cumRR };
+  });
+  cumRR = 0;
+  const cumulativeMonthly = [...monthStatsList].sort((a, b2) => a.monthIndex - b2.monthIndex).map((ms) => {
+    cumRR = Math.round((cumRR + ms.netRR) * 100) / 100;
+    return { monthIndex: ms.monthIndex, label: ms.label, netRR: ms.netRR, cumulativeRR: cumRR };
+  });
+  res.json({
+    allTime,
+    byYear,
+    bestWeek,
+    worstWeek,
+    bestMonth,
+    worstMonth,
+    avgRRRByMonth,
+    avgRRRByYear,
+    longestTradeStreak: longestTradeStreak > 0 ? { length: longestTradeStreak, startWeekLabel: longestTradeStreakStart, endWeekLabel: longestTradeStreakEnd } : null,
+    longestWeekStreak: longestWeekStreak > 0 ? { length: longestWeekStreak, startWeekLabel: longestWeekStreakStart, endWeekLabel: longestWeekStreakEnd } : null,
+    maxDrawdown: maxDD,
+    maxDrawdownWeekLabel: maxDDWeekLabel,
+    recoveryWeeks,
+    consistency,
+    cumulativeWeekly,
+    cumulativeMonthly
+  });
 });
 var stats_default = router6;
 
