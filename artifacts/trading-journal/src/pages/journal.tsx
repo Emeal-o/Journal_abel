@@ -161,10 +161,12 @@ function StreakIndicator() {
         ? "text-red-400/70"
         : "text-amber-400/70";
 
+  const plural: Record<string, string> = { Win: "wins", Loss: "losses", BE: "BEs" };
+  const singular: Record<string, string> = { Win: "win", Loss: "loss", BE: "BE" };
   const label =
     data.length === 1
-      ? `1 ${data.result.toLowerCase()} in a row`
-      : `${data.length} ${data.result.toLowerCase()}s in a row`;
+      ? `1 ${singular[data.result] ?? data.result} in a row`
+      : `${data.length} ${plural[data.result] ?? data.result + "s"} in a row`;
 
   return (
     <span className={`text-xs tabular-nums ${colorClass}`}>
