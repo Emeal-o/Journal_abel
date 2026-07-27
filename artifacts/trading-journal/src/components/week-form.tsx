@@ -6,6 +6,7 @@ import {
   useCreateWeek, 
   useUpdateWeek,
   useGetWeekSuggestion,
+  useListWeeks,
   getGetWeekSuggestionQueryKey,
   getListWeeksQueryKey
 } from "@workspace/api-client-react";
@@ -19,6 +20,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import {
   Form,
   FormControl,
@@ -34,7 +45,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useArchivedWeeks } from "@/lib/weeks-api";
+import { useEffect, useState } from "react";
 
 const weekSchema = z.object({
   label: z.string().min(1, "Label is required"),
@@ -54,9 +66,17 @@ export function WeekForm({ week, open, onOpenChange }: WeekFormProps) {
   const isEditing = !!week;
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
+  // Duplicate start-date warning state
+  const [pendingData, setPendingData] = useState<{ formatted: ReturnType<typeof formatFormData>; conflictLabel: string } | null>(null);
+
   const createWeek = useCreateWeek();
   const updateWeek = useUpdateWeek();
+
+  // Fetch all weeks (active + archived) for the duplicate-date check.
+  // Both are already scoped server-side to the logged-in user.
+  const { data: activeWeeks = [] } = useListWeeks();
+  const { data: archivedWeeks = [] } = useArchivedWeeks();
 
   // Auto-suggested Week Label + Start Date for a brand-new week, derived
   // server-side from the single most recent week (active or archived)
@@ -100,14 +120,34 @@ export function WeekForm({ week, open, onOpenChange }: WeekFormProps) {
     // editable afterward — this effect doesn't run again once the user types.
   }, [open, week, form, suggestion]);
 
-  const onSubmit = (data: WeekFormValues) => {
-    const formattedData = {
+  function formatFormData(data: WeekFormValues) {
+    return {
       ...data,
       // Format using local date parts (not toISOString, which converts to
       // UTC and can shift the calendar day backward for timezones ahead of
       // UTC's negative offsets... i.e. any timezone behind UTC at midnight).
       startDate: format(data.startDate, "yyyy-MM-dd"),
     };
+  }
+
+  const doCreate = (formattedData: ReturnType<typeof formatFormData>) => {
+    createWeek.mutate(
+      { data: formattedData },
+      {
+        onSuccess: () => {
+          toast({ title: "Week created successfully" });
+          queryClient.invalidateQueries({ queryKey: getListWeeksQueryKey() });
+          onOpenChange(false);
+        },
+        onError: () => {
+          toast({ title: "Failed to create week", variant: "destructive" });
+        },
+      }
+    );
+  };
+
+  const onSubmit = (data: WeekFormValues) => {
+    const formattedData = formatFormData(data);
 
     if (isEditing) {
       updateWeek.mutate(
@@ -123,26 +163,26 @@ export function WeekForm({ week, open, onOpenChange }: WeekFormProps) {
           },
         }
       );
-    } else {
-      createWeek.mutate(
-        { data: formattedData },
-        {
-          onSuccess: () => {
-            toast({ title: "Week created successfully" });
-            queryClient.invalidateQueries({ queryKey: getListWeeksQueryKey() });
-            onOpenChange(false);
-          },
-          onError: () => {
-            toast({ title: "Failed to create week", variant: "destructive" });
-          },
-        }
-      );
+      return;
     }
+
+    // Duplicate start-date check (create only). Check against all weeks —
+    // active and archived — scoped to this user (both queries are user-scoped
+    // server-side). This is a warning only; the user can still proceed.
+    const allWeeks = [...activeWeeks, ...archivedWeeks];
+    const conflict = allWeeks.find((w) => w.startDate === formattedData.startDate);
+    if (conflict) {
+      setPendingData({ formatted: formattedData, conflictLabel: conflict.label });
+      return;
+    }
+
+    doCreate(formattedData);
   };
 
   const isPending = createWeek.isPending || updateWeek.isPending;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] bg-background border-white/10 shadow-2xl">
         <DialogHeader>
@@ -236,5 +276,40 @@ export function WeekForm({ week, open, onOpenChange }: WeekFormProps) {
         </Form>
       </DialogContent>
     </Dialog>
+
+    {/* Duplicate start-date warning — shown after the main dialog so it
+        layers on top without closing the form. Cancel dismisses the warning
+        and returns the user to the form; Continue Anyway proceeds. */}
+    <AlertDialog open={!!pendingData} onOpenChange={(open) => { if (!open) setPendingData(null); }}>
+      <AlertDialogContent className="bg-background border-white/10 sm:max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Duplicate start date</AlertDialogTitle>
+          <AlertDialogDescription>
+            A week starting on this date already exists
+            {pendingData ? ` (${pendingData.conflictLabel})` : ""}.
+            You can still save — continue anyway?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel
+            className="border-white/10 bg-white/5 hover:bg-white/10 hover:text-white"
+            onClick={() => setPendingData(null)}
+          >
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              if (pendingData) {
+                doCreate(pendingData.formatted);
+                setPendingData(null);
+              }
+            }}
+          >
+            Continue Anyway
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </>
   );
 }
