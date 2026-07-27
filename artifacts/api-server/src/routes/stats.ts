@@ -79,23 +79,36 @@ router.get("/stats/weekly", requireAuth, async (req, res) => {
 type AnalysisTrade = { id: number; weekId: number; result: string; rrr: number; pips: number; createdAt: Date };
 type WeekStatEntry = { week: Week; trades: AnalysisTrade[]; totalTrades: number; wins: number; losses: number; breakEvens: number; winRate: number; netRR: number; netPips: number };
 
-// GET /api/stats/analysis — rich all-time analytics for the authenticated user
+// GET /api/stats/analysis — rich analytics for the authenticated user.
+// Optional query param: ?year=<number> — scopes all calculations to that year only.
 router.get("/stats/analysis", requireAuth, async (req, res) => {
   const userId = req.session.userId!;
+  const yearFilter = req.query.year != null ? parseInt(req.query.year as string, 10) : null;
 
-  // All weeks (active + archived) in chronological order
-  const weeks = await db
+  // All weeks (active + archived) in chronological order for this user
+  const allWeeksRaw = await db
     .select()
     .from(weeksTable)
     .where(eq(weeksTable.userId, userId))
     .orderBy(weeksTable.createdAt);
 
-  // All trades in chronological order
-  const allTrades: AnalysisTrade[] = await db
+  // Apply year filter: keep only weeks whose monthIndex falls in the requested year
+  const weeks = yearFilter != null
+    ? allWeeksRaw.filter((w: Week) => w.monthIndex != null && yearIndexFromMonthIndex(w.monthIndex) === yearFilter)
+    : allWeeksRaw;
+
+  const scopedWeekIds = new Set(weeks.map((w: Week) => w.id));
+
+  // All trades in chronological order, scoped to the same user (+ year if filtered)
+  const allTradesRaw: AnalysisTrade[] = await db
     .select({ id: tradesTable.id, weekId: tradesTable.weekId, result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips, createdAt: tradesTable.createdAt })
     .from(tradesTable)
     .where(eq(tradesTable.userId, userId))
     .orderBy(tradesTable.createdAt);
+
+  const allTrades: AnalysisTrade[] = yearFilter != null
+    ? allTradesRaw.filter((t: AnalysisTrade) => scopedWeekIds.has(t.weekId))
+    : allTradesRaw;
 
   // Group trades by weekId (preserving chronological order within each week)
   const tradesByWeek = new Map<number, AnalysisTrade[]>();

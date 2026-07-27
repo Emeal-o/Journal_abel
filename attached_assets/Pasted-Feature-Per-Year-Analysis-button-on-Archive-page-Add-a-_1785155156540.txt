@@ -1,0 +1,15 @@
+Feature: Per-Year Analysis button on Archive page
+
+Add a small icon-only button to the top-right corner of each Year section header on the Archive page (same corner where "Year I" title sits, opposite side -- roughly where the circled area is in the reference screenshot). Use a chart/analytics icon (e.g. a small bar-chart or line-chart glyph), no text label, similar visual weight to the existing chevron/expand icon already in that header row.
+
+This button must automatically appear on EVERY Year section, not just Year I -- when Year II, Year III, etc. are created in the future, they should each get this same button with no additional code changes needed. Implement it generically at the YearSection component level, not hardcoded per year.
+
+Behavior: tapping this button navigates to the existing /analysis page, but scoped to ONLY that specific year's data (not all-time). Reuse the same page/component and same sections already built (all-time summary, cumulative growth chart, best/worst week & month, avg RRR chart, drawdown & recovery, consistency) -- just filter every calculation to the tapped year instead of the full journal history. The page header/title should indicate which year is being shown (e.g. "Year I Analysis" instead of "All-Time Analysis") so it's clear this is a scoped view, not the all-time one.
+
+CRITICAL: scope every query strictly to the logged-in user, same as the existing All-Time Analysis feature. Never aggregate or leak data across users.
+
+Guardrails:
+- Do not change the existing all-time "All-Time Snapshot" card or its /analysis (all-time) behavior -- that stays exactly as-is, reachable the same way it already is.
+- Reuse the existing Analysis page's calculation logic where possible (e.g. as a shared function that accepts an optional year filter), rather than duplicating all the drawdown/growth/consistency math in a second implementation -- reduces risk of the two views drifting out of sync or disagreeing with each other.
+- Do not touch archived week immutability, Download Year export, or any other existing Archive page functionality.
+- After deploying, verify: tap the new per-year button for Year I and confirm every number shown (trades, win rate, Net RR, drawdown, etc.) matches what you'd expect from ONLY Year I's data -- compare against the existing Year I totals already shown elsewhere (e.g. the +102.62R Net RR already displayed on the Year I card) to confirm they match exactly.

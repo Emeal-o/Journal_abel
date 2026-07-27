@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ChevronDown, ChevronRight, Archive, Download, TrendingUp, ChevronRight as ChevronRightIcon } from "lucide-react";
+import { ChevronDown, ChevronRight, Archive, Download, TrendingUp, ChevronRight as ChevronRightIcon, BarChart2 } from "lucide-react";
 import JSZip from "jszip";
 import {
   useGetWeeklyStats,
@@ -388,6 +388,7 @@ function YearSection({
   weeklyStats: WeekStats[];
 }) {
   const [open, setOpen] = useState(false);
+  const [, navigate] = useLocation();
   const label = yearIndex == null ? "Uncategorised" : `Year ${toRoman(yearIndex)}`;
   const allWeeks = months.flatMap((m) => m.weeks);
   const totalWeeks = allWeeks.length;
@@ -424,7 +425,14 @@ function YearSection({
         </div>
 
         {yearIndex != null && (
-          <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0 self-start sm:self-auto">
+          <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0 self-start sm:self-auto flex items-center gap-2">
+            <button
+              onClick={() => navigate(`/analysis?year=${yearIndex}`)}
+              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-muted-foreground hover:text-white transition-colors"
+              title={`View Year ${toRoman(yearIndex)} Analysis`}
+            >
+              <BarChart2 className="w-3.5 h-3.5" />
+            </button>
             <DownloadYearButton yearIndex={yearIndex} months={months} weeklyStats={weeklyStats} />
           </div>
         )}

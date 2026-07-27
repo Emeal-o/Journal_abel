@@ -86,17 +86,20 @@ export interface AnalysisData {
 
 // ─── fetch + hook ─────────────────────────────────────────────────────────────
 
-export async function fetchAnalysis(): Promise<AnalysisData> {
-  const res = await analysisFetch("/api/stats/analysis");
+export async function fetchAnalysis(yearIndex?: number): Promise<AnalysisData> {
+  const qs = yearIndex != null ? `?year=${yearIndex}` : "";
+  const res = await analysisFetch(`/api/stats/analysis${qs}`);
   if (!res.ok) throw new Error("Failed to load analysis data.");
   return res.json() as Promise<AnalysisData>;
 }
 
-export const ANALYSIS_QUERY_KEY = ["stats-analysis"] as const;
+export function analysisQueryKey(yearIndex?: number): readonly unknown[] {
+  return yearIndex != null ? ["stats-analysis", yearIndex] : ["stats-analysis"];
+}
 
-export function useAnalysis() {
+export function useAnalysis(yearIndex?: number) {
   return useQuery({
-    queryKey: ANALYSIS_QUERY_KEY,
-    queryFn: fetchAnalysis,
+    queryKey: analysisQueryKey(yearIndex),
+    queryFn: () => fetchAnalysis(yearIndex),
   });
 }

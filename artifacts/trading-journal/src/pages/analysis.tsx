@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { ArrowLeft, TrendingUp, TrendingDown, BarChart2, Activity, Target, Zap } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -79,9 +79,19 @@ function RRRTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
 
 export function AnalysisPage() {
   const [, navigate] = useLocation();
-  const { data, isLoading, error } = useAnalysis();
+  const search = useSearch();
+  const yearParam = new URLSearchParams(search).get("year");
+  const yearIndex = yearParam != null && yearParam !== "" ? parseInt(yearParam, 10) : undefined;
+  const isYearScoped = yearIndex != null && !isNaN(yearIndex);
+
+  const { data, isLoading, error } = useAnalysis(isYearScoped ? yearIndex : undefined);
   const [chartGranularity, setChartGranularity] = useState<"weekly" | "monthly">("weekly");
   const [rrrGranularity, setRRRGranularity] = useState<"monthly" | "yearly">("monthly");
+
+  const pageTitle = isYearScoped ? `Year ${toRoman(yearIndex!)} Analysis` : "All-Time Analysis";
+  const pageSubtitle = isYearScoped
+    ? `Trades from Year ${toRoman(yearIndex!)} only.`
+    : "Every trade across your entire journal history.";
 
   // ── loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -91,7 +101,7 @@ export function AnalysisPage() {
           <button onClick={() => navigate("/archive")} className="text-muted-foreground hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-3xl font-bold tracking-tight text-white">All-Time Analysis</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">{pageTitle}</h1>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl bg-white/5" />)}
@@ -110,7 +120,7 @@ export function AnalysisPage() {
           <button onClick={() => navigate("/archive")} className="text-muted-foreground hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-3xl font-bold tracking-tight text-white">All-Time Analysis</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">{pageTitle}</h1>
         </div>
         <div className="p-8 text-center border border-destructive/20 bg-destructive/10 rounded-xl">
           <p className="text-destructive">Failed to load analysis data. Please try again.</p>
@@ -127,7 +137,7 @@ export function AnalysisPage() {
           <button onClick={() => navigate("/archive")} className="text-muted-foreground hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-3xl font-bold tracking-tight text-white">All-Time Analysis</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">{pageTitle}</h1>
         </div>
         <div className="flex flex-col items-center justify-center p-16 border border-dashed border-white/10 rounded-xl bg-white/5">
           <Activity className="w-10 h-10 text-muted-foreground mb-4" />
@@ -156,8 +166,8 @@ export function AnalysisPage() {
           <ArrowLeft className="w-4 h-4" />
           Back to Archive
         </button>
-        <h1 className="text-3xl font-bold tracking-tight text-white">All-Time Analysis</h1>
-        <p className="text-muted-foreground mt-1">Every trade across your entire journal history.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-white">{pageTitle}</h1>
+        <p className="text-muted-foreground mt-1">{pageSubtitle}</p>
       </div>
 
       {/* 1. All-time summary */}

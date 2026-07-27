@@ -1,0 +1,24 @@
+Feature: All-Time Analysis page, accessed via a tappable card on the Archive page
+
+1. Archive page addition
+Add a small, compact card at the very top of the Archive page, above the "Year I" section (and any other Year sections). This card shows an all-time snapshot: total trades, overall win rate, total Net RR, and total Net Pips, calculated across the user's ENTIRE journal (all years, active + archived weeks combined).
+
+The card is tappable and navigates to a new dedicated "Analysis" page (a new route, not a new main-nav tab -- only reachable by tapping this card).
+
+CRITICAL: All calculations must be scoped to the currently logged-in user only, exactly like every other data view in this multi-user app. Never aggregate or leak data across users.
+
+2. Analysis page contents
+- All-time summary: total trades, overall win rate, total Net RR, total Net Pips.
+- Year-over-year comparison: each Year (Year I, Year II, etc.) shown side by side or as a list, each with its own trade count, win rate, and Net RR.
+- Best/worst performance: the single best week or month (highest Net RR) and the single worst week or month (lowest Net RR), shown with their label/date.
+- Average RRR per trade over time: average risk-reward ratio shown as a trend (e.g. per month or per year), not just one all-time number.
+- Drawdown & Recovery: longest losing/BE streak (consecutive weeks or trades without a win, with when it happened), max drawdown (the largest drop in cumulative Net RR from a prior peak), and recovery time (how many weeks it took to climb back to that prior peak).
+- Consistency rate: percentage of weeks where at least one trade was logged, versus weeks with none, tracked over time.
+- A cumulative growth chart (line graph): plots Net RR accumulating over time across the user's entire journal history (active + archived combined, chronological order), with a Weekly/Monthly granularity toggle.
+
+3. Guardrails
+- Entirely read-only / additive. Do not modify any existing week, month, or year calculation logic already used elsewhere (Stats, Archive month/year totals, etc.) -- reuse/reference that data, don't recompute it differently.
+- Do not touch archived week immutability in any way.
+- Do not add a new main navigation tab -- Analysis is only reachable via the card on the Archive page.
+- Scope every query strictly to the logged-in user.
+- After deploying, verify manually: compare the all-time Net RR shown to what you'd get by manually summing the existing Year totals, and spot-check the best/worst week and drawdown numbers against what you know from memory, before considering this done.
