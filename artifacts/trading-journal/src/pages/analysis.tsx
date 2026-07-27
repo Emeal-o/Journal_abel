@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalysis } from "@/lib/analysis-api";
-import type { AnalysisCumulativePoint, AnalysisRRRPoint } from "@/lib/analysis-api";
+import type { AnalysisCumulativePoint, AnalysisRRRPoint, AnalysisRRRBucket } from "@/lib/analysis-api";
 import { toRoman } from "@/lib/label-utils";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -71,6 +71,19 @@ function RRRTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
     <div className="rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-xs shadow-xl">
       <p className="text-muted-foreground mb-1">{label}</p>
       <p className="font-mono font-semibold text-sky-400">{payload[0]!.value.toFixed(2)}R avg RRR</p>
+    </div>
+  );
+}
+
+function RRRHistogramTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: AnalysisRRRBucket }> }) {
+  if (!active || !payload?.length) return null;
+  const b = payload[0]!.payload;
+  const rangeLabel = b.max != null ? `${b.min}–${b.max}R` : `${b.min}R+`;
+  const tradeWord = b.count === 1 ? "trade" : "trades";
+  return (
+    <div className="rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-xs shadow-xl">
+      <p className="text-muted-foreground mb-1">{rangeLabel}</p>
+      <p className="font-mono font-semibold text-violet-400">{b.count} {tradeWord}</p>
     </div>
   );
 }
@@ -367,7 +380,43 @@ export function AnalysisPage() {
         </Section>
       )}
 
-      {/* 6. Drawdown & Recovery */}
+      {/* 6. RRR Distribution histogram */}
+      {data.rrrDistribution.some(b => b.count > 0) && (
+        <Section title="RRR Distribution" icon={BarChart2}>
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <span className="text-sm text-muted-foreground">Trade count per RRR bucket</span>
+            <ResponsiveContainer width="100%" height={180} className="mt-5">
+              <BarChart data={data.rrrDistribution} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: "#64748b", fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: string) => `${v}R`}
+                />
+                <YAxis
+                  tick={{ fill: "#64748b", fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  width={32}
+                />
+                <Tooltip content={<RRRHistogramTooltip />} />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {data.rrrDistribution.map((bucket, i) => (
+                    <Cell
+                      key={i}
+                      fill={bucket.count > 0 ? "#a78bfa" : "rgba(255,255,255,0.06)"}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Section>
+      )}
+
+      {/* 7. Drawdown & Recovery */}
       <Section title="Drawdown & Recovery" icon={TrendingDown}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 space-y-1">

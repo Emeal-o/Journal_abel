@@ -63703,6 +63703,19 @@ router6.get("/stats/analysis", requireAuth, async (req, res) => {
     cumRR = Math.round((cumRR + ms.netRR) * 100) / 100;
     return { monthIndex: ms.monthIndex, label: ms.label, netRR: ms.netRR, cumulativeRR: cumRR };
   });
+  const RRR_BUCKETS = [
+    { label: "0\u20135", min: 0, max: 5 },
+    { label: "5\u201310", min: 5, max: 10 },
+    { label: "10\u201315", min: 10, max: 15 },
+    { label: "15\u201320", min: 15, max: 20 },
+    { label: "20+", min: 20, max: null }
+  ];
+  const rrrDistribution = RRR_BUCKETS.map((b2) => ({
+    label: b2.label,
+    min: b2.min,
+    max: b2.max,
+    count: allTrades.filter((t) => t.rrr >= b2.min && (b2.max === null || t.rrr < b2.max)).length
+  }));
   res.json({
     allTime,
     byYear,
@@ -63719,7 +63732,8 @@ router6.get("/stats/analysis", requireAuth, async (req, res) => {
     recoveryWeeks,
     consistency,
     cumulativeWeekly,
-    cumulativeMonthly
+    cumulativeMonthly,
+    rrrDistribution
   });
 });
 router6.get("/stats/streak", requireAuth, async (req, res) => {

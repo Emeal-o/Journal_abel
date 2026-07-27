@@ -65,6 +65,13 @@ export interface AnalysisStreak {
   endWeekLabel: string | null;
 }
 
+export interface AnalysisRRRBucket {
+  label: string;
+  min: number;
+  max: number | null;
+  count: number;
+}
+
 export interface AnalysisData {
   allTime: AnalysisSummary;
   byYear: AnalysisYearStats[];
@@ -82,6 +89,7 @@ export interface AnalysisData {
   consistency: { weeksWithTrades: number; totalWeeks: number; rate: number };
   cumulativeWeekly: AnalysisCumulativePoint[];
   cumulativeMonthly: AnalysisCumulativePoint[];
+  rrrDistribution: AnalysisRRRBucket[];
 }
 
 // ─── fetch + hook ─────────────────────────────────────────────────────────────

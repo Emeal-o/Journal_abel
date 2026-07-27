@@ -263,6 +263,23 @@ router.get("/stats/analysis", requireAuth, async (req, res) => {
       return { monthIndex: ms.monthIndex, label: ms.label, netRR: ms.netRR, cumulativeRR: cumRR };
     });
 
+  // 11. RRR distribution histogram — counts trades per RRR bucket.
+  // Uses allTrades (already year-filtered when ?year= is set) so scoping
+  // is inherited from the existing year filter above — no extra logic needed.
+  const RRR_BUCKETS: Array<{ label: string; min: number; max: number | null }> = [
+    { label: "0–5",   min: 0,  max: 5  },
+    { label: "5–10",  min: 5,  max: 10 },
+    { label: "10–15", min: 10, max: 15 },
+    { label: "15–20", min: 15, max: 20 },
+    { label: "20+",   min: 20, max: null },
+  ];
+  const rrrDistribution = RRR_BUCKETS.map(b => ({
+    label: b.label,
+    min: b.min,
+    max: b.max,
+    count: allTrades.filter(t => t.rrr >= b.min && (b.max === null || t.rrr < b.max)).length,
+  }));
+
   res.json({
     allTime,
     byYear,
@@ -280,6 +297,7 @@ router.get("/stats/analysis", requireAuth, async (req, res) => {
     consistency,
     cumulativeWeekly,
     cumulativeMonthly,
+    rrrDistribution,
   });
 });
 
