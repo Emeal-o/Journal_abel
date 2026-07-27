@@ -256,3 +256,12 @@ export const GetWeeklyStatsResponseItem = zod.object({
 export const GetWeeklyStatsResponse = zod.array(GetWeeklyStatsResponseItem)
 
 
+/**
+ * @summary Current consecutive trade streak (win/loss/BE)
+ */
+export const GetCurrentStreakResponse = zod.object({
+  "result": zod.union([zod.literal('Win'),zod.literal('Loss'),zod.literal('BE'),zod.literal(null)]).nullable().describe('The result of the current streak, or null if no trades'),
+  "length": zod.number().describe('Number of consecutive trades with the same result')
+})
+
+

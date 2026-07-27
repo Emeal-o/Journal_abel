@@ -30,7 +30,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Week } from "@workspace/api-client-react";
-import { getListWeeksQueryKey } from "@workspace/api-client-react";
+import { getListWeeksQueryKey, useGetCurrentStreak } from "@workspace/api-client-react";
 
 import { WeekCard } from "@/components/week-card";
 import { WeekForm } from "@/components/week-form";
@@ -150,6 +150,29 @@ function SortableWeekCard({ week, showDragHandle }: { week: Week; showDragHandle
 
 // ─── page ─────────────────────────────────────────────────────────────────────
 
+function StreakIndicator() {
+  const { data } = useGetCurrentStreak();
+  if (!data || !data.result || data.length === 0) return null;
+
+  const colorClass =
+    data.result === "Win"
+      ? "text-emerald-400/70"
+      : data.result === "Loss"
+        ? "text-red-400/70"
+        : "text-amber-400/70";
+
+  const label =
+    data.length === 1
+      ? `1 ${data.result.toLowerCase()} in a row`
+      : `${data.length} ${data.result.toLowerCase()}s in a row`;
+
+  return (
+    <span className={`text-xs tabular-nums ${colorClass}`}>
+      {label}
+    </span>
+  );
+}
+
 export function JournalPage() {
   const { orderedWeeks, isLoading, error, setOrderedIds, sortMode, setSortMode } =
     useOrderedWeeks();
@@ -224,7 +247,10 @@ export function JournalPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Trading Journal</h1>
-          <p className="text-muted-foreground mt-1">Log your sessions and analyze your edge.</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-muted-foreground">Log your sessions and analyze your edge.</p>
+            <StreakIndicator />
+          </div>
         </div>
 
         <div className="flex items-center gap-2">

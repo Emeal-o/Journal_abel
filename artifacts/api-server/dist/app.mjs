@@ -62082,6 +62082,10 @@ var GetWeeklyStatsResponseItem = objectType({
   "netPips": numberType()
 });
 var GetWeeklyStatsResponse = arrayType(GetWeeklyStatsResponseItem);
+var GetCurrentStreakResponse = objectType({
+  "result": unionType([literalType("Win"), literalType("Loss"), literalType("BE"), literalType(null)]).nullable().describe("The result of the current streak, or null if no trades"),
+  "length": numberType().describe("Number of consecutive trades with the same result")
+});
 
 // src/routes/health.ts
 var router = (0, import_express.Router)();
@@ -63717,6 +63721,21 @@ router6.get("/stats/analysis", requireAuth, async (req, res) => {
     cumulativeWeekly,
     cumulativeMonthly
   });
+});
+router6.get("/stats/streak", requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const trades = await db.select({ result: tradesTable.result }).from(tradesTable).where(eq(tradesTable.userId, userId)).orderBy(tradesTable.createdAt);
+  if (trades.length === 0) {
+    res.json({ result: null, length: 0 });
+    return;
+  }
+  const lastResult = trades[trades.length - 1].result;
+  let length = 0;
+  for (let i = trades.length - 1; i >= 0; i--) {
+    if (trades[i].result === lastResult) length++;
+    else break;
+  }
+  res.json({ result: lastResult, length });
 });
 var stats_default = router6;
 

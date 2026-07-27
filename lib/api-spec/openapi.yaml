@@ -255,6 +255,19 @@ paths:
                 items:
                   $ref: "#/components/schemas/WeekStats"
 
+  /stats/streak:
+    get:
+      operationId: getCurrentStreak
+      tags: [stats]
+      summary: Current consecutive trade streak (win/loss/BE)
+      responses:
+        "200":
+          description: Current streak info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentStreak"
+
 components:
   schemas:
     HealthStatus:
@@ -437,3 +450,15 @@ components:
           type: number
         netPips:
           type: number
+
+    CurrentStreak:
+      type: object
+      required: [result, length]
+      properties:
+        result:
+          type: ["string", "null"]
+          enum: [Win, Loss, BE, null]
+          description: The result of the current streak, or null if no trades
+        length:
+          type: integer
+          description: Number of consecutive trades with the same result

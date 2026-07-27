@@ -283,4 +283,30 @@ router.get("/stats/analysis", requireAuth, async (req, res) => {
   });
 });
 
+// GET /api/stats/streak — current consecutive streak for the authenticated user.
+// Looks at all trades in chronological order and counts how many of the most
+// recent trades share the same result. Returns { result, length } or
+// { result: null, length: 0 } when the user has no trades.
+router.get("/stats/streak", requireAuth, async (req, res) => {
+  const userId = req.session.userId!;
+  const trades = await db
+    .select({ result: tradesTable.result })
+    .from(tradesTable)
+    .where(eq(tradesTable.userId, userId))
+    .orderBy(tradesTable.createdAt);
+
+  if (trades.length === 0) {
+    res.json({ result: null, length: 0 });
+    return;
+  }
+
+  const lastResult = trades[trades.length - 1]!.result;
+  let length = 0;
+  for (let i = trades.length - 1; i >= 0; i--) {
+    if (trades[i]!.result === lastResult) length++;
+    else break;
+  }
+  res.json({ result: lastResult, length });
+});
+
 export default router;

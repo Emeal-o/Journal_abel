@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CurrentStreak,
   HealthStatus,
   ListTradesParams,
   StatsSummary,
@@ -1094,6 +1095,83 @@ export function useGetWeeklyStats<TData = Awaited<ReturnType<typeof getWeeklySta
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetWeeklyStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetCurrentStreakUrl = () => {
+
+
+
+
+  return `/api/stats/streak`
+}
+
+/**
+ * @summary Current consecutive trade streak (win/loss/BE)
+ */
+export const getCurrentStreak = async ( options?: RequestInit): Promise<CurrentStreak> => {
+
+  return customFetch<CurrentStreak>(getGetCurrentStreakUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCurrentStreakQueryKey = () => {
+    return [
+    `/api/stats/streak`
+    ] as const;
+    }
+
+
+export const getGetCurrentStreakQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentStreak>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentStreak>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCurrentStreakQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCurrentStreak>>> = ({ signal }) => getCurrentStreak({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCurrentStreak>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCurrentStreakQueryResult = NonNullable<Awaited<ReturnType<typeof getCurrentStreak>>>
+export type GetCurrentStreakQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Current consecutive trade streak (win/loss/BE)
+ */
+
+export function useGetCurrentStreak<TData = Awaited<ReturnType<typeof getCurrentStreak>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentStreak>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCurrentStreakQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

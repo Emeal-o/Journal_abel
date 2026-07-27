@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './currentStreak';
+export * from './currentStreakResult';
 export * from './healthStatus';
 export * from './listTradesParams';
 export * from './statsSummary';

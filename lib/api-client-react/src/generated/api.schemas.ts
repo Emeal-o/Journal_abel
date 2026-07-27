@@ -138,6 +138,29 @@ export interface WeekStats {
   netPips: number;
 }
 
+/**
+ * The result of the current streak, or null if no trades
+ * @nullable
+ */
+export type CurrentStreakResult = typeof CurrentStreakResult[keyof typeof CurrentStreakResult] | null;
+
+
+export const CurrentStreakResult = {
+  Win: 'Win',
+  Loss: 'Loss',
+  BE: 'BE',
+} as const;
+
+export interface CurrentStreak {
+  /**
+     * The result of the current streak, or null if no trades
+     * @nullable
+     */
+  result: CurrentStreakResult;
+  /** Number of consecutive trades with the same result */
+  length: number;
+}
+
 export type ListTradesParams = {
 /**
  * @nullable
