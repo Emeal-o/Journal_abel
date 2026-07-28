@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { useLocation, useSearch } from "wouter";
-import { ArrowLeft, TrendingUp, TrendingDown, BarChart2, Activity, Target, Zap } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, BarChart2, Activity, Target, Zap, X } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine, BarChart, Bar, Cell,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAnalysis } from "@/lib/analysis-api";
-import type { AnalysisCumulativePoint, AnalysisRRRPoint, AnalysisRRRBucket } from "@/lib/analysis-api";
+import type { AnalysisCumulativePoint, AnalysisRRRPoint, AnalysisRRRBucket, AnalysisRRRBucketTrade } from "@/lib/analysis-api";
 import { toRoman } from "@/lib/label-utils";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -88,6 +94,92 @@ function RRRHistogramTooltip({ active, payload }: { active?: boolean; payload?: 
   );
 }
 
+// ─── result badge ─────────────────────────────────────────────────────────────
+
+function ResultBadge({ result }: { result: string }) {
+  const styles: Record<string, string> = {
+    Win:  "bg-emerald-500/15 text-emerald-400 border-emerald-500/25",
+    Loss: "bg-rose-500/15 text-rose-400 border-rose-500/25",
+    BE:   "bg-amber-500/15 text-amber-400 border-amber-500/25",
+  };
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-xs font-semibold ${styles[result] ?? "bg-white/10 text-white border-white/10"}`}>
+      {result}
+    </span>
+  );
+}
+
+// ─── bucket trades modal ──────────────────────────────────────────────────────
+
+function BucketTradesModal({
+  bucket,
+  onClose,
+}: {
+  bucket: AnalysisRRRBucket | null;
+  onClose: () => void;
+}) {
+  const rangeLabel = bucket
+    ? bucket.max != null ? `${bucket.min}–${bucket.max}R` : `${bucket.min}R+`
+    : "";
+  const tradeWord = (bucket?.count ?? 0) === 1 ? "Trade" : "Trades";
+
+  return (
+    <Dialog open={!!bucket} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-lg bg-background border-white/10 shadow-2xl max-h-[80vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="text-white">
+            {rangeLabel} {tradeWord}
+            <span className="ml-2 text-sm font-normal text-muted-foreground">({bucket?.count ?? 0})</span>
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Trade list */}
+        <div className="overflow-y-auto flex-1 -mx-6 px-6 mt-2">
+          {!bucket || bucket.trades.length === 0 ? (
+            <p className="text-center text-muted-foreground text-sm py-8">No trades in this bucket.</p>
+          ) : (
+            <div className="space-y-2 pb-2">
+              {bucket.trades.map((trade: AnalysisRRRBucketTrade) => (
+                <div
+                  key={trade.id}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 flex items-center gap-4"
+                >
+                  {/* Result */}
+                  <ResultBadge result={trade.result} />
+
+                  {/* RRR + Pips */}
+                  <div className="flex-1 flex gap-4">
+                    <div className="min-w-[64px]">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">RRR</p>
+                      <p className="font-mono text-sm font-semibold text-white">{trade.rrr.toFixed(2)}R</p>
+                    </div>
+                    <div className="min-w-[56px]">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Pips</p>
+                      <p className="font-mono text-sm font-semibold text-white">
+                        {trade.pips > 0 ? "+" : ""}{trade.pips}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Week reference */}
+                  {trade.weekLabel && (
+                    <div className="text-right shrink-0 max-w-[140px]">
+                      <p className="text-xs font-medium text-white truncate">{trade.weekLabel}</p>
+                      {trade.weekStartDate && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{trade.weekStartDate}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export function AnalysisPage() {
@@ -100,6 +192,7 @@ export function AnalysisPage() {
   const { data, isLoading, error } = useAnalysis(isYearScoped ? yearIndex : undefined);
   const [chartGranularity, setChartGranularity] = useState<"weekly" | "monthly">("weekly");
   const [rrrGranularity, setRRRGranularity] = useState<"monthly" | "yearly">("monthly");
+  const [selectedBucket, setSelectedBucket] = useState<AnalysisRRRBucket | null>(null);
 
   const pageTitle = isYearScoped ? `Year ${toRoman(yearIndex!)} Analysis` : "All-Time Analysis";
   const pageSubtitle = isYearScoped
@@ -402,7 +495,12 @@ export function AnalysisPage() {
                   width={32}
                 />
                 <Tooltip content={<RRRHistogramTooltip />} />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                <Bar
+                  dataKey="count"
+                  radius={[4, 4, 0, 0]}
+                  onClick={(entry: AnalysisRRRBucket) => { if (entry.count > 0) setSelectedBucket(entry); }}
+                  style={{ cursor: "pointer" }}
+                >
                   {data.rrrDistribution.map((bucket, i) => (
                     <Cell
                       key={i}
@@ -415,6 +513,9 @@ export function AnalysisPage() {
           </div>
         </Section>
       )}
+
+      {/* Bucket drill-down modal */}
+      <BucketTradesModal bucket={selectedBucket} onClose={() => setSelectedBucket(null)} />
 
       {/* 7. Drawdown & Recovery */}
       <Section title="Drawdown & Recovery" icon={TrendingDown}>

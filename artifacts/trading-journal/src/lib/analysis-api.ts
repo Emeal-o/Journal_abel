@@ -65,11 +65,22 @@ export interface AnalysisStreak {
   endWeekLabel: string | null;
 }
 
+export interface AnalysisRRRBucketTrade {
+  id: number;
+  result: string;
+  rrr: number;
+  pips: number;
+  weekId: number;
+  weekLabel: string | null;
+  weekStartDate: string | null;
+}
+
 export interface AnalysisRRRBucket {
   label: string;
   min: number;
   max: number | null;
   count: number;
+  trades: AnalysisRRRBucketTrade[];
 }
 
 export interface AnalysisData {

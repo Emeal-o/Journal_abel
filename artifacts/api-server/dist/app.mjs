@@ -63710,12 +63710,23 @@ router6.get("/stats/analysis", requireAuth, async (req, res) => {
     { label: "15\u201320", min: 15, max: 20 },
     { label: "20+", min: 20, max: null }
   ];
-  const rrrDistribution = RRR_BUCKETS.map((b2) => ({
-    label: b2.label,
-    min: b2.min,
-    max: b2.max,
-    count: allTrades.filter((t) => t.rrr >= b2.min && (b2.max === null || t.rrr < b2.max)).length
-  }));
+  const weekById = /* @__PURE__ */ new Map();
+  for (const w of weeks) weekById.set(w.id, { label: w.label, startDate: w.startDate });
+  const rrrDistribution = RRR_BUCKETS.map((b2) => {
+    const bucketTrades = allTrades.filter((t) => t.rrr >= b2.min && (b2.max === null || t.rrr < b2.max)).map((t) => {
+      const wk = weekById.get(t.weekId);
+      return {
+        id: t.id,
+        result: t.result,
+        rrr: t.rrr,
+        pips: t.pips,
+        weekId: t.weekId,
+        weekLabel: wk?.label ?? null,
+        weekStartDate: wk?.startDate ?? null
+      };
+    });
+    return { label: b2.label, min: b2.min, max: b2.max, count: bucketTrades.length, trades: bucketTrades };
+  });
   res.json({
     allTime,
     byYear,
