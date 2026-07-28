@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation, useSearch } from "wouter";
-import { ArrowLeft, TrendingUp, TrendingDown, BarChart2, Activity, Target, Zap, X } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, BarChart2, Activity, Target, Zap, X, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { THEMES } from "@/components/ledger-sheet";
+import type { LedgerTheme } from "@/components/ledger-sheet";
+import { AnalysisCard } from "@/components/analysis-card";
+import { captureCardPng, triggerDownload } from "@/lib/card-export";
+import { useToast } from "@/hooks/use-toast";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine, BarChart, Bar, Cell,
@@ -254,6 +260,11 @@ function BucketTradesModal({
   );
 }
 
+// ─── export constants ─────────────────────────────────────────────────────────
+
+const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix", "aurora", "goldrush", "sakura", "vapor", "autumn"];
+const EXPORT_CARD_WIDTH = 680;
+
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export function AnalysisPage() {
@@ -267,6 +278,28 @@ export function AnalysisPage() {
   const [chartGranularity, setChartGranularity] = useState<"weekly" | "monthly">("weekly");
   const [rrrGranularity, setRRRGranularity] = useState<"monthly" | "yearly">("monthly");
   const [selectedBucket, setSelectedBucket] = useState<AnalysisRRRBucket | null>(null);
+  const [exportTheme, setExportTheme] = useState<LedgerTheme>("obsidian");
+  const [exporting, setExporting] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  const handleDownload = async () => {
+    if (!cardRef.current) return;
+    setExporting(true);
+    try {
+      const t = THEMES[exportTheme];
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const scopeStr = isYearScoped ? `year${yearIndex}` : "all-time";
+      const png = await captureCardPng(cardRef.current, t.pageBg, EXPORT_CARD_WIDTH, 6);
+      triggerDownload(png, `tradeops-analysis-${scopeStr}-${exportTheme}-${dateStr}.png`);
+      toast({ title: "Analysis card downloaded" });
+    } catch (err) {
+      console.error("[dom-to-image-more] render failed:", err);
+      toast({ title: "Failed to download card", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const pageTitle = isYearScoped ? `Year ${toRoman(yearIndex!)} Analysis` : "All-Time Analysis";
   const pageSubtitle = isYearScoped
@@ -346,8 +379,54 @@ export function AnalysisPage() {
           <ArrowLeft className="w-4 h-4" />
           Back to Archive
         </button>
-        <h1 className="text-3xl font-bold tracking-tight text-white">{pageTitle}</h1>
-        <p className="text-muted-foreground mt-1">{pageSubtitle}</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-white">{pageTitle}</h1>
+            <p className="text-muted-foreground mt-1">{pageSubtitle}</p>
+          </div>
+          <Button
+            onClick={handleDownload}
+            disabled={exporting}
+            className="gap-2 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_20px_rgba(99,102,241,0.4)] border border-primary-foreground/10"
+          >
+            <Download className="w-4 h-4" />
+            {exporting ? "Generating…" : "Download Analysis Card"}
+          </Button>
+        </div>
+
+        {/* Theme selector */}
+        <div className="flex items-center gap-2 flex-wrap mt-3">
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/50 mr-1">
+            Theme
+          </span>
+          {THEME_ORDER.map((id) => {
+            const th = THEMES[id];
+            const active = exportTheme === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setExportTheme(id)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
+                style={{
+                  background: active ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${active ? th.containerBorder : "rgba(255,255,255,0.06)"}`,
+                  color: active ? th.textPrimary : "#64748b",
+                  boxShadow: active ? `0 0 14px ${th.dot}30` : "none",
+                }}
+              >
+                <span style={{
+                  width: 7, height: 7,
+                  borderRadius: "50%",
+                  background: th.dot,
+                  flexShrink: 0,
+                  boxShadow: active ? `0 0 6px ${th.dot}` : "none",
+                  display: "inline-block",
+                }} />
+                {th.name}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* 1. All-time summary */}
@@ -667,6 +746,20 @@ export function AnalysisPage() {
           </div>
         </div>
       </Section>
+
+      {/* Hidden export card, rendered off-screen for dom-to-image-more capture */}
+      <div style={{ position: "fixed", top: -9999, left: -9999, pointerEvents: "none" }}>
+        <AnalysisCard
+          ref={cardRef}
+          theme={exportTheme}
+          data={data}
+          pageTitle={pageTitle}
+          pageSubtitle={pageSubtitle}
+          cumulativeData={cumulativeData}
+          chartGranularityLabel={chartGranularity === "weekly" ? "Weekly" : "Monthly"}
+          isYearScoped={isYearScoped}
+        />
+      </div>
     </div>
   );
 }
