@@ -81,7 +81,15 @@ function RRRTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
   );
 }
 
-function RRRHistogramTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: AnalysisRRRBucket }> }) {
+function RRRHistogramTooltip({
+  active,
+  payload,
+  onCountClick,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: AnalysisRRRBucket }>;
+  onCountClick?: (bucket: AnalysisRRRBucket) => void;
+}) {
   if (!active || !payload?.length) return null;
   const b = payload[0]!.payload;
   const rangeLabel = b.max != null ? `${b.min}–${b.max}R` : `${b.min}R+`;
@@ -89,7 +97,16 @@ function RRRHistogramTooltip({ active, payload }: { active?: boolean; payload?: 
   return (
     <div className="rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-xs shadow-xl">
       <p className="text-muted-foreground mb-1">{rangeLabel}</p>
-      <p className="font-mono font-semibold text-violet-400">{b.count} {tradeWord}</p>
+      {b.count > 0 && onCountClick ? (
+        <button
+          className="font-mono font-semibold text-violet-400 underline underline-offset-2 decoration-dotted hover:text-violet-300 transition-colors cursor-pointer"
+          onClick={(e) => { e.stopPropagation(); onCountClick(b); }}
+        >
+          {b.count} {tradeWord}
+        </button>
+      ) : (
+        <p className="font-mono font-semibold text-violet-400">{b.count} {tradeWord}</p>
+      )}
     </div>
   );
 }
@@ -494,13 +511,11 @@ export function AnalysisPage() {
                   allowDecimals={false}
                   width={32}
                 />
-                <Tooltip content={<RRRHistogramTooltip />} />
-                <Bar
-                  dataKey="count"
-                  radius={[4, 4, 0, 0]}
-                  onClick={(entry: AnalysisRRRBucket) => { if (entry.count > 0) setSelectedBucket(entry); }}
-                  style={{ cursor: "pointer" }}
-                >
+                <Tooltip
+                  content={<RRRHistogramTooltip onCountClick={setSelectedBucket} />}
+                  wrapperStyle={{ pointerEvents: "auto" }}
+                />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {data.rrrDistribution.map((bucket, i) => (
                     <Cell
                       key={i}
