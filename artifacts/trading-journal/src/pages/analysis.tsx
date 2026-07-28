@@ -128,6 +128,21 @@ function ResultBadge({ result }: { result: string }) {
 
 // ─── bucket trades modal ──────────────────────────────────────────────────────
 
+function computeBucketStats(trades: AnalysisRRRBucketTrade[]) {
+  const total = trades.length;
+  const wins  = trades.filter(t => t.result === "Win").length;
+  const winRate = total > 0 ? Math.round((wins / total) * 10000) / 100 : 0;
+  const netRR = Math.round(
+    trades.reduce((sum, t) => {
+      if (t.result === "Win")  return sum + t.rrr;
+      if (t.result === "Loss") return sum - 1;
+      return sum;
+    }, 0) * 100,
+  ) / 100;
+  const netPips = Math.round(trades.reduce((sum, t) => sum + t.pips, 0) * 10) / 10;
+  return { winRate, netRR, netPips };
+}
+
 function BucketTradesModal({
   bucket,
   onClose,
@@ -135,10 +150,21 @@ function BucketTradesModal({
   bucket: AnalysisRRRBucket | null;
   onClose: () => void;
 }) {
+  const [statsOpen, setStatsOpen] = useState(false);
+
+  // Reset summary panel whenever a different bucket is opened
+  const bucketKey = bucket?.label ?? null;
+  const prevKeyRef = useState<string | null>(null);
+  if (prevKeyRef[0] !== bucketKey) {
+    prevKeyRef[1](bucketKey);
+    if (statsOpen) setStatsOpen(false);
+  }
+
   const rangeLabel = bucket
     ? bucket.max != null ? `${bucket.min}–${bucket.max}R` : `${bucket.min}R+`
     : "";
   const tradeWord = (bucket?.count ?? 0) === 1 ? "Trade" : "Trades";
+  const stats = bucket && bucket.trades.length > 0 ? computeBucketStats(bucket.trades) : null;
 
   return (
     <Dialog open={!!bucket} onOpenChange={(open) => { if (!open) onClose(); }}>
@@ -146,9 +172,40 @@ function BucketTradesModal({
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-white">
             {rangeLabel} {tradeWord}
-            <span className="ml-2 text-sm font-normal text-muted-foreground">({bucket?.count ?? 0})</span>
+            {stats ? (
+              <button
+                onClick={() => setStatsOpen(v => !v)}
+                className="ml-2 text-sm font-normal text-muted-foreground underline underline-offset-2 decoration-dotted hover:text-white transition-colors cursor-pointer"
+                aria-expanded={statsOpen}
+              >
+                ({bucket?.count ?? 0})
+              </button>
+            ) : (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">({bucket?.count ?? 0})</span>
+            )}
           </DialogTitle>
         </DialogHeader>
+
+        {/* Collapsible summary row */}
+        {stats && (
+          <div
+            className="flex-shrink-0 overflow-hidden transition-all duration-200"
+            style={{ maxHeight: statsOpen ? "120px" : "0px", opacity: statsOpen ? 1 : 0 }}
+          >
+            <div className="grid grid-cols-3 gap-2 pt-1 pb-3">
+              {[
+                { label: "Win Rate", value: `${stats.winRate}%`,  accent: stats.winRate >= 50 ? "#34d399" : "#fb7185" },
+                { label: "Net RR",   value: fmtRR(stats.netRR),   accent: rrColor(stats.netRR) },
+                { label: "Net Pips", value: `${stats.netPips > 0 ? "+" : ""}${stats.netPips}`, accent: rrColor(stats.netPips) },
+              ].map(({ label, value, accent }) => (
+                <div key={label} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 flex flex-col gap-0.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{label}</span>
+                  <span className="text-base font-bold font-mono" style={{ color: accent }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Trade list */}
         <div className="overflow-y-auto flex-1 -mx-6 px-6 mt-2">
