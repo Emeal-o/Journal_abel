@@ -58,5 +58,3 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-BASE_PATH = "/"
-PORT = "21194"

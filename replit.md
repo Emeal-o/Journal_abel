@@ -19,9 +19,22 @@ Required secrets (all set in Replit Secrets):
 - `SESSION_SECRET` — session signing secret
 - `ADMIN_SECRET` — password for the /admin panel (create/manage user access codes)
 
-Dev database note: this Repl's `DATABASE_URL` points to a fresh Replit-provisioned Postgres instance, not the production Neon DB. It starts empty — use the `/admin` panel (with `ADMIN_SECRET`) to create a user access code before logging in, or run `pnpm --filter @workspace/api-server run create-user`.
+Dev database note: this Repl's database is a Replit-provisioned Postgres instance (accessed via `PGHOST`/`PGPORT`/`PGDATABASE`/`PGUSER`/`PGPASSWORD` runtime env vars), separate from the production Neon DB used by the Vercel deployment.
 
-Setup status: dependencies installed, schema tables (`users`, `weeks`, `trades`, `login_events`) created, `ADMIN_SECRET` configured, and all three workflows (API Server, Trading Journal web, Canvas/mockup sandbox) are running. One access code has already been created for initial login (see chat for the code — it is not recoverable, generate a new one via the admin panel or `create-user` script if lost).
+### Fresh-install setup (new Replit import)
+
+1. `pnpm install` — install all workspace dependencies
+2. Initialize the core DB tables (idempotent):
+   ```sh
+   psql "host=$PGHOST port=$PGPORT dbname=$PGDATABASE user=$PGUSER" \
+     -f artifacts/api-server/scripts/init-db.sql
+   ```
+3. Set the `ADMIN_SECRET` secret in Replit Secrets (any strong password).
+4. `SESSION_SECRET` is also required — set it in Replit Secrets.
+5. Start both workflows from the Workflows panel (or they auto-start).
+6. Visit `/admin` with your `ADMIN_SECRET` to create the first access code, or run `pnpm --filter @workspace/api-server run create-user`.
+
+The server's startup migration (`artifacts/api-server/src/index.ts`) handles `sessions`, `login_events`, and `ALTER TABLE` additions automatically on every boot — no manual step needed for those.
 
 ## Stack
 

@@ -49,12 +49,13 @@ function StatTile({ label, value, sub, accent }: { label: string; value: string;
 
 // ─── section wrapper ─────────────────────────────────────────────────────────
 
-function Section({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
+function Section({ title, icon: Icon, children, action }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Icon className="w-4 h-4 text-muted-foreground" />
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{title}</h2>
+        {action && <div className="ml-auto">{action}</div>}
       </div>
       {children}
     </div>
@@ -280,6 +281,7 @@ export function AnalysisPage() {
   const [selectedBucket, setSelectedBucket] = useState<AnalysisRRRBucket | null>(null);
   const [exportTheme, setExportTheme] = useState<LedgerTheme>("obsidian");
   const [exporting, setExporting] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -379,58 +381,79 @@ export function AnalysisPage() {
           <ArrowLeft className="w-4 h-4" />
           Back to Archive
         </button>
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">{pageTitle}</h1>
-            <p className="text-muted-foreground mt-1">{pageSubtitle}</p>
-          </div>
-          <Button
-            onClick={handleDownload}
-            disabled={exporting}
-            className="gap-2 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_20px_rgba(99,102,241,0.4)] border border-primary-foreground/10"
-          >
-            <Download className="w-4 h-4" />
-            {exporting ? "Generating…" : "Download Analysis Card"}
-          </Button>
-        </div>
-
-        {/* Theme selector */}
-        <div className="flex items-center gap-2 flex-wrap mt-3">
-          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/50 mr-1">
-            Theme
-          </span>
-          {THEME_ORDER.map((id) => {
-            const th = THEMES[id];
-            const active = exportTheme === id;
-            return (
-              <button
-                key={id}
-                onClick={() => setExportTheme(id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
-                style={{
-                  background: active ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
-                  border: `1px solid ${active ? th.containerBorder : "rgba(255,255,255,0.06)"}`,
-                  color: active ? th.textPrimary : "#64748b",
-                  boxShadow: active ? `0 0 14px ${th.dot}30` : "none",
-                }}
-              >
-                <span style={{
-                  width: 7, height: 7,
-                  borderRadius: "50%",
-                  background: th.dot,
-                  flexShrink: 0,
-                  boxShadow: active ? `0 0 6px ${th.dot}` : "none",
-                  display: "inline-block",
-                }} />
-                {th.name}
-              </button>
-            );
-          })}
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">{pageTitle}</h1>
+          <p className="text-muted-foreground mt-1">{pageSubtitle}</p>
         </div>
       </div>
 
+      {/* Export modal */}
+      <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
+        <DialogContent className="sm:max-w-sm bg-background border-white/10 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white text-sm font-semibold uppercase tracking-wider">Export Analysis Card</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            {/* Theme selector */}
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/50">Theme</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {THEME_ORDER.map((id) => {
+                  const th = THEMES[id];
+                  const active = exportTheme === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setExportTheme(id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
+                      style={{
+                        background: active ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
+                        border: `1px solid ${active ? th.containerBorder : "rgba(255,255,255,0.06)"}`,
+                        color: active ? th.textPrimary : "#64748b",
+                        boxShadow: active ? `0 0 14px ${th.dot}30` : "none",
+                      }}
+                    >
+                      <span style={{
+                        width: 7, height: 7,
+                        borderRadius: "50%",
+                        background: th.dot,
+                        flexShrink: 0,
+                        boxShadow: active ? `0 0 6px ${th.dot}` : "none",
+                        display: "inline-block",
+                      }} />
+                      {th.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Download button */}
+            <Button
+              onClick={handleDownload}
+              disabled={exporting}
+              className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_20px_rgba(99,102,241,0.4)] border border-primary-foreground/10"
+            >
+              <Download className="w-4 h-4" />
+              {exporting ? "Generating…" : "Download Analysis Card"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* 1. All-time summary */}
-      <Section title="All-Time Summary" icon={Activity}>
+      <Section
+        title="All-Time Summary"
+        icon={Activity}
+        action={
+          <button
+            onClick={() => setExportModalOpen(true)}
+            className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="Export analysis card"
+          >
+            <Download className="w-3.5 h-3.5" />
+          </button>
+        }
+      >
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatTile label="Total Trades" value={String(data.allTime.totalTrades)} sub={`${data.allTime.wins}W · ${data.allTime.losses}L · ${data.allTime.breakEvens}BE`} />
           <StatTile label="Win Rate" value={`${data.allTime.winRate}%`} accent={data.allTime.winRate >= 50 ? "#34d399" : "#fb7185"} />
