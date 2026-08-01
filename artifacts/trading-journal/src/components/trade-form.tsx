@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trade, TradeResult, TradeInputResult } from "@workspace/api-client-react";
+import { TradeResult, TradeInputResult } from "@workspace/api-client-react";
 import { 
   useCreateTrade, 
   useUpdateTrade,
@@ -10,6 +10,7 @@ import {
   getGetStatsSummaryQueryKey,
   getGetWeeklyStatsQueryKey
 } from "@workspace/api-client-react";
+import type { TradeWithSetupType, TradeInputWithSetupType, TradeUpdateWithSetupType } from "@/lib/trade-types";
 import { useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -38,6 +39,9 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
+import { useSetupTypes } from "@/lib/setup-types-api";
+
+const CLEAR_SENTINEL = "__none__";
 
 const tradeSchema = z.object({
   result: z.enum([TradeResult.Win, TradeResult.Loss, TradeResult.BE]),
@@ -45,13 +49,14 @@ const tradeSchema = z.object({
   pips: z.coerce.number().min(-10000).max(10000),
   notes: z.string().optional(),
   flagEmoji: z.string().optional(),
+  setupTypeId: z.number().nullable().optional(),
 });
 
 type TradeFormValues = z.infer<typeof tradeSchema>;
 
 interface TradeFormProps {
   weekId: number;
-  trade?: Trade;
+  trade?: TradeWithSetupType;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -60,6 +65,7 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
   const isEditing = !!trade;
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: setupTypes = [] } = useSetupTypes();
   
   const createTrade = useCreateTrade();
   const updateTrade = useUpdateTrade();
@@ -72,6 +78,7 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
       pips: 0,
       notes: "",
       flagEmoji: "",
+      setupTypeId: null,
     },
   });
 
@@ -83,6 +90,7 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
         pips: Number(trade.pips),
         notes: trade.notes || "",
         flagEmoji: trade.flagEmoji || "",
+        setupTypeId: trade.setupTypeId ?? null,
       });
     } else if (open && !trade) {
       form.reset({
@@ -91,14 +99,19 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
         pips: 0,
         notes: "",
         flagEmoji: "",
+        setupTypeId: null,
       });
     }
   }, [open, trade, form]);
 
   const onSubmit = (data: TradeFormValues) => {
+    const { setupTypeId, ...rest } = data;
     if (isEditing) {
+      // TradeUpdateWithSetupType structurally satisfies TradeUpdate (it adds an optional field),
+      // so it is assignable to the hook's expected type without a cast.
+      const updatePayload: TradeUpdateWithSetupType = { ...rest, setupTypeId: setupTypeId ?? null };
       updateTrade.mutate(
-        { id: trade.id, data },
+        { id: trade.id, data: updatePayload },
         {
           onSuccess: () => {
             toast({ title: "Trade updated successfully" });
@@ -114,8 +127,10 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
         }
       );
     } else {
+      // Same pattern: TradeInputWithSetupType satisfies TradeInput structurally.
+      const createPayload: TradeInputWithSetupType = { ...rest, weekId, setupTypeId: setupTypeId ?? undefined };
       createTrade.mutate(
-        { data: { ...data, weekId } },
+        { data: createPayload },
         {
           onSuccess: () => {
             toast({ title: "Trade created successfully" });
@@ -233,6 +248,48 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
                 </FormItem>
               )}
             />
+
+            {/* Setup Type — only rendered when the user has at least one active type */}
+            {setupTypes.length > 0 && (
+              <FormField
+                control={form.control}
+                name="setupTypeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Setup Type (optional)</FormLabel>
+                    <Select
+                      value={field.value != null ? String(field.value) : CLEAR_SENTINEL}
+                      onValueChange={(val) =>
+                        field.onChange(val === CLEAR_SENTINEL ? null : Number(val))
+                      }
+                    >
+                      <FormControl>
+                        <SelectTrigger className="bg-white/5 border-white/10">
+                          <SelectValue placeholder="No setup type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-background border-white/10">
+                        <SelectItem value={CLEAR_SENTINEL} className="text-muted-foreground">
+                          No setup type
+                        </SelectItem>
+                        {setupTypes.map((st) => (
+                          <SelectItem key={st.id} value={String(st.id)}>
+                            <span className="flex items-center gap-2">
+                              <span
+                                className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: st.color }}
+                              />
+                              {st.name}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             
             <div className="flex justify-end pt-4 gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="bg-transparent border-white/10 hover:bg-white/5">
