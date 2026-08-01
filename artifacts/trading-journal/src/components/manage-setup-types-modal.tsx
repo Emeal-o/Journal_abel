@@ -190,6 +190,7 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const atCap = setupTypes.length >= MAX_ACTIVE;
@@ -281,7 +282,7 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
                     )}
                   </span>
                   {/* Edit + Delete buttons */}
-                  <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all mt-0.5">
+                  <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
                     <Button
                       variant="ghost"
                       size="icon"
