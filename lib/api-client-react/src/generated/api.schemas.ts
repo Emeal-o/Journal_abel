@@ -41,6 +41,8 @@ export interface Trade {
   notes?: string | null;
   /** @nullable */
   flagEmoji?: string | null;
+  /** @nullable — ID of the setup type tagged on this trade (not in OpenAPI spec; read defensively from server response). */
+  setupTypeId?: number | null;
   createdAt: string;
 }
 
@@ -92,6 +94,8 @@ export interface TradeInput {
   pips: number;
   notes?: string;
   flagEmoji?: string;
+  /** Not in OpenAPI spec — accepted by the server defensively; pass to tag a setup type. */
+  setupTypeId?: number | null;
 }
 
 export type TradeUpdateResult = typeof TradeUpdateResult[keyof typeof TradeUpdateResult];
@@ -111,6 +115,8 @@ export interface TradeUpdate {
   notes?: string | null;
   /** @nullable */
   flagEmoji?: string | null;
+  /** @nullable — Not in OpenAPI spec; pass to update the setup type tag (null to clear). */
+  setupTypeId?: number | null;
 }
 
 export interface StatsSummary {

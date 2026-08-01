@@ -12,6 +12,7 @@ import {
   Minus 
 } from "lucide-react";
 import { Week, TradeResult, Trade } from "@workspace/api-client-react";
+import { useSetupTypes, type SetupType } from "@/lib/setup-types-api";
 import { 
   useDeleteWeek, 
   useDeleteTrade,
@@ -48,6 +49,30 @@ interface WeekCardProps {
   readOnly?: boolean;
 }
 
+// ─── setup type chip ──────────────────────────────────────────────────────────
+
+function SetupTypeChip({ setupTypeId, setupTypes }: { setupTypeId?: number | null; setupTypes: SetupType[] }) {
+  if (!setupTypeId) return null;
+  const st = setupTypes.find((s) => s.id === setupTypeId);
+  if (!st) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none ring-1 ring-inset"
+      style={{
+        backgroundColor: `${st.color}22`,
+        color: st.color,
+        ringColor: `${st.color}44`,
+      }}
+      title={`Setup: ${st.name}`}
+    >
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: st.color }} />
+      {st.name}
+    </span>
+  );
+}
+
+// ─── week card ────────────────────────────────────────────────────────────────
+
 export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isTradeFormOpen, setIsTradeFormOpen] = useState(false);
@@ -57,6 +82,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: setupTypes = [] } = useSetupTypes();
   
   const deleteWeek = useDeleteWeek();
   const deleteTrade = useDeleteTrade();
@@ -182,7 +208,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                 <div key={trade.id} className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-white">#{trade.tradeNumber}</span>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       {trade.result === TradeResult.Win && (
                         <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20">
                           <TrendingUp className="w-3 h-3 mr-1" /> Win
@@ -198,6 +224,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                           <Minus className="w-3 h-3 mr-1" /> BE
                         </Badge>
                       )}
+                      <SetupTypeChip setupTypeId={trade.setupTypeId} setupTypes={setupTypes} />
                       {trade.flagEmoji && (
                         <span className="text-sm leading-none" title="Flag">{trade.flagEmoji}</span>
                       )}
@@ -265,7 +292,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                     <tr key={trade.id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="px-6 py-4 font-medium text-white">#{trade.tradeNumber}</td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           {trade.result === TradeResult.Win && (
                             <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20">
                               <TrendingUp className="w-3 h-3 mr-1" /> Win
@@ -281,6 +308,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                               <Minus className="w-3 h-3 mr-1" /> BE
                             </Badge>
                           )}
+                          <SetupTypeChip setupTypeId={trade.setupTypeId} setupTypes={setupTypes} />
                           {trade.flagEmoji && (
                             <span className="text-sm leading-none" title="Flag">{trade.flagEmoji}</span>
                           )}

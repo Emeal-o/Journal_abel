@@ -12,6 +12,7 @@ import {
   Plus,
   Rows3,
   ArchiveIcon,
+  Tag,
 } from "lucide-react";
 import {
   DndContext,
@@ -34,6 +35,7 @@ import { getListWeeksQueryKey, useGetCurrentStreak } from "@workspace/api-client
 
 import { WeekCard } from "@/components/week-card";
 import { WeekForm } from "@/components/week-form";
+import { ManageSetupTypesModal } from "@/components/manage-setup-types-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -179,6 +181,7 @@ export function JournalPage() {
   const { orderedWeeks, isLoading, error, setOrderedIds, sortMode, setSortMode } =
     useOrderedWeeks();
   const [isAddWeekOpen, setIsAddWeekOpen] = useState(false);
+  const [isManageSetupTypesOpen, setIsManageSetupTypesOpen] = useState(false);
 
   // ── archive dialog ──────────────────────────────────────────────────────────
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
@@ -325,6 +328,16 @@ export function JournalPage() {
           )}
 
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsManageSetupTypesOpen(true)}
+            className="gap-2 border-white/10 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white"
+          >
+            <Tag className="w-4 h-4" />
+            <span className="hidden sm:inline">Setup Types</span>
+          </Button>
+
+          <Button
             onClick={() => setIsAddWeekOpen(true)}
             className="gap-2 shadow-[0_0_15px_rgba(var(--primary),0.2)]"
           >
@@ -382,6 +395,11 @@ export function JournalPage() {
       )}
 
       <WeekForm open={isAddWeekOpen} onOpenChange={setIsAddWeekOpen} />
+
+      <ManageSetupTypesModal
+        open={isManageSetupTypesOpen}
+        onOpenChange={setIsManageSetupTypesOpen}
+      />
 
       {/* ── Start New Month dialog ──────────────────────────────────────────── */}
       <Dialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>

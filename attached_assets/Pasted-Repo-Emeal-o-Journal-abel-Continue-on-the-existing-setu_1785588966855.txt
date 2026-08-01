@@ -1,0 +1,20 @@
+Repo: Emeal-o/Journal_abel. Continue on the existing setup-types branch. Do NOT push to or merge into main yourself — the user will review and merge the PR manually.
+
+This is Part 2 of the Setup Type tagging feature. The database and backend routes already exist on this branch and are merged into main: GET/POST/DELETE at /api/setup-types, and trades routes already accept setupTypeId. Verify this backend work is present before starting; if it's missing, stop and report back rather than rebuilding it.
+
+ONLY do the following in this session — do NOT touch the Analysis page:
+
+1. Create a custom frontend API wrapper file for setup types, matching the exact pattern of this codebase's existing analysis-api.ts custom wrapper (not the generated api-client-react hooks). It should support fetching the list, creating (name + optional description if that field exists on the backend already — check first), and soft-deleting.
+
+2. Create a "Manage Setup Types" modal component:
+- Lists active setup types with color swatch, name, delete button (and description snippet if that field exists)
+- An add-new form with a name input (with a live character counter matching whatever server-side limit exists)
+- A clear message when at the 10-cap, disabling the add form
+- Scrollable content area (max-height + overflow-y-auto) so it isn't cut off on small screens
+- Add an entry point to open this modal that is ALWAYS visible regardless of how many setup types exist — do not hide the entry point behind a check like "only show if setupTypes.length > 0"
+
+3. Add an optional "Setup Type" dropdown to the Add/Edit Trade form, showing only active types with color swatches. Default to no selection.
+
+4. Show the setup type name + color chip inline on trades wherever the flag emoji is currently shown (stats table / week cards).
+
+After finishing, restart the frontend and confirm it builds with no errors, then commit and confirm the commit succeeded (show git log). Stop here — do not start on the Analysis page work, even with quota remaining. Report back on what was completed.
