@@ -20,6 +20,7 @@ export interface SetupType {
   color: string;
   active: boolean;
   createdAt: string;
+  description?: string | null;
 }
 
 // ─── query key ────────────────────────────────────────────────────────────────
@@ -37,12 +38,12 @@ export async function fetchSetupTypes(): Promise<SetupType[]> {
   return res.json() as Promise<SetupType[]>;
 }
 
-/** Create a new setup type by name. Color is auto-assigned by the server. */
-export async function createSetupType(name: string): Promise<SetupType> {
+/** Create a new setup type. Color is auto-assigned by the server. */
+export async function createSetupType(name: string, description?: string): Promise<SetupType> {
   const res = await setupTypesFetch("/api/setup-types", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, description: description || undefined }),
   });
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -74,7 +75,8 @@ export function useSetupTypes() {
 export function useCreateSetupType() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => createSetupType(name),
+    mutationFn: ({ name, description }: { name: string; description?: string }) =>
+      createSetupType(name, description),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: setupTypesQueryKey() });
     },

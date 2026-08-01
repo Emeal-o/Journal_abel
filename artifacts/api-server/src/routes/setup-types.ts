@@ -36,9 +36,48 @@ function serialize(t: SetupType) {
   return { ...t, createdAt: t.createdAt.toISOString() };
 }
 
-// GET /api/setup-types — list active setup types for the authenticated user
+/** Pick the first palette color not in usedColors; wraps around using activeCount as fallback index. */
+function pickColor(usedColors: Set<string>, activeCount: number): string {
+  return PALETTE.find((c) => !usedColors.has(c)) ?? PALETTE[activeCount % PALETTE.length]!;
+}
+
+const DEFAULT_SEEDS: Array<{ name: string; description: string }> = [
+  { name: "MSS + Retest",  description: "Market Structure Shift on lower timeframe with entry on pullback/FVG retest." },
+  { name: "Breakout",      description: "Clean break through key structural level with follow-through momentum." },
+  { name: "Pullback",      description: "Entry on a retracement within an established trend direction." },
+  { name: "Reversal",      description: "Countertrend entry at a key level signaling trend exhaustion." },
+  { name: "Range Play",    description: "Fading extreme high/low boundaries inside a consolidation range." },
+];
+
+// GET /api/setup-types — list active setup types for the authenticated user.
+// If the user has zero rows (active or inactive) the 5 default seed types are
+// inserted first, then the full active list is returned.
 router.get("/setup-types", requireAuth, async (req, res) => {
   const userId = req.session.userId!;
+
+  // Count ALL rows (active + inactive) to decide whether to seed
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(setupTypesTable)
+    .where(eq(setupTypesTable.userId, userId));
+
+  if (total === 0) {
+    // Seed 5 defaults, assigning palette colors in order
+    const usedColors = new Set<string>();
+    for (let i = 0; i < DEFAULT_SEEDS.length; i++) {
+      const seed = DEFAULT_SEEDS[i]!;
+      const color = pickColor(usedColors, i);
+      usedColors.add(color);
+      await db.insert(setupTypesTable).values({
+        userId,
+        name: seed.name,
+        description: seed.description,
+        color,
+        active: true,
+      });
+    }
+  }
+
   const types = await db
     .select()
     .from(setupTypesTable)
@@ -47,19 +86,42 @@ router.get("/setup-types", requireAuth, async (req, res) => {
   res.json(types.map(serialize));
 });
 
-// POST /api/setup-types — create a new setup type
-// - If the name matches an existing INACTIVE type, reactivates it (reuses its colour).
+// POST /api/setup-types — create a new setup type.
+// - Validates name (1–30 chars) and optional description (max 120 chars).
+// - If the name matches an existing INACTIVE type, reactivates it (preserves
+//   its colour) and updates its description if a new one is provided.
 // - Rejects at 10 active types per user (hard cap).
-// - Auto-assigns a colour from the palette, avoiding colours already active for this user.
+// - Auto-assigns a colour from the palette, avoiding colours already active.
 router.post("/setup-types", requireAuth, async (req, res) => {
   const userId = req.session.userId!;
 
-  const { name: rawName } = req.body as { name?: unknown };
-  if (typeof rawName !== "string" || rawName.trim().length === 0 || rawName.length > 50) {
-    res.status(400).json({ error: "name is required and must be 1–50 characters." });
+  const { name: rawName, description: rawDescription } = req.body as {
+    name?: unknown;
+    description?: unknown;
+  };
+
+  if (typeof rawName !== "string" || rawName.trim().length === 0) {
+    res.status(400).json({ error: "name is required." });
+    return;
+  }
+  if (rawName.trim().length > 30 || rawName.length > 30) {
+    res.status(400).json({ error: "name must be 30 characters or fewer." });
     return;
   }
   const name = rawName.trim();
+
+  let description: string | null = null;
+  if (rawDescription !== undefined && rawDescription !== null && rawDescription !== "") {
+    if (typeof rawDescription !== "string") {
+      res.status(400).json({ error: "description must be a string." });
+      return;
+    }
+    if (rawDescription.length > 120) {
+      res.status(400).json({ error: "description must be 120 characters or fewer." });
+      return;
+    }
+    description = rawDescription.trim() || null;
+  }
 
   // Check for an existing type with this name (active or inactive)
   const [existing] = await db
@@ -72,10 +134,14 @@ router.post("/setup-types", requireAuth, async (req, res) => {
       res.status(409).json({ error: "A setup type with that name already exists." });
       return;
     }
-    // Reactivate the inactive type, preserving its original colour
+    // Reactivate the inactive type, preserving its original colour.
+    // Update description if a new one was provided.
+    const updatePayload: { active: boolean; description?: string | null } = { active: true };
+    if (description !== null) updatePayload.description = description;
+
     const [reactivated] = await db
       .update(setupTypesTable)
-      .set({ active: true })
+      .set(updatePayload)
       .where(eq(setupTypesTable.id, existing.id))
       .returning();
     res.status(200).json(serialize(reactivated!));
@@ -101,11 +167,11 @@ router.post("/setup-types", requireAuth, async (req, res) => {
     .from(setupTypesTable)
     .where(and(eq(setupTypesTable.userId, userId), eq(setupTypesTable.active, true)));
   const usedColors = new Set(activeTypes.map((t) => t.color));
-  const color = PALETTE.find((c) => !usedColors.has(c)) ?? PALETTE[activeCount % PALETTE.length]!;
+  const color = pickColor(usedColors, activeCount);
 
   const [created] = await db
     .insert(setupTypesTable)
-    .values({ userId, name, color, active: true })
+    .values({ userId, name, color, active: true, description })
     .returning();
   res.status(201).json(serialize(created!));
 });

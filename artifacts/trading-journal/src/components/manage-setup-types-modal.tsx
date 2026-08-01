@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   useSetupTypes,
@@ -17,7 +18,8 @@ import {
 } from "@/lib/setup-types-api";
 
 const MAX_ACTIVE = 10;
-const MAX_NAME_LENGTH = 50;
+const MAX_NAME_LENGTH = 30;
+const MAX_DESC_LENGTH = 120;
 
 interface ManageSetupTypesModalProps {
   open: boolean;
@@ -31,27 +33,37 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
   const deleteSetupType = useDeleteSetupType();
 
   const [newName, setNewName] = useState("");
+  const [newDesc, setNewDesc] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const atCap = setupTypes.length >= MAX_ACTIVE;
-  const canAdd = !atCap && newName.trim().length > 0 && newName.length <= MAX_NAME_LENGTH;
+  const canAdd =
+    !atCap &&
+    newName.trim().length > 0 &&
+    newName.length <= MAX_NAME_LENGTH &&
+    newDesc.length <= MAX_DESC_LENGTH;
 
   const handleAdd = () => {
-    const trimmed = newName.trim();
-    if (!trimmed || atCap) return;
-    createSetupType.mutate(trimmed, {
-      onSuccess: () => {
-        setNewName("");
-        inputRef.current?.focus();
-        toast({ title: `"${trimmed}" added` });
+    const trimmedName = newName.trim();
+    const trimmedDesc = newDesc.trim();
+    if (!trimmedName || atCap) return;
+    createSetupType.mutate(
+      { name: trimmedName, description: trimmedDesc || undefined },
+      {
+        onSuccess: () => {
+          setNewName("");
+          setNewDesc("");
+          inputRef.current?.focus();
+          toast({ title: `"${trimmedName}" added` });
+        },
+        onError: (err) => {
+          toast({
+            title: err instanceof Error ? err.message : "Failed to add setup type",
+            variant: "destructive",
+          });
+        },
       },
-      onError: (err) => {
-        toast({
-          title: err instanceof Error ? err.message : "Failed to add setup type",
-          variant: "destructive",
-        });
-      },
-    });
+    );
   };
 
   const handleDelete = (id: number, name: string) => {
@@ -70,7 +82,7 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px] bg-background border-white/10 shadow-2xl flex flex-col gap-0 p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[440px] bg-background border-white/10 shadow-2xl flex flex-col gap-0 p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-white/10">
           <DialogTitle>Manage Setup Types</DialogTitle>
           <DialogDescription className="text-muted-foreground text-sm">
@@ -80,7 +92,7 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
         </DialogHeader>
 
         {/* Scrollable list */}
-        <div className="overflow-y-auto max-h-[300px] px-6 py-3 space-y-1">
+        <div className="overflow-y-auto max-h-[320px] px-6 py-3 space-y-1">
           {isLoading ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground text-sm gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -94,20 +106,27 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
             setupTypes.map((st) => (
               <div
                 key={st.id}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-white/[0.04] group transition-colors"
+                className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-white/[0.04] group transition-colors"
               >
-                {/* Color swatch */}
+                {/* Color swatch — aligned to first line */}
                 <span
-                  className="flex-shrink-0 w-3 h-3 rounded-full ring-1 ring-white/20"
+                  className="flex-shrink-0 w-3 h-3 rounded-full ring-1 ring-white/20 mt-[3px]"
                   style={{ backgroundColor: st.color }}
                 />
-                {/* Name */}
-                <span className="flex-1 text-sm text-white truncate">{st.name}</span>
+                {/* Name + description */}
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm text-white truncate">{st.name}</span>
+                  {st.description && (
+                    <span className="block text-[11px] text-muted-foreground/60 leading-snug mt-0.5 line-clamp-2">
+                      {st.description}
+                    </span>
+                  )}
+                </span>
                 {/* Delete button */}
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="w-7 h-7 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
+                  className="w-7 h-7 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0 mt-0.5"
                   onClick={() => handleDelete(st.id, st.name)}
                   disabled={deleteSetupType.isPending}
                   aria-label={`Remove ${st.name}`}
@@ -127,6 +146,7 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
             </p>
           ) : (
             <div className="space-y-2">
+              {/* Name row */}
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Input
@@ -143,7 +163,7 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
                     maxLength={MAX_NAME_LENGTH}
                     disabled={createSetupType.isPending}
                   />
-                  {/* Live character counter */}
+                  {/* Live name counter */}
                   <span
                     className={`absolute right-3 top-1/2 -translate-y-1/2 text-[11px] tabular-nums pointer-events-none transition-colors ${
                       newName.length >= MAX_NAME_LENGTH
@@ -168,6 +188,30 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
                   Add
                 </Button>
               </div>
+
+              {/* Description row */}
+              <div className="relative">
+                <Textarea
+                  placeholder="Optional description (e.g. Entry criteria, market context…)"
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value.slice(0, MAX_DESC_LENGTH))}
+                  className="bg-white/5 border-white/10 text-sm resize-none pb-6 min-h-[64px]"
+                  maxLength={MAX_DESC_LENGTH}
+                  disabled={createSetupType.isPending}
+                  rows={2}
+                />
+                {/* Live desc counter */}
+                <span
+                  className={`absolute right-3 bottom-2 text-[11px] tabular-nums pointer-events-none transition-colors ${
+                    newDesc.length >= MAX_DESC_LENGTH
+                      ? "text-amber-400"
+                      : "text-muted-foreground/40"
+                  }`}
+                >
+                  {newDesc.length}/{MAX_DESC_LENGTH}
+                </span>
+              </div>
+
               <p className="text-[11px] text-muted-foreground/50">
                 A color will be auto-assigned. Press Enter to add quickly.
               </p>

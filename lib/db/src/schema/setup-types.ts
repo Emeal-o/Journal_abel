@@ -10,6 +10,7 @@ export const setupTypesTable = pgTable("setup_types", {
   color: text("color").notNull(), // hex string e.g. "#3B82F6"
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  description: text("description"), // optional user-facing description, max 120 chars enforced at API layer
 }, (t) => ({
   uniqueUserIdName: unique("setup_types_user_id_name_key").on(t.userId, t.name),
 }));

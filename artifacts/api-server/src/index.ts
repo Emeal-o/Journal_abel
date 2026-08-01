@@ -76,6 +76,8 @@ async function runStartupMigrations() {
       ADD COLUMN IF NOT EXISTS setup_type_id INTEGER
         REFERENCES setup_types(id) ON DELETE SET NULL
   `);
+  // Optional description on setup_types — idempotent; existing rows default to NULL.
+  await db.execute(sql`ALTER TABLE setup_types ADD COLUMN IF NOT EXISTS description TEXT`);
 
   // setup_type_change_log — audit trail for admin setup-type reassignments.
   await db.execute(sql`
