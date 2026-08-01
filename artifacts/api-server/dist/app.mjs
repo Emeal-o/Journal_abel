@@ -760,8 +760,8 @@ var require_depd = __commonJS({
       return deprecate;
     }
     function eehaslisteners(emitter, type) {
-      var count2 = typeof emitter.listenerCount !== "function" ? emitter.listeners(type).length : emitter.listenerCount(type);
-      return count2 > 0;
+      var count3 = typeof emitter.listenerCount !== "function" ? emitter.listeners(type).length : emitter.listenerCount(type);
+      return count3 > 0;
     }
     function isignored(namespace) {
       if (process.noDeprecation) {
@@ -18395,14 +18395,14 @@ var require_urlencoded = __commonJS({
       };
     }
     function parameterCount(body, limit) {
-      let count2 = 0;
+      let count3 = 0;
       let index = -1;
       do {
-        count2++;
-        if (count2 > limit) return void 0;
+        count3++;
+        if (count3 > limit) return void 0;
         index = body.indexOf("&", index + 1);
       } while (index !== -1);
-      return count2;
+      return count3;
     }
   }
 });
@@ -20651,27 +20651,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router8;
+    module.exports = Router9;
     module.exports.Route = Route;
-    function Router8(options) {
-      if (!(this instanceof Router8)) {
-        return new Router8(options);
+    function Router9(options) {
+      if (!(this instanceof Router9)) {
+        return new Router9(options);
       }
       const opts = options || {};
-      function router8(req, res, next) {
-        router8.handle(req, res, next);
+      function router9(req, res, next) {
+        router9.handle(req, res, next);
       }
-      Object.setPrototypeOf(router8, this);
-      router8.caseSensitive = opts.caseSensitive;
-      router8.mergeParams = opts.mergeParams;
-      router8.params = {};
-      router8.strict = opts.strict;
-      router8.stack = [];
-      return router8;
+      Object.setPrototypeOf(router9, this);
+      router9.caseSensitive = opts.caseSensitive;
+      router9.mergeParams = opts.mergeParams;
+      router9.params = {};
+      router9.strict = opts.strict;
+      router9.stack = [];
+      return router9;
     }
-    Router8.prototype = function() {
+    Router9.prototype = function() {
     };
-    Router8.prototype.param = function param(name, fn) {
+    Router9.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20691,7 +20691,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router8.prototype.handle = function handle(req, res, callback) {
+    Router9.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20818,7 +20818,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router8.prototype.use = function use(handler) {
+    Router9.prototype.use = function use(handler) {
       let offset = 0;
       let path = "/";
       if (typeof handler !== "function") {
@@ -20851,7 +20851,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router8.prototype.route = function route(path) {
+    Router9.prototype.route = function route(path) {
       const route2 = new Route(path);
       const layer = new Layer(path, {
         sensitive: this.caseSensitive,
@@ -20866,7 +20866,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router8.prototype[method] = function(path) {
+      Router9.prototype[method] = function(path) {
         const route = this.route(path);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21049,13 +21049,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router8 = require_router();
+    var Router9 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router8 = null;
+      var router9 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21064,13 +21064,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router8 === null) {
-            router8 = new Router8({
+          if (router9 === null) {
+            router9 = new Router9({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router8;
+          return router9;
         }
       });
     };
@@ -21141,15 +21141,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router8 = this.router;
+      var router9 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router8.use(path, fn2);
+          return router9.use(path, fn2);
         }
         debug(".use app under %s", path);
         fn2.mountpath = path;
         fn2.parent = this;
-        router8.use(path, function mounted_app(req, res, next) {
+        router9.use(path, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -21703,13 +21703,13 @@ var require_mediaType = __commonJS({
       return spec.q > 0;
     }
     function quoteCount(string4) {
-      var count2 = 0;
+      var count3 = 0;
       var index = 0;
       while ((index = string4.indexOf('"', index)) !== -1) {
-        count2++;
+        count3++;
         index++;
       }
-      return count2;
+      return count3;
     }
     function splitKeyValuePair(str) {
       var index = str.indexOf("=");
@@ -22423,7 +22423,7 @@ var require_cookie = __commonJS({
   "../../node_modules/.pnpm/cookie@0.7.2/node_modules/cookie/index.js"(exports) {
     "use strict";
     exports.parse = parse4;
-    exports.serialize = serialize;
+    exports.serialize = serialize2;
     var __toString = Object.prototype.toString;
     var __hasOwnProperty = Object.prototype.hasOwnProperty;
     var cookieNameRegExp = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
@@ -22482,7 +22482,7 @@ var require_cookie = __commonJS({
       }
       return min;
     }
-    function serialize(name, val, opt) {
+    function serialize2(name, val, opt) {
       var enc = opt && opt.encode || encodeURIComponent;
       if (typeof enc !== "function") {
         throw new TypeError("option encode is invalid");
@@ -23014,8 +23014,8 @@ var require_send = __commonJS({
       }
     }
     function hasListeners(emitter, type) {
-      var count2 = typeof emitter.listenerCount !== "function" ? emitter.listeners(type).length : emitter.listenerCount(type);
-      return count2 > 0;
+      var count3 = typeof emitter.listenerCount !== "function" ? emitter.listeners(type).length : emitter.listenerCount(type);
+      return count3 > 0;
     }
     function normalizeList(val, name) {
       var list = [].concat(val || []);
@@ -23722,7 +23722,7 @@ var require_express = __commonJS({
     var EventEmitter = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router8 = require_router();
+    var Router9 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23744,8 +23744,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router8.Route;
-    exports.Router = Router8;
+    exports.Route = Router9.Route;
+    exports.Router = Router9;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -26208,11 +26208,11 @@ var require_binaryParsers = __commonJS({
         var array2 = [];
         var i2;
         if (dimension.length > 1) {
-          var count2 = dimension.shift();
-          for (i2 = 0; i2 < count2; i2++) {
+          var count3 = dimension.shift();
+          for (i2 = 0; i2 < count3; i2++) {
             array2[i2] = parse4(dimension, elementType2);
           }
-          dimension.unshift(count2);
+          dimension.unshift(count3);
         } else {
           for (i2 = 0; i2 < dimension[0]; i2++) {
             array2[i2] = parseElement(elementType2);
@@ -28059,7 +28059,7 @@ var require_serializer = __commonJS({
       99
       /* code.copyDone */
     );
-    var serialize = {
+    var serialize2 = {
       startup,
       password,
       requestSsl,
@@ -28079,7 +28079,7 @@ var require_serializer = __commonJS({
       copyFail,
       cancel
     };
-    exports.serialize = serialize;
+    exports.serialize = serialize2;
   }
 });
 
@@ -28553,12 +28553,12 @@ var require_connection = __commonJS({
   "../../node_modules/.pnpm/pg@8.22.0/node_modules/pg/lib/connection.js"(exports, module) {
     "use strict";
     var EventEmitter = __require("events").EventEmitter;
-    var { parse: parse4, serialize } = require_dist3();
+    var { parse: parse4, serialize: serialize2 } = require_dist3();
     var stream = require_stream();
     var { getStream } = stream;
-    var flushBuffer = serialize.flush();
-    var syncBuffer = serialize.sync();
-    var endBuffer = serialize.end();
+    var flushBuffer = serialize2.flush();
+    var syncBuffer = serialize2.sync();
+    var endBuffer = serialize2.end();
     var Connection3 = class extends EventEmitter {
       constructor(config2) {
         super();
@@ -28662,22 +28662,22 @@ var require_connection = __commonJS({
         });
       }
       requestSsl() {
-        this.stream.write(serialize.requestSsl());
+        this.stream.write(serialize2.requestSsl());
       }
       startup(config2) {
-        this.stream.write(serialize.startup(config2));
+        this.stream.write(serialize2.startup(config2));
       }
       cancel(processID, secretKey) {
-        this._send(serialize.cancel(processID, secretKey));
+        this._send(serialize2.cancel(processID, secretKey));
       }
       password(password) {
-        this._send(serialize.password(password));
+        this._send(serialize2.password(password));
       }
       sendSASLInitialResponseMessage(mechanism, initialResponse) {
-        this._send(serialize.sendSASLInitialResponseMessage(mechanism, initialResponse));
+        this._send(serialize2.sendSASLInitialResponseMessage(mechanism, initialResponse));
       }
       sendSCRAMClientFinalMessage(additionalData) {
-        this._send(serialize.sendSCRAMClientFinalMessage(additionalData));
+        this._send(serialize2.sendSCRAMClientFinalMessage(additionalData));
       }
       _send(buffer2) {
         if (!this.stream.writable) {
@@ -28686,19 +28686,19 @@ var require_connection = __commonJS({
         return this.stream.write(buffer2);
       }
       query(text2) {
-        this._send(serialize.query(text2));
+        this._send(serialize2.query(text2));
       }
       // send parse message
       parse(query) {
-        this._send(serialize.parse(query));
+        this._send(serialize2.parse(query));
       }
       // send bind message
       bind(config2) {
-        this._send(serialize.bind(config2));
+        this._send(serialize2.bind(config2));
       }
       // send execute message
       execute(config2) {
-        this._send(serialize.execute(config2));
+        this._send(serialize2.execute(config2));
       }
       flush() {
         if (this.stream.writable) {
@@ -28726,19 +28726,19 @@ var require_connection = __commonJS({
         });
       }
       close(msg) {
-        this._send(serialize.close(msg));
+        this._send(serialize2.close(msg));
       }
       describe(msg) {
-        this._send(serialize.describe(msg));
+        this._send(serialize2.describe(msg));
       }
       sendCopyFromChunk(chunk) {
-        this._send(serialize.copyData(chunk));
+        this._send(serialize2.copyData(chunk));
       }
       endCopyFrom() {
-        this._send(serialize.copyDone());
+        this._send(serialize2.copyDone());
       }
       sendCopyFail(msg) {
-        this._send(serialize.copyFail(msg));
+        this._send(serialize2.copyFail(msg));
       }
     };
     module.exports = Connection3;
@@ -31827,7 +31827,7 @@ var require_redact = __commonJS({
       const {
         paths = [],
         censor = "[REDACTED]",
-        serialize = JSON.stringify,
+        serialize: serialize2 = JSON.stringify,
         strict = true,
         remove = false
       } = options;
@@ -31836,10 +31836,10 @@ var require_redact = __commonJS({
       return function redact(obj) {
         if (strict && (obj === null || typeof obj !== "object")) {
           if (obj === null || obj === void 0) {
-            return serialize ? serialize(obj) : obj;
+            return serialize2 ? serialize2(obj) : obj;
           }
           if (typeof obj !== "object") {
-            return serialize ? serialize(obj) : obj;
+            return serialize2 ? serialize2(obj) : obj;
           }
         }
         const cloned = selectiveClone(obj, pathStructure);
@@ -31849,14 +31849,14 @@ var require_redact = __commonJS({
           actualCensor = censor;
         }
         redactPaths(cloned, paths, actualCensor, remove);
-        if (serialize === false) {
+        if (serialize2 === false) {
           cloned.restore = function() {
             return deepClone(original);
           };
           return cloned;
         }
-        if (typeof serialize === "function") {
-          return serialize(cloned);
+        if (typeof serialize2 === "function") {
+          return serialize2(cloned);
         }
         return JSON.stringify(cloned);
       };
@@ -31945,7 +31945,7 @@ var require_redaction = __commonJS({
     var rx = /[^.[\]]+|\[([^[\]]*?)\]/g;
     var CENSOR = "[Redacted]";
     var strict = false;
-    function redaction(opts, serialize) {
+    function redaction(opts, serialize2) {
       const { paths, censor, remove } = handle(opts);
       const shape = paths.reduce((o, str) => {
         rx.lastIndex = 0;
@@ -31979,10 +31979,10 @@ var require_redaction = __commonJS({
         return o;
       }, {});
       const result = {
-        [redactFmtSym]: Redact({ paths, censor, serialize, strict, remove })
+        [redactFmtSym]: Redact({ paths, censor, serialize: serialize2, strict, remove })
       };
       const topCensor = (...args) => {
-        return typeof censor === "function" ? serialize(censor(...args)) : serialize(censor);
+        return typeof censor === "function" ? serialize2(censor(...args)) : serialize2(censor);
       };
       return [...Object.keys(shape), ...Object.getOwnPropertySymbols(shape)].reduce((o, k) => {
         if (shape[k] === null) {
@@ -31994,7 +31994,7 @@ var require_redaction = __commonJS({
           o[k] = Redact({
             paths: shape[k],
             censor: wrappedCensor,
-            serialize,
+            serialize: serialize2,
             strict,
             remove
           });
@@ -37514,7 +37514,7 @@ var require_ip_address = __commonJS({
 });
 
 // src/app.ts
-var import_express8 = __toESM(require_express2(), 1);
+var import_express9 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_express_session = __toESM(require_express_session(), 1);
 var import_connect_pg_simple = __toESM(require_connect_pg_simple(), 1);
@@ -39944,6 +39944,9 @@ function iife(fn, ...args) {
 }
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0_postgres@3.4.9/node_modules/drizzle-orm/pg-core/unique-constraint.js
+function unique(name) {
+  return new UniqueOnConstraintBuilder(name);
+}
 function uniqueKeyName(table, columns) {
   return `${table[TableName]}_${columns.join("_")}_unique`;
 }
@@ -43056,6 +43059,11 @@ function mapRelationalRow(tablesConfig, tableConfig, row, buildQueryResultSelect
     }
   }
   return result;
+}
+
+// ../../node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0_postgres@3.4.9/node_modules/drizzle-orm/sql/functions/aggregate.js
+function count(expression) {
+  return sql`count(${expression || sql.raw("*")})`.mapWith(Number);
 }
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0_postgres@3.4.9/node_modules/drizzle-orm/pg-core/view-base.js
@@ -46535,6 +46543,8 @@ __export(schema_exports, {
   insertTradeSchema: () => insertTradeSchema,
   insertWeekSchema: () => insertWeekSchema,
   loginEventsTable: () => loginEventsTable,
+  setupTypeChangeLogTable: () => setupTypeChangeLogTable,
+  setupTypesTable: () => setupTypesTable,
   tradesTable: () => tradesTable,
   usersTable: () => usersTable,
   weeksTable: () => weeksTable
@@ -50382,8 +50392,8 @@ function az_default() {
 }
 
 // ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v4/locales/be.js
-function getBelarusianPlural(count2, one, few, many) {
-  const absCount = Math.abs(count2);
+function getBelarusianPlural(count3, one, few, many) {
+  const absCount = Math.abs(count3);
   const lastDigit = absCount % 10;
   const lastTwoDigits = absCount % 100;
   if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
@@ -53528,8 +53538,8 @@ function pt_default() {
 }
 
 // ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v4/locales/ru.js
-function getRussianPlural(count2, one, few, many) {
-  const absCount = Math.abs(count2);
+function getRussianPlural(count3, one, few, many) {
+  const absCount = Math.abs(count3);
   const lastDigit = absCount % 10;
   const lastTwoDigits = absCount % 100;
   if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
@@ -57961,6 +57971,19 @@ var insertWeekSchema = createInsertSchema(weeksTable).omit({
   monthIndex: true
 });
 
+// ../../lib/db/src/schema/setup-types.ts
+var setupTypesTable = pgTable("setup_types", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => usersTable.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
+  // hex string e.g. "#3B82F6"
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+}, (t) => ({
+  uniqueUserIdName: unique("setup_types_user_id_name_key").on(t.userId, t.name)
+}));
+
 // ../../lib/db/src/schema/trades.ts
 var tradesTable = pgTable("trades", {
   id: serial("id").primaryKey(),
@@ -57973,6 +57996,7 @@ var tradesTable = pgTable("trades", {
   pips: real("pips").notNull(),
   notes: text("notes"),
   flagEmoji: text("flag_emoji"),
+  setupTypeId: integer("setup_type_id").references(() => setupTypesTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 var insertTradeSchema = createInsertSchema(tradesTable).omit({ id: true, tradeNumber: true, createdAt: true, userId: true });
@@ -57984,6 +58008,16 @@ var loginEventsTable = pgTable("login_events", {
   ipAddress: text("ip_address").notNull(),
   success: boolean("success").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// ../../lib/db/src/schema/setup-type-change-log.ts
+var setupTypeChangeLogTable = pgTable("setup_type_change_log", {
+  id: serial("id").primaryKey(),
+  tradeId: integer("trade_id").references(() => tradesTable.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => usersTable.id, { onDelete: "cascade" }).notNull(),
+  oldSetupTypeId: integer("old_setup_type_id").references(() => setupTypesTable.id, { onDelete: "set null" }),
+  newSetupTypeId: integer("new_setup_type_id").references(() => setupTypesTable.id, { onDelete: "set null" }),
+  changedAt: timestamp("changed_at").defaultNow().notNull()
 });
 
 // ../../lib/db/src/index.ts
@@ -58029,7 +58063,7 @@ var pool = new Pool2(buildPgPoolConfig());
 var db = drizzle(createQueryClient(), { schema: schema_exports });
 
 // src/routes/index.ts
-var import_express7 = __toESM(require_express2(), 1);
+var import_express8 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -63269,6 +63303,102 @@ router3.get("/admin/login-events", requireAdmin, async (_req, res) => {
   }).from(loginEventsTable).orderBy(desc(loginEventsTable.createdAt)).limit(50);
   res.json(events);
 });
+router3.get("/admin/setup-type-change-log", requireAdmin, async (_req, res) => {
+  const rows = await db.execute(sql`
+    SELECT
+      l.id,
+      l.user_id           AS "userId",
+      l.trade_id          AS "tradeId",
+      l.old_setup_type_id AS "oldSetupTypeId",
+      l.new_setup_type_id AS "newSetupTypeId",
+      l.changed_at        AS "changedAt",
+      t.trade_number      AS "tradeNumber",
+      w.label             AS "weekLabel",
+      old_st.name         AS "oldName",
+      new_st.name         AS "newName"
+    FROM setup_type_change_log l
+    JOIN   trades      t      ON t.id      = l.trade_id
+    JOIN   weeks       w      ON w.id      = t.week_id
+    LEFT JOIN setup_types old_st ON old_st.id = l.old_setup_type_id
+    LEFT JOIN setup_types new_st ON new_st.id = l.new_setup_type_id
+    ORDER BY l.changed_at DESC
+    LIMIT 100
+  `);
+  res.json(Array.from(rows).map((r) => ({
+    ...r,
+    changedAt: r.changedAt instanceof Date ? r.changedAt.toISOString() : r.changedAt
+  })));
+});
+router3.get("/admin/users/:userId/trades", requireAdmin, async (req, res) => {
+  const userId = Number(req.params.userId);
+  if (!Number.isInteger(userId) || userId < 1) {
+    res.status(400).json({ error: "Invalid user id." });
+    return;
+  }
+  const trades = await db.select({
+    id: tradesTable.id,
+    tradeNumber: tradesTable.tradeNumber,
+    result: tradesTable.result,
+    setupTypeId: tradesTable.setupTypeId,
+    weekId: weeksTable.id,
+    weekLabel: weeksTable.label,
+    archivedAt: weeksTable.archivedAt,
+    setupTypeName: setupTypesTable.name
+  }).from(tradesTable).innerJoin(weeksTable, eq(weeksTable.id, tradesTable.weekId)).leftJoin(setupTypesTable, eq(setupTypesTable.id, tradesTable.setupTypeId)).where(eq(tradesTable.userId, userId)).orderBy(desc(weeksTable.startDate), tradesTable.tradeNumber);
+  res.json(trades.map((t) => ({
+    ...t,
+    archivedAt: t.archivedAt ? t.archivedAt.toISOString() : null
+  })));
+});
+router3.get("/admin/users/:userId/setup-types", requireAdmin, async (req, res) => {
+  const userId = Number(req.params.userId);
+  if (!Number.isInteger(userId) || userId < 1) {
+    res.status(400).json({ error: "Invalid user id." });
+    return;
+  }
+  const setupTypes = await db.select({
+    id: setupTypesTable.id,
+    name: setupTypesTable.name,
+    color: setupTypesTable.color,
+    active: setupTypesTable.active
+  }).from(setupTypesTable).where(eq(setupTypesTable.userId, userId)).orderBy(setupTypesTable.name);
+  res.json(setupTypes);
+});
+router3.patch("/admin/trades/:tradeId/setup-type", requireAdmin, async (req, res) => {
+  const tradeId = Number(req.params.tradeId);
+  if (!Number.isInteger(tradeId) || tradeId < 1) {
+    res.status(400).json({ error: "Invalid trade id." });
+    return;
+  }
+  const { newSetupTypeId: rawNew } = req.body;
+  let newSetupTypeId;
+  if (rawNew === null || rawNew === void 0) {
+    newSetupTypeId = null;
+  } else {
+    const parsed = Number(rawNew);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      res.status(400).json({ error: "newSetupTypeId must be a positive integer or null." });
+      return;
+    }
+    newSetupTypeId = parsed;
+  }
+  const [trade] = await db.select({ id: tradesTable.id, userId: tradesTable.userId, setupTypeId: tradesTable.setupTypeId }).from(tradesTable).where(eq(tradesTable.id, tradeId));
+  if (!trade) {
+    res.status(404).json({ error: "Trade not found." });
+    return;
+  }
+  if (newSetupTypeId !== null) {
+    const [setupType] = await db.select({ id: setupTypesTable.id }).from(setupTypesTable).where(and(eq(setupTypesTable.id, newSetupTypeId), eq(setupTypesTable.userId, trade.userId)));
+    if (!setupType) {
+      res.status(400).json({ error: "Invalid setupTypeId: setup type does not belong to this trade's owner." });
+      return;
+    }
+  }
+  const oldSetupTypeId = trade.setupTypeId ?? null;
+  await db.update(tradesTable).set({ setupTypeId: newSetupTypeId }).where(eq(tradesTable.id, tradeId));
+  await db.insert(setupTypeChangeLogTable).values({ tradeId, userId: trade.userId, oldSetupTypeId, newSetupTypeId });
+  res.json({ ok: true, tradeId, userId: trade.userId, oldSetupTypeId, newSetupTypeId });
+});
 var admin_default = router3;
 
 // src/routes/weeks.ts
@@ -63418,6 +63548,21 @@ router5.post("/trades", requireAuth, async (req, res) => {
     res.status(404).json({ error: "Week not found" });
     return;
   }
+  let setupTypeId = null;
+  const rawSetupTypeId = req.body.setupTypeId;
+  if (rawSetupTypeId !== void 0 && rawSetupTypeId !== null) {
+    const parsed = Number(rawSetupTypeId);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      res.status(400).json({ error: "setupTypeId must be a positive integer." });
+      return;
+    }
+    const [setupType] = await db.select({ id: setupTypesTable.id }).from(setupTypesTable).where(and(eq(setupTypesTable.id, parsed), eq(setupTypesTable.userId, userId)));
+    if (!setupType) {
+      res.status(400).json({ error: "Invalid setupTypeId." });
+      return;
+    }
+    setupTypeId = parsed;
+  }
   const existingTrades = await db.select({ id: tradesTable.id }).from(tradesTable).where(and(eq(tradesTable.weekId, body.weekId), eq(tradesTable.userId, userId)));
   const tradeNumber = existingTrades.length + 1;
   const [trade] = await db.insert(tradesTable).values({
@@ -63428,7 +63573,8 @@ router5.post("/trades", requireAuth, async (req, res) => {
     rrr: body.rrr,
     pips: body.pips,
     notes: body.notes ?? null,
-    flagEmoji: body.flagEmoji ?? null
+    flagEmoji: body.flagEmoji ?? null,
+    setupTypeId
   }).returning();
   res.status(201).json({ ...trade, createdAt: trade.createdAt.toISOString() });
 });
@@ -63446,6 +63592,25 @@ router5.patch("/trades/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { id } = UpdateTradeParams.parse({ id: Number(req.params.id) });
   const body = UpdateTradeBody.parse(req.body);
+  let patchSetupTypeId = void 0;
+  const rawSetupTypeId = req.body.setupTypeId;
+  if (rawSetupTypeId !== void 0) {
+    if (rawSetupTypeId === null) {
+      patchSetupTypeId = null;
+    } else {
+      const parsed = Number(rawSetupTypeId);
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        res.status(400).json({ error: "setupTypeId must be a positive integer or null." });
+        return;
+      }
+      const [setupType] = await db.select({ id: setupTypesTable.id }).from(setupTypesTable).where(and(eq(setupTypesTable.id, parsed), eq(setupTypesTable.userId, userId)));
+      if (!setupType) {
+        res.status(400).json({ error: "Invalid setupTypeId." });
+        return;
+      }
+      patchSetupTypeId = parsed;
+    }
+  }
   const [existing] = await db.select({ id: tradesTable.id, weekId: tradesTable.weekId }).from(tradesTable).where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId)));
   if (!existing) {
     res.status(404).json({ error: "Not found" });
@@ -63456,7 +63621,8 @@ router5.patch("/trades/:id", requireAuth, async (req, res) => {
     res.status(403).json({ error: "Cannot modify trades in an archived week." });
     return;
   }
-  const [trade] = await db.update(tradesTable).set({ ...body }).where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId))).returning();
+  const updateFields = patchSetupTypeId !== void 0 ? { ...body, setupTypeId: patchSetupTypeId } : { ...body };
+  const [trade] = await db.update(tradesTable).set(updateFields).where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId))).returning();
   if (!trade) {
     res.status(404).json({ error: "Not found" });
     return;
@@ -63764,15 +63930,110 @@ router6.get("/stats/streak", requireAuth, async (req, res) => {
 });
 var stats_default = router6;
 
-// src/routes/index.ts
+// src/routes/setup-types.ts
+var import_express7 = __toESM(require_express2(), 1);
+var PALETTE = [
+  "#3B82F6",
+  // blue-500
+  "#06B6D4",
+  // cyan-500
+  "#8B5CF6",
+  // violet-500
+  "#6366F1",
+  // indigo-500
+  "#0EA5E9",
+  // sky-500
+  "#14B8A6",
+  // teal-500
+  "#A855F7",
+  // purple-500
+  "#22D3EE",
+  // cyan-400
+  "#818CF8",
+  // indigo-400
+  "#7C3AED",
+  // violet-600
+  "#0284C7",
+  // sky-600
+  "#0D9488",
+  // teal-600
+  "#4F46E5",
+  // indigo-600
+  "#2563EB",
+  // blue-600
+  "#7E22CE",
+  // purple-700
+  "#0891B2"
+  // cyan-600
+];
+var MAX_ACTIVE = 10;
 var router7 = (0, import_express7.Router)();
-router7.use(health_default);
-router7.use(auth_default);
-router7.use(admin_default);
-router7.use(weeks_default);
-router7.use(trades_default);
-router7.use(stats_default);
-var routes_default = router7;
+function serialize(t) {
+  return { ...t, createdAt: t.createdAt.toISOString() };
+}
+router7.get("/setup-types", requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const types3 = await db.select().from(setupTypesTable).where(and(eq(setupTypesTable.userId, userId), eq(setupTypesTable.active, true))).orderBy(setupTypesTable.createdAt);
+  res.json(types3.map(serialize));
+});
+router7.post("/setup-types", requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const { name: rawName } = req.body;
+  if (typeof rawName !== "string" || rawName.trim().length === 0 || rawName.length > 50) {
+    res.status(400).json({ error: "name is required and must be 1\u201350 characters." });
+    return;
+  }
+  const name = rawName.trim();
+  const [existing] = await db.select().from(setupTypesTable).where(and(eq(setupTypesTable.userId, userId), eq(setupTypesTable.name, name)));
+  if (existing) {
+    if (existing.active) {
+      res.status(409).json({ error: "A setup type with that name already exists." });
+      return;
+    }
+    const [reactivated] = await db.update(setupTypesTable).set({ active: true }).where(eq(setupTypesTable.id, existing.id)).returning();
+    res.status(200).json(serialize(reactivated));
+    return;
+  }
+  const [{ activeCount }] = await db.select({ activeCount: count() }).from(setupTypesTable).where(and(eq(setupTypesTable.userId, userId), eq(setupTypesTable.active, true)));
+  if (activeCount >= MAX_ACTIVE) {
+    res.status(422).json({
+      error: `You can have at most ${MAX_ACTIVE} active setup types. Remove one before adding a new one.`
+    });
+    return;
+  }
+  const activeTypes = await db.select({ color: setupTypesTable.color }).from(setupTypesTable).where(and(eq(setupTypesTable.userId, userId), eq(setupTypesTable.active, true)));
+  const usedColors = new Set(activeTypes.map((t) => t.color));
+  const color = PALETTE.find((c) => !usedColors.has(c)) ?? PALETTE[activeCount % PALETTE.length];
+  const [created] = await db.insert(setupTypesTable).values({ userId, name, color, active: true }).returning();
+  res.status(201).json(serialize(created));
+});
+router7.delete("/setup-types/:id", requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+  const [existing] = await db.select({ id: setupTypesTable.id }).from(setupTypesTable).where(and(eq(setupTypesTable.id, id), eq(setupTypesTable.userId, userId)));
+  if (!existing) {
+    res.status(404).json({ error: "Not found." });
+    return;
+  }
+  await db.update(setupTypesTable).set({ active: false }).where(eq(setupTypesTable.id, id));
+  res.status(204).send();
+});
+var setup_types_default = router7;
+
+// src/routes/index.ts
+var router8 = (0, import_express8.Router)();
+router8.use(health_default);
+router8.use(auth_default);
+router8.use(admin_default);
+router8.use(weeks_default);
+router8.use(trades_default);
+router8.use(stats_default);
+router8.use(setup_types_default);
+var routes_default = router8;
 
 // src/lib/logger.ts
 var import_pino = __toESM(require_pino(), 1);
@@ -63793,7 +64054,7 @@ var logger = (0, import_pino.default)({
 });
 
 // src/app.ts
-var app = (0, import_express8.default)();
+var app = (0, import_express9.default)();
 app.set("trust proxy", 1);
 app.use(
   (0, import_pino_http.pinoHttp)({
@@ -63828,8 +64089,8 @@ app.use(
   })
 );
 app.use((0, import_cookie_parser.default)());
-app.use(import_express8.default.json());
-app.use(import_express8.default.urlencoded({ extended: true }));
+app.use(import_express9.default.json());
+app.use(import_express9.default.urlencoded({ extended: true }));
 var UNSAFE_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
 app.use((req, res, next) => {
   if (process.env.NODE_ENV !== "production") return next();

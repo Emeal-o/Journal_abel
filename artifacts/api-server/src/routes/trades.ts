@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, count, desc, and } from "drizzle-orm";
-import { db, tradesTable, weeksTable, type Trade } from "@workspace/db";
+import { db, tradesTable, weeksTable, setupTypesTable, type Trade } from "@workspace/db";
 import {
   CreateTradeBody,
   GetTradeParams,
@@ -56,6 +56,28 @@ router.post("/trades", requireAuth, async (req, res) => {
     .where(and(eq(weeksTable.id, body.weekId), eq(weeksTable.userId, userId)));
   if (!week) { res.status(404).json({ error: "Week not found" }); return; }
 
+  // Read setupTypeId defensively from raw body — not part of the generated schema.
+  // Must be a positive integer or absent/null.
+  let setupTypeId: number | null = null;
+  const rawSetupTypeId = (req.body as Record<string, unknown>).setupTypeId;
+  if (rawSetupTypeId !== undefined && rawSetupTypeId !== null) {
+    const parsed = Number(rawSetupTypeId);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      res.status(400).json({ error: "setupTypeId must be a positive integer." });
+      return;
+    }
+    // Verify ownership — must belong to this user
+    const [setupType] = await db
+      .select({ id: setupTypesTable.id })
+      .from(setupTypesTable)
+      .where(and(eq(setupTypesTable.id, parsed), eq(setupTypesTable.userId, userId)));
+    if (!setupType) {
+      res.status(400).json({ error: "Invalid setupTypeId." });
+      return;
+    }
+    setupTypeId = parsed;
+  }
+
   // Auto-increment trade number within the week for this user
   const existingTrades = await db
     .select({ id: tradesTable.id })
@@ -72,6 +94,7 @@ router.post("/trades", requireAuth, async (req, res) => {
     pips: body.pips,
     notes: body.notes ?? null,
     flagEmoji: body.flagEmoji ?? null,
+    setupTypeId,
   }).returning();
   res.status(201).json({ ...trade!, createdAt: trade!.createdAt.toISOString() });
 });
@@ -92,6 +115,32 @@ router.patch("/trades/:id", requireAuth, async (req, res) => {
   const { id } = UpdateTradeParams.parse({ id: Number(req.params.id) });
   const body = UpdateTradeBody.parse(req.body);
 
+  // Read setupTypeId defensively from raw body — not part of the generated schema.
+  // undefined = not provided (leave unchanged); null = clear it; number = set it.
+  let patchSetupTypeId: number | null | undefined = undefined;
+  const rawSetupTypeId = (req.body as Record<string, unknown>).setupTypeId;
+  if (rawSetupTypeId !== undefined) {
+    if (rawSetupTypeId === null) {
+      patchSetupTypeId = null;
+    } else {
+      const parsed = Number(rawSetupTypeId);
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        res.status(400).json({ error: "setupTypeId must be a positive integer or null." });
+        return;
+      }
+      // Verify ownership — must belong to this user
+      const [setupType] = await db
+        .select({ id: setupTypesTable.id })
+        .from(setupTypesTable)
+        .where(and(eq(setupTypesTable.id, parsed), eq(setupTypesTable.userId, userId)));
+      if (!setupType) {
+        res.status(400).json({ error: "Invalid setupTypeId." });
+        return;
+      }
+      patchSetupTypeId = parsed;
+    }
+  }
+
   // Verify ownership and that the parent week isn't archived before mutating
   const [existing] = await db
     .select({ id: tradesTable.id, weekId: tradesTable.weekId })
@@ -108,9 +157,13 @@ router.patch("/trades/:id", requireAuth, async (req, res) => {
     return;
   }
 
+  const updateFields = patchSetupTypeId !== undefined
+    ? { ...body, setupTypeId: patchSetupTypeId }
+    : { ...body };
+
   const [trade] = await db
     .update(tradesTable)
-    .set({ ...body })
+    .set(updateFields)
     .where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId)))
     .returning();
   if (!trade) { res.status(404).json({ error: "Not found" }); return; }

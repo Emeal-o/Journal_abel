@@ -33,6 +33,37 @@ export interface LoginEvent {
   createdAt: string;
 }
 
+export interface SetupTypeChangeLogEntry {
+  id: number;
+  userId: number;
+  tradeId: number;
+  tradeNumber: number;
+  weekLabel: string;
+  oldSetupTypeId: number | null;
+  oldName: string | null;
+  newSetupTypeId: number | null;
+  newName: string | null;
+  changedAt: string;
+}
+
+export interface AdminTrade {
+  id: number;
+  tradeNumber: number;
+  result: string;
+  setupTypeId: number | null;
+  setupTypeName: string | null;
+  weekId: number;
+  weekLabel: string;
+  archivedAt: string | null;
+}
+
+export interface AdminSetupType {
+  id: number;
+  name: string;
+  color: string;
+  active: boolean;
+}
+
 /** True if the browser currently holds a valid admin session. */
 export async function getAdminSession(): Promise<boolean> {
   const res = await adminFetch("/api/admin/me");
@@ -93,4 +124,46 @@ export async function listAdminLoginEvents(): Promise<LoginEvent[]> {
     throw new Error(await parseErrorMessage(res, "Failed to load login events."));
   }
   return res.json() as Promise<LoginEvent[]>;
+}
+
+/** Returns the 100 most recent setup type reassignments, newest first. */
+export async function listSetupTypeChangeLog(): Promise<SetupTypeChangeLogEntry[]> {
+  const res = await adminFetch("/api/admin/setup-type-change-log");
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, "Failed to load setup type change log."));
+  }
+  return res.json() as Promise<SetupTypeChangeLogEntry[]>;
+}
+
+/** Returns all trades for a user, with week label and current setup type name. */
+export async function listAdminUserTrades(userId: number): Promise<AdminTrade[]> {
+  const res = await adminFetch(`/api/admin/users/${userId}/trades`);
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, "Failed to load trades."));
+  }
+  return res.json() as Promise<AdminTrade[]>;
+}
+
+/** Returns all setup types (active and inactive) for a user. */
+export async function listAdminUserSetupTypes(userId: number): Promise<AdminSetupType[]> {
+  const res = await adminFetch(`/api/admin/users/${userId}/setup-types`);
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, "Failed to load setup types."));
+  }
+  return res.json() as Promise<AdminSetupType[]>;
+}
+
+/** Reassigns the setup type on a trade (admin-only). Pass null to clear. */
+export async function adminUpdateTradeSetupType(
+  tradeId: number,
+  newSetupTypeId: number | null,
+): Promise<void> {
+  const res = await adminFetch(`/api/admin/trades/${tradeId}/setup-type`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ newSetupTypeId }),
+  });
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, "Failed to update setup type."));
+  }
 }

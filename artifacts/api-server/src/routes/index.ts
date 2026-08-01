@@ -5,6 +5,7 @@ import adminRouter from "./admin.js";
 import weeksRouter from "./weeks.js";
 import tradesRouter from "./trades.js";
 import statsRouter from "./stats.js";
+import setupTypesRouter from "./setup-types.js";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(adminRouter);
 router.use(weeksRouter);
 router.use(tradesRouter);
 router.use(statsRouter);
+router.use(setupTypesRouter);
 
 export default router;
