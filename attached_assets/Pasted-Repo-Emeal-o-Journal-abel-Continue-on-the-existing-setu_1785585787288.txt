@@ -1,0 +1,21 @@
+Repo: Emeal-o/Journal_abel. Continue on the existing setup-types branch. Do NOT push to or merge into main.
+
+This adds a NEW, narrowly-scoped admin capability: the ability for an admin to change which setup type an ARCHIVED trade is tagged with. This is the only field on archived trades that will ever be admin-editable — result, RRR, pips, notes, and all other archived trade fields remain fully locked with no override, exactly as they are today. Do not add editability to any other archived field.
+
+1. New audit table `setup_type_change_log`: id, tradeId (FK to trades), userId (the trade owner), oldSetupTypeId (nullable), newSetupTypeId (nullable), changedAt (timestamp, default now). Add via the existing idempotent startup migration pattern.
+
+2. New admin-only endpoint (protected by the existing requireAdmin middleware, same pattern as other admin routes): PATCH /api/admin/trades/:tradeId/setup-type, accepting a newSetupTypeId (or null to clear). This endpoint:
+- Works on any trade, active or archived (archived is the main use case, since active trades already support editing setupTypeId through the normal trade edit endpoint)
+- Validates the trade exists
+- Validates the new setupTypeId (if not null) belongs to the SAME user who owns the trade (setup types are per-user — an admin cannot assign a trade to a setup type belonging to a different user)
+- Updates trades.setupTypeId to the new value
+- Inserts a row into setup_type_change_log recording the tradeId, the trade's userId, the old setupTypeId, the new setupTypeId, and the current timestamp
+- Does NOT touch any other field on the trade
+
+3. Add a small section to the existing admin dashboard showing the setup type change history: for each log entry, show which user, which trade (enough context to identify it — e.g. week label + trade number), the old setup type name, the new setup type name, and when the change was made. Sort by most recent first. Follow the existing visual/table pattern already used for the admin dashboard's login history section.
+
+4. Add a simple way for the admin to actually perform this action from the admin dashboard: a way to locate a specific trade (e.g. by selecting a user then browsing their trades, reusing existing admin data-fetching patterns) and a dropdown of that user's setup types (active and inactive) to reassign it to, with a confirm action that calls the endpoint above.
+
+Do not build any user-facing self-serve version of this — it must only be accessible through the admin dashboard, admin-only. Do not add override capability for any other trade field.
+
+After finishing, restart both services, confirm they start cleanly, then commit and confirm the commit landed (show git log). Report back on what was completed.

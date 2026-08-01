@@ -46543,6 +46543,7 @@ __export(schema_exports, {
   insertTradeSchema: () => insertTradeSchema,
   insertWeekSchema: () => insertWeekSchema,
   loginEventsTable: () => loginEventsTable,
+  setupTypeChangeLogTable: () => setupTypeChangeLogTable,
   setupTypesTable: () => setupTypesTable,
   tradesTable: () => tradesTable,
   usersTable: () => usersTable,
@@ -58009,6 +58010,16 @@ var loginEventsTable = pgTable("login_events", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
+// ../../lib/db/src/schema/setup-type-change-log.ts
+var setupTypeChangeLogTable = pgTable("setup_type_change_log", {
+  id: serial("id").primaryKey(),
+  tradeId: integer("trade_id").references(() => tradesTable.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => usersTable.id, { onDelete: "cascade" }).notNull(),
+  oldSetupTypeId: integer("old_setup_type_id").references(() => setupTypesTable.id, { onDelete: "set null" }),
+  newSetupTypeId: integer("new_setup_type_id").references(() => setupTypesTable.id, { onDelete: "set null" }),
+  changedAt: timestamp("changed_at").defaultNow().notNull()
+});
+
 // ../../lib/db/src/index.ts
 var { Pool: Pool2 } = esm_default;
 if (!process.env.DATABASE_URL && !process.env.PGHOST) {
@@ -63291,6 +63302,102 @@ router3.get("/admin/login-events", requireAdmin, async (_req, res) => {
     createdAt: loginEventsTable.createdAt
   }).from(loginEventsTable).orderBy(desc(loginEventsTable.createdAt)).limit(50);
   res.json(events);
+});
+router3.get("/admin/setup-type-change-log", requireAdmin, async (_req, res) => {
+  const rows = await db.execute(sql`
+    SELECT
+      l.id,
+      l.user_id           AS "userId",
+      l.trade_id          AS "tradeId",
+      l.old_setup_type_id AS "oldSetupTypeId",
+      l.new_setup_type_id AS "newSetupTypeId",
+      l.changed_at        AS "changedAt",
+      t.trade_number      AS "tradeNumber",
+      w.label             AS "weekLabel",
+      old_st.name         AS "oldName",
+      new_st.name         AS "newName"
+    FROM setup_type_change_log l
+    JOIN   trades      t      ON t.id      = l.trade_id
+    JOIN   weeks       w      ON w.id      = t.week_id
+    LEFT JOIN setup_types old_st ON old_st.id = l.old_setup_type_id
+    LEFT JOIN setup_types new_st ON new_st.id = l.new_setup_type_id
+    ORDER BY l.changed_at DESC
+    LIMIT 100
+  `);
+  res.json(Array.from(rows).map((r) => ({
+    ...r,
+    changedAt: r.changedAt instanceof Date ? r.changedAt.toISOString() : r.changedAt
+  })));
+});
+router3.get("/admin/users/:userId/trades", requireAdmin, async (req, res) => {
+  const userId = Number(req.params.userId);
+  if (!Number.isInteger(userId) || userId < 1) {
+    res.status(400).json({ error: "Invalid user id." });
+    return;
+  }
+  const trades = await db.select({
+    id: tradesTable.id,
+    tradeNumber: tradesTable.tradeNumber,
+    result: tradesTable.result,
+    setupTypeId: tradesTable.setupTypeId,
+    weekId: weeksTable.id,
+    weekLabel: weeksTable.label,
+    archivedAt: weeksTable.archivedAt,
+    setupTypeName: setupTypesTable.name
+  }).from(tradesTable).innerJoin(weeksTable, eq(weeksTable.id, tradesTable.weekId)).leftJoin(setupTypesTable, eq(setupTypesTable.id, tradesTable.setupTypeId)).where(eq(tradesTable.userId, userId)).orderBy(desc(weeksTable.startDate), tradesTable.tradeNumber);
+  res.json(trades.map((t) => ({
+    ...t,
+    archivedAt: t.archivedAt ? t.archivedAt.toISOString() : null
+  })));
+});
+router3.get("/admin/users/:userId/setup-types", requireAdmin, async (req, res) => {
+  const userId = Number(req.params.userId);
+  if (!Number.isInteger(userId) || userId < 1) {
+    res.status(400).json({ error: "Invalid user id." });
+    return;
+  }
+  const setupTypes = await db.select({
+    id: setupTypesTable.id,
+    name: setupTypesTable.name,
+    color: setupTypesTable.color,
+    active: setupTypesTable.active
+  }).from(setupTypesTable).where(eq(setupTypesTable.userId, userId)).orderBy(setupTypesTable.name);
+  res.json(setupTypes);
+});
+router3.patch("/admin/trades/:tradeId/setup-type", requireAdmin, async (req, res) => {
+  const tradeId = Number(req.params.tradeId);
+  if (!Number.isInteger(tradeId) || tradeId < 1) {
+    res.status(400).json({ error: "Invalid trade id." });
+    return;
+  }
+  const { newSetupTypeId: rawNew } = req.body;
+  let newSetupTypeId;
+  if (rawNew === null || rawNew === void 0) {
+    newSetupTypeId = null;
+  } else {
+    const parsed = Number(rawNew);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      res.status(400).json({ error: "newSetupTypeId must be a positive integer or null." });
+      return;
+    }
+    newSetupTypeId = parsed;
+  }
+  const [trade] = await db.select({ id: tradesTable.id, userId: tradesTable.userId, setupTypeId: tradesTable.setupTypeId }).from(tradesTable).where(eq(tradesTable.id, tradeId));
+  if (!trade) {
+    res.status(404).json({ error: "Trade not found." });
+    return;
+  }
+  if (newSetupTypeId !== null) {
+    const [setupType] = await db.select({ id: setupTypesTable.id }).from(setupTypesTable).where(and(eq(setupTypesTable.id, newSetupTypeId), eq(setupTypesTable.userId, trade.userId)));
+    if (!setupType) {
+      res.status(400).json({ error: "Invalid setupTypeId: setup type does not belong to this trade's owner." });
+      return;
+    }
+  }
+  const oldSetupTypeId = trade.setupTypeId ?? null;
+  await db.update(tradesTable).set({ setupTypeId: newSetupTypeId }).where(eq(tradesTable.id, tradeId));
+  await db.insert(setupTypeChangeLogTable).values({ tradeId, userId: trade.userId, oldSetupTypeId, newSetupTypeId });
+  res.json({ ok: true, tradeId, userId: trade.userId, oldSetupTypeId, newSetupTypeId });
 });
 var admin_default = router3;
 

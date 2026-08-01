@@ -77,6 +77,18 @@ async function runStartupMigrations() {
         REFERENCES setup_types(id) ON DELETE SET NULL
   `);
 
+  // setup_type_change_log — audit trail for admin setup-type reassignments.
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS setup_type_change_log (
+      id                SERIAL  PRIMARY KEY,
+      trade_id          INTEGER REFERENCES trades(id) ON DELETE CASCADE NOT NULL,
+      user_id           INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+      old_setup_type_id INTEGER REFERENCES setup_types(id) ON DELETE SET NULL,
+      new_setup_type_id INTEGER REFERENCES setup_types(id) ON DELETE SET NULL,
+      changed_at        TIMESTAMP DEFAULT NOW() NOT NULL
+    )
+  `);
+
   // Backfill: for already-archived weeks with no month_index yet, group by
   // (user_id, month_label), order each user's groups chronologically by the
   // earliest created_at in the group, and assign sequential integers 1, 2, 3...
