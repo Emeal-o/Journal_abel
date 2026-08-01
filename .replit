@@ -42,7 +42,8 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pnpm --filter @workspace/trading-journal run dev"
+args = "PORT=21194 BASE_PATH=/ pnpm --filter @workspace/trading-journal run dev"
+waitForPort = 21194
 
 [agent]
 stack = "PNPM_WORKSPACE"
