@@ -11,8 +11,9 @@ import {
   TrendingDown, 
   Minus 
 } from "lucide-react";
-import { Week, TradeResult, Trade } from "@workspace/api-client-react";
+import { Week, TradeResult } from "@workspace/api-client-react";
 import { useSetupTypes, type SetupType } from "@/lib/setup-types-api";
+import type { TradeWithSetupType } from "@/lib/trade-types";
 import { 
   useDeleteWeek, 
   useDeleteTrade,
@@ -78,7 +79,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
   const [isTradeFormOpen, setIsTradeFormOpen] = useState(false);
   const [isEditWeekOpen, setIsEditWeekOpen] = useState(false);
   const [isDeleteWeekOpen, setIsDeleteWeekOpen] = useState(false);
-  const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
+  const [editingTrade, setEditingTrade] = useState<TradeWithSetupType | null>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -86,7 +87,11 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
   
   const deleteWeek = useDeleteWeek();
   const deleteTrade = useDeleteTrade();
-  const { data: trades = [] } = useListTrades({ weekId: week.id }, { query: { queryKey: getListTradesQueryKey({ weekId: week.id }) } });
+  // Cast: the server returns setupTypeId on every trade row but it is not in the generated
+  // spec yet. TradeWithSetupType (lib/trade-types.ts) extends Trade with that field so we
+  // can access it without touching the generated file.
+  const { data: rawTrades = [] } = useListTrades({ weekId: week.id }, { query: { queryKey: getListTradesQueryKey({ weekId: week.id }) } });
+  const trades = rawTrades as TradeWithSetupType[];
 
   const handleDeleteWeek = () => {
     deleteWeek.mutate({ id: week.id }, {
@@ -120,7 +125,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
     }
   };
 
-  const handleEditTrade = (trade: Trade) => {
+  const handleEditTrade = (trade: TradeWithSetupType) => {
     setEditingTrade(trade);
   };
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trade, TradeResult, TradeInputResult } from "@workspace/api-client-react";
+import { TradeResult, TradeInputResult } from "@workspace/api-client-react";
 import { 
   useCreateTrade, 
   useUpdateTrade,
@@ -10,6 +10,7 @@ import {
   getGetStatsSummaryQueryKey,
   getGetWeeklyStatsQueryKey
 } from "@workspace/api-client-react";
+import type { TradeWithSetupType, TradeInputWithSetupType, TradeUpdateWithSetupType } from "@/lib/trade-types";
 import { useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -55,7 +56,7 @@ type TradeFormValues = z.infer<typeof tradeSchema>;
 
 interface TradeFormProps {
   weekId: number;
-  trade?: Trade;
+  trade?: TradeWithSetupType;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -106,8 +107,11 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
   const onSubmit = (data: TradeFormValues) => {
     const { setupTypeId, ...rest } = data;
     if (isEditing) {
+      // TradeUpdateWithSetupType structurally satisfies TradeUpdate (it adds an optional field),
+      // so it is assignable to the hook's expected type without a cast.
+      const updatePayload: TradeUpdateWithSetupType = { ...rest, setupTypeId: setupTypeId ?? null };
       updateTrade.mutate(
-        { id: trade.id, data: { ...rest, setupTypeId: setupTypeId ?? null } },
+        { id: trade.id, data: updatePayload },
         {
           onSuccess: () => {
             toast({ title: "Trade updated successfully" });
@@ -123,8 +127,10 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
         }
       );
     } else {
+      // Same pattern: TradeInputWithSetupType satisfies TradeInput structurally.
+      const createPayload: TradeInputWithSetupType = { ...rest, weekId, setupTypeId: setupTypeId ?? undefined };
       createTrade.mutate(
-        { data: { ...rest, weekId, setupTypeId: setupTypeId ?? undefined } },
+        { data: createPayload },
         {
           onSuccess: () => {
             toast({ title: "Trade created successfully" });
