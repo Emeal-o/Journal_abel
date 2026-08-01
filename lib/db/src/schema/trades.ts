@@ -3,6 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { weeksTable } from "./weeks";
 import { usersTable } from "./users";
+import { setupTypesTable } from "./setup-types";
 
 export const tradesTable = pgTable("trades", {
   id: serial("id").primaryKey(),
@@ -14,6 +15,7 @@ export const tradesTable = pgTable("trades", {
   pips: real("pips").notNull(),
   notes: text("notes"),
   flagEmoji: text("flag_emoji"),
+  setupTypeId: integer("setup_type_id").references(() => setupTypesTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
