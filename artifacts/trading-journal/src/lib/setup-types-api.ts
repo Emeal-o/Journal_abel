@@ -52,6 +52,23 @@ export async function createSetupType(name: string, description?: string): Promi
   return res.json() as Promise<SetupType>;
 }
 
+/** Patch an existing setup type's name and/or description. */
+export async function patchSetupType(
+  id: number,
+  fields: { name?: string; description?: string | null },
+): Promise<SetupType> {
+  const res = await setupTypesFetch(`/api/setup-types/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(fields),
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error ?? "Failed to update setup type.");
+  }
+  return res.json() as Promise<SetupType>;
+}
+
 /** Soft-delete a setup type (sets active = false). Trades that referenced it keep their reference. */
 export async function deleteSetupType(id: number): Promise<void> {
   const res = await setupTypesFetch(`/api/setup-types/${id}`, { method: "DELETE" });
@@ -77,6 +94,18 @@ export function useCreateSetupType() {
   return useMutation({
     mutationFn: ({ name, description }: { name: string; description?: string }) =>
       createSetupType(name, description),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: setupTypesQueryKey() });
+    },
+  });
+}
+
+/** Mutation to patch a setup type's name/description. Invalidates the setup-types list on success. */
+export function usePatchSetupType() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, fields }: { id: number; fields: { name?: string; description?: string | null } }) =>
+      patchSetupType(id, fields),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: setupTypesQueryKey() });
     },

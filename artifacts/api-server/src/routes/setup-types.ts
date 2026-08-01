@@ -176,6 +176,109 @@ router.post("/setup-types", requireAuth, async (req, res) => {
   res.status(201).json(serialize(created!));
 });
 
+// PATCH /api/setup-types/:id — edit name and/or description in place.
+//
+// Rules:
+//  • Name may only be changed within 56 days (8 weeks) of the type's original
+//    createdAt. The window is always measured from the original creation date —
+//    edits do NOT reset or extend it.
+//  • Description may be changed at any time.
+//  • If the request includes a name change but the window has closed, the
+//    entire request is rejected with a 422 and a clear message.
+//  • Color cannot be changed via this endpoint.
+router.patch("/setup-types/:id", requireAuth, async (req, res) => {
+  const userId = req.session.userId!;
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(setupTypesTable)
+    .where(and(eq(setupTypesTable.id, id), eq(setupTypesTable.userId, userId)));
+
+  if (!existing) {
+    res.status(404).json({ error: "Not found." });
+    return;
+  }
+
+  const body = req.body as { name?: unknown; description?: unknown };
+  const hasName = "name" in body;
+  const hasDescription = "description" in body;
+
+  if (!hasName && !hasDescription) {
+    res.status(400).json({ error: "Provide at least one of: name, description." });
+    return;
+  }
+
+  const update: { name?: string; description?: string | null } = {};
+
+  // ── name ──────────────────────────────────────────────────────────────────
+  if (hasName) {
+    const rawName = body.name;
+    if (typeof rawName !== "string" || rawName.trim().length === 0) {
+      res.status(400).json({ error: "name must be a non-empty string." });
+      return;
+    }
+    if (rawName.trim().length > 30 || rawName.length > 30) {
+      res.status(400).json({ error: "name must be 30 characters or fewer." });
+      return;
+    }
+
+    // 8-week (56-day) window measured from original createdAt
+    const ageMs = Date.now() - existing.createdAt.getTime();
+    const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+    if (ageDays > 56) {
+      res.status(422).json({
+        error: `This setup type's name can no longer be edited (created ${ageDays} days ago — older than 8 weeks). You can still edit its description, or delete it and create a new one.`,
+      });
+      return;
+    }
+
+    const trimmedName = rawName.trim();
+    // Check uniqueness if the name is actually changing
+    if (trimmedName !== existing.name) {
+      const [conflict] = await db
+        .select({ id: setupTypesTable.id })
+        .from(setupTypesTable)
+        .where(and(eq(setupTypesTable.userId, userId), eq(setupTypesTable.name, trimmedName)));
+      if (conflict) {
+        res.status(409).json({ error: "A setup type with that name already exists." });
+        return;
+      }
+    }
+    update.name = trimmedName;
+  }
+
+  // ── description ───────────────────────────────────────────────────────────
+  if (hasDescription) {
+    const rawDesc = body.description;
+    if (rawDesc === null || rawDesc === undefined || rawDesc === "") {
+      update.description = null;
+    } else {
+      if (typeof rawDesc !== "string") {
+        res.status(400).json({ error: "description must be a string." });
+        return;
+      }
+      if (rawDesc.length > 120) {
+        res.status(400).json({ error: "description must be 120 characters or fewer." });
+        return;
+      }
+      update.description = rawDesc.trim() || null;
+    }
+  }
+
+  const [updated] = await db
+    .update(setupTypesTable)
+    .set(update)
+    .where(eq(setupTypesTable.id, id))
+    .returning();
+
+  res.json(serialize(updated!));
+});
+
 // DELETE /api/setup-types/:id — soft-delete: sets active = false.
 // The row and any setupTypeId references on existing trades are never touched.
 router.delete("/setup-types/:id", requireAuth, async (req, res) => {

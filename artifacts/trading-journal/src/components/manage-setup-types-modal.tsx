@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { X, Plus, Loader2 } from "lucide-react";
+import { X, Plus, Loader2, Pencil, Check, Ban } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,11 +15,166 @@ import {
   useSetupTypes,
   useCreateSetupType,
   useDeleteSetupType,
+  usePatchSetupType,
+  type SetupType,
 } from "@/lib/setup-types-api";
 
 const MAX_ACTIVE = 10;
 const MAX_NAME_LENGTH = 30;
 const MAX_DESC_LENGTH = 120;
+const EDIT_WINDOW_DAYS = 56; // 8 weeks
+
+function daysOld(createdAt: string): number {
+  return Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function isNameLocked(createdAt: string): boolean {
+  return daysOld(createdAt) > EDIT_WINDOW_DAYS;
+}
+
+// ─── Inline edit row ──────────────────────────────────────────────────────────
+
+interface EditRowProps {
+  st: SetupType;
+  onDone: () => void;
+}
+
+function EditRow({ st, onDone }: EditRowProps) {
+  const { toast } = useToast();
+  const patchSetupType = usePatchSetupType();
+  const locked = isNameLocked(st.createdAt);
+  const age = daysOld(st.createdAt);
+
+  const [name, setName] = useState(st.name);
+  const [desc, setDesc] = useState(st.description ?? "");
+
+  const nameChanged = name.trim() !== st.name;
+  const descChanged = (desc.trim() || null) !== (st.description ?? null);
+  const hasChange = nameChanged || descChanged;
+
+  const canSave =
+    hasChange &&
+    name.trim().length > 0 &&
+    name.length <= MAX_NAME_LENGTH &&
+    desc.length <= MAX_DESC_LENGTH &&
+    !(nameChanged && locked);
+
+  const handleSave = () => {
+    const fields: { name?: string; description?: string | null } = {};
+    if (nameChanged) fields.name = name.trim();
+    if (descChanged) fields.description = desc.trim() || null;
+
+    patchSetupType.mutate(
+      { id: st.id, fields },
+      {
+        onSuccess: () => {
+          toast({ title: `"${name.trim()}" updated` });
+          onDone();
+        },
+        onError: (err) => {
+          toast({
+            title: err instanceof Error ? err.message : "Failed to update",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-3 space-y-2">
+      {/* Color swatch + name */}
+      <div className="flex items-center gap-2">
+        <span
+          className="flex-shrink-0 w-3 h-3 rounded-full ring-1 ring-white/20"
+          style={{ backgroundColor: st.color }}
+        />
+        <div className="relative flex-1">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value.slice(0, MAX_NAME_LENGTH))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && canSave && !patchSetupType.isPending) handleSave();
+              if (e.key === "Escape") onDone();
+            }}
+            className="bg-white/5 border-white/10 pr-12 text-sm h-8"
+            maxLength={MAX_NAME_LENGTH}
+            disabled={locked || patchSetupType.isPending}
+            autoFocus={!locked}
+          />
+          <span
+            className={`absolute right-3 top-1/2 -translate-y-1/2 text-[11px] tabular-nums pointer-events-none transition-colors ${
+              name.length >= MAX_NAME_LENGTH ? "text-amber-400" : "text-muted-foreground/40"
+            }`}
+          >
+            {name.length}/{MAX_NAME_LENGTH}
+          </span>
+        </div>
+      </div>
+
+      {/* Name-locked hint */}
+      {locked && (
+        <p className="text-[11px] text-amber-400/70 flex items-center gap-1.5 pl-5">
+          <Ban className="w-3 h-3 flex-shrink-0" />
+          Name locked (created {age} days ago — older than 8 weeks).
+          Description can still be edited.
+        </p>
+      )}
+
+      {/* Description */}
+      <div className="relative pl-5">
+        <Textarea
+          value={desc}
+          onChange={(e) => setDesc(e.target.value.slice(0, MAX_DESC_LENGTH))}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") onDone();
+          }}
+          placeholder="Optional description…"
+          className="bg-white/5 border-white/10 text-sm resize-none pb-6 min-h-[56px]"
+          maxLength={MAX_DESC_LENGTH}
+          disabled={patchSetupType.isPending}
+          rows={2}
+          autoFocus={locked}
+        />
+        <span
+          className={`absolute right-3 bottom-2 text-[11px] tabular-nums pointer-events-none transition-colors ${
+            desc.length >= MAX_DESC_LENGTH ? "text-amber-400" : "text-muted-foreground/40"
+          }`}
+        >
+          {desc.length}/{MAX_DESC_LENGTH}
+        </span>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end gap-2 pl-5">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 text-xs text-muted-foreground hover:text-white"
+          onClick={onDone}
+          disabled={patchSetupType.isPending}
+        >
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          className="h-7 text-xs gap-1"
+          onClick={handleSave}
+          disabled={!canSave || patchSetupType.isPending}
+        >
+          {patchSetupType.isPending ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <Check className="w-3 h-3" />
+          )}
+          Save
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main modal ───────────────────────────────────────────────────────────────
 
 interface ManageSetupTypesModalProps {
   open: boolean;
@@ -34,6 +189,7 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
 
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const atCap = setupTypes.length >= MAX_ACTIVE;
@@ -67,10 +223,9 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
   };
 
   const handleDelete = (id: number, name: string) => {
+    if (editingId === id) setEditingId(null);
     deleteSetupType.mutate(id, {
-      onSuccess: () => {
-        toast({ title: `"${name}" removed` });
-      },
+      onSuccess: () => toast({ title: `"${name}" removed` }),
       onError: (err) => {
         toast({
           title: err instanceof Error ? err.message : "Failed to remove setup type",
@@ -92,7 +247,7 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
         </DialogHeader>
 
         {/* Scrollable list */}
-        <div className="overflow-y-auto max-h-[320px] px-6 py-3 space-y-1">
+        <div className="overflow-y-auto max-h-[360px] px-6 py-3 space-y-1">
           {isLoading ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground text-sm gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -103,38 +258,54 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
               No setup types yet. Add one below.
             </p>
           ) : (
-            setupTypes.map((st) => (
-              <div
-                key={st.id}
-                className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-white/[0.04] group transition-colors"
-              >
-                {/* Color swatch — aligned to first line */}
-                <span
-                  className="flex-shrink-0 w-3 h-3 rounded-full ring-1 ring-white/20 mt-[3px]"
-                  style={{ backgroundColor: st.color }}
-                />
-                {/* Name + description */}
-                <span className="flex-1 min-w-0">
-                  <span className="block text-sm text-white truncate">{st.name}</span>
-                  {st.description && (
-                    <span className="block text-[11px] text-muted-foreground/60 leading-snug mt-0.5 line-clamp-2">
-                      {st.description}
-                    </span>
-                  )}
-                </span>
-                {/* Delete button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-7 h-7 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0 mt-0.5"
-                  onClick={() => handleDelete(st.id, st.name)}
-                  disabled={deleteSetupType.isPending}
-                  aria-label={`Remove ${st.name}`}
+            setupTypes.map((st) =>
+              editingId === st.id ? (
+                <EditRow key={st.id} st={st} onDone={() => setEditingId(null)} />
+              ) : (
+                <div
+                  key={st.id}
+                  className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-white/[0.04] group transition-colors"
                 >
-                  <X className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            ))
+                  {/* Color swatch */}
+                  <span
+                    className="flex-shrink-0 w-3 h-3 rounded-full ring-1 ring-white/20 mt-[3px]"
+                    style={{ backgroundColor: st.color }}
+                  />
+                  {/* Name + description */}
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm text-white truncate">{st.name}</span>
+                    {st.description && (
+                      <span className="block text-[11px] text-muted-foreground/60 leading-snug mt-0.5 line-clamp-2">
+                        {st.description}
+                      </span>
+                    )}
+                  </span>
+                  {/* Edit + Delete buttons */}
+                  <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all mt-0.5">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-7 h-7 text-muted-foreground/40 hover:text-white hover:bg-white/10"
+                      onClick={() => setEditingId(st.id)}
+                      disabled={deleteSetupType.isPending}
+                      aria-label={`Edit ${st.name}`}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-7 h-7 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDelete(st.id, st.name)}
+                      disabled={deleteSetupType.isPending}
+                      aria-label={`Remove ${st.name}`}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ),
+            )
           )}
         </div>
 
@@ -163,7 +334,6 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
                     maxLength={MAX_NAME_LENGTH}
                     disabled={createSetupType.isPending}
                   />
-                  {/* Live name counter */}
                   <span
                     className={`absolute right-3 top-1/2 -translate-y-1/2 text-[11px] tabular-nums pointer-events-none transition-colors ${
                       newName.length >= MAX_NAME_LENGTH
@@ -192,7 +362,7 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
               {/* Description row */}
               <div className="relative">
                 <Textarea
-                  placeholder="Optional description (e.g. Entry criteria, market context…)"
+                  placeholder="Optional description…"
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value.slice(0, MAX_DESC_LENGTH))}
                   className="bg-white/5 border-white/10 text-sm resize-none pb-6 min-h-[64px]"
@@ -200,7 +370,6 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
                   disabled={createSetupType.isPending}
                   rows={2}
                 />
-                {/* Live desc counter */}
                 <span
                   className={`absolute right-3 bottom-2 text-[11px] tabular-nums pointer-events-none transition-colors ${
                     newDesc.length >= MAX_DESC_LENGTH
