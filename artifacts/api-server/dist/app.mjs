@@ -64053,6 +64053,73 @@ router7.post("/setup-types", requireAuth, async (req, res) => {
   const [created] = await db.insert(setupTypesTable).values({ userId, name, color, active: true, description }).returning();
   res.status(201).json(serialize(created));
 });
+router7.patch("/setup-types/:id", requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+  const [existing] = await db.select().from(setupTypesTable).where(and(eq(setupTypesTable.id, id), eq(setupTypesTable.userId, userId)));
+  if (!existing) {
+    res.status(404).json({ error: "Not found." });
+    return;
+  }
+  const body = req.body;
+  const hasName = "name" in body;
+  const hasDescription = "description" in body;
+  if (!hasName && !hasDescription) {
+    res.status(400).json({ error: "Provide at least one of: name, description." });
+    return;
+  }
+  const update = {};
+  if (hasName) {
+    const rawName = body.name;
+    if (typeof rawName !== "string" || rawName.trim().length === 0) {
+      res.status(400).json({ error: "name must be a non-empty string." });
+      return;
+    }
+    if (rawName.trim().length > 30 || rawName.length > 30) {
+      res.status(400).json({ error: "name must be 30 characters or fewer." });
+      return;
+    }
+    const ageMs = Date.now() - existing.createdAt.getTime();
+    const ageDays = Math.floor(ageMs / (1e3 * 60 * 60 * 24));
+    if (ageDays > 56) {
+      res.status(422).json({
+        error: `This setup type's name can no longer be edited (created ${ageDays} days ago \u2014 older than 8 weeks). You can still edit its description, or delete it and create a new one.`
+      });
+      return;
+    }
+    const trimmedName = rawName.trim();
+    if (trimmedName !== existing.name) {
+      const [conflict] = await db.select({ id: setupTypesTable.id }).from(setupTypesTable).where(and(eq(setupTypesTable.userId, userId), eq(setupTypesTable.name, trimmedName)));
+      if (conflict) {
+        res.status(409).json({ error: "A setup type with that name already exists." });
+        return;
+      }
+    }
+    update.name = trimmedName;
+  }
+  if (hasDescription) {
+    const rawDesc = body.description;
+    if (rawDesc === null || rawDesc === void 0 || rawDesc === "") {
+      update.description = null;
+    } else {
+      if (typeof rawDesc !== "string") {
+        res.status(400).json({ error: "description must be a string." });
+        return;
+      }
+      if (rawDesc.length > 120) {
+        res.status(400).json({ error: "description must be 120 characters or fewer." });
+        return;
+      }
+      update.description = rawDesc.trim() || null;
+    }
+  }
+  const [updated] = await db.update(setupTypesTable).set(update).where(eq(setupTypesTable.id, id)).returning();
+  res.json(serialize(updated));
+});
 router7.delete("/setup-types/:id", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const id = Number(req.params.id);

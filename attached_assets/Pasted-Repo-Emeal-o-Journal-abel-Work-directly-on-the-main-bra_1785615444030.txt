@@ -1,0 +1,21 @@
+Repo: Emeal-o/Journal_abel. Work directly on the main branch — no feature branch, no pull request. Commit and push directly to main.
+
+The setup_types table (with description column) and its routes already exist on main. Verify this before starting; if missing, stop and report back.
+
+Add a PATCH /api/setup-types/:id endpoint to allow editing an existing setup type's name and/or description in place (not delete-and-recreate), with a time-limited edit window on the NAME only:
+
+1. The NAME can only be edited (PATCH) if it is within 8 weeks (56 days) of the setup type's ORIGINAL createdAt timestamp. This window does NOT reset or extend when an edit is made — always measured from original creation. Applies equally to user-created and auto-seeded default types.
+
+2. The DESCRIPTION has no time restriction — it can be edited at any time, regardless of the 8-week window.
+
+3. If a PATCH attempts to change the name after the 8-week window has passed, reject that specific field with a clear error message, e.g. "This setup type's name can no longer be edited (older than 8 weeks). You can still edit its description, or delete it and create a new one." If only the description is being changed, allow it regardless of age.
+
+4. Apply the same 30-char/120-char validation as POST. Verify the setup type belongs to the requesting user (same ownership pattern as existing routes). Do not allow changing color via this endpoint.
+
+5. Editing a setup type's name/description does NOT touch any trades — trades keep referencing the same setupTypeId, so historical links are preserved; only the type's own display metadata changes.
+
+6. This applies regardless of whether trades tagged with this setup type are in active or archived weeks — the 8-week rule (name only) is the only restriction, not archive status.
+
+7. Update the frontend manage-setup-types-modal.tsx to add an edit affordance (e.g. an edit icon/button next to each setup type) that opens inline or modal editing for name + description, disabling/hiding the name field (but not description) once past the 8-week window, ideally with a small hint like "Name locked (created X days ago)".
+
+After finishing, restart both services, confirm clean start, then commit and push directly to main. After the Vercel deployment goes Ready, tell the user the exact information_schema or endpoint check to confirm this landed on production, since you may not have direct production DB access yourself. Report back clearly.
