@@ -1,0 +1,23 @@
+Repo: Emeal-o/Journal_abel. Work directly on the main branch — no feature branch, no pull request. Commit and push directly to main.
+
+The setup_types table, its routes, and trades.setupTypeId already exist on main (merged previously). Verify this before starting; if it's missing, stop and report back.
+
+Add two enhancements to the existing setup types feature:
+
+1. Add a nullable `description` TEXT column to the setup_types table, via the same idempotent startup migration pattern already used for the table itself.
+
+2. Enforce length limits server-side in the existing POST /api/setup-types validation: name max 30 characters, description max 120 characters (description is optional). Return a clear validation error if exceeded.
+
+3. Update POST /api/setup-types so it accepts and stores an optional description field, and so that reactivating an existing inactive type (by matching name) also updates its description if a new one is provided.
+
+4. DEFAULT SEEDING: update GET /api/setup-types so that if a user has zero rows in setup_types (active or inactive), it auto-seeds these 5 default active types before returning the list:
+  1. Name: "MSS + Retest" | Description: "Market Structure Shift on lower timeframe with entry on pullback/FVG retest."
+  2. Name: "Breakout" | Description: "Clean break through key structural level with follow-through momentum."
+  3. Name: "Pullback" | Description: "Entry on a retracement within an established trend direction."
+  4. Name: "Reversal" | Description: "Countertrend entry at a key level signaling trend exhaustion."
+  5. Name: "Range Play" | Description: "Fading extreme high/low boundaries inside a consolidation range."
+  Assign each a color using the existing color-assignment logic (do not hardcode colors). Treat these as normal rows — fully editable and deletable by the user, and they count toward the 10-active cap.
+
+5. Update the frontend manage-setup-types-modal.tsx: change the name character counter/limit from 50 to 30, add an optional description input with a 120-char live counter, and show the description snippet next to each listed setup type.
+
+After finishing, restart both services, confirm they start cleanly with no errors, then commit and push directly to main. After pushing, wait for the Vercel deployment to go Ready, then verify directly against the PRODUCTION Neon database (not just a dev database) that the description column actually exists on setup_types — run an information_schema query yourself if you have database access, or clearly tell the user the exact query to run. Report back on what was completed and explicitly confirm whether you verified the production schema or need the user to verify it.

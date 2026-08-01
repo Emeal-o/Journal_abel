@@ -57979,7 +57979,9 @@ var setupTypesTable = pgTable("setup_types", {
   color: text("color").notNull(),
   // hex string e.g. "#3B82F6"
   active: boolean("active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull()
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  description: text("description")
+  // optional user-facing description, max 120 chars enforced at API layer
 }, (t) => ({
   uniqueUserIdName: unique("setup_types_user_id_name_key").on(t.userId, t.name)
 }));
@@ -63971,26 +63973,70 @@ var router7 = (0, import_express7.Router)();
 function serialize(t) {
   return { ...t, createdAt: t.createdAt.toISOString() };
 }
+function pickColor(usedColors, activeCount) {
+  return PALETTE.find((c) => !usedColors.has(c)) ?? PALETTE[activeCount % PALETTE.length];
+}
+var DEFAULT_SEEDS = [
+  { name: "MSS + Retest", description: "Market Structure Shift on lower timeframe with entry on pullback/FVG retest." },
+  { name: "Breakout", description: "Clean break through key structural level with follow-through momentum." },
+  { name: "Pullback", description: "Entry on a retracement within an established trend direction." },
+  { name: "Reversal", description: "Countertrend entry at a key level signaling trend exhaustion." },
+  { name: "Range Play", description: "Fading extreme high/low boundaries inside a consolidation range." }
+];
 router7.get("/setup-types", requireAuth, async (req, res) => {
   const userId = req.session.userId;
+  const [{ total }] = await db.select({ total: count() }).from(setupTypesTable).where(eq(setupTypesTable.userId, userId));
+  if (total === 0) {
+    const usedColors = /* @__PURE__ */ new Set();
+    for (let i = 0; i < DEFAULT_SEEDS.length; i++) {
+      const seed = DEFAULT_SEEDS[i];
+      const color = pickColor(usedColors, i);
+      usedColors.add(color);
+      await db.insert(setupTypesTable).values({
+        userId,
+        name: seed.name,
+        description: seed.description,
+        color,
+        active: true
+      });
+    }
+  }
   const types3 = await db.select().from(setupTypesTable).where(and(eq(setupTypesTable.userId, userId), eq(setupTypesTable.active, true))).orderBy(setupTypesTable.createdAt);
   res.json(types3.map(serialize));
 });
 router7.post("/setup-types", requireAuth, async (req, res) => {
   const userId = req.session.userId;
-  const { name: rawName } = req.body;
-  if (typeof rawName !== "string" || rawName.trim().length === 0 || rawName.length > 50) {
-    res.status(400).json({ error: "name is required and must be 1\u201350 characters." });
+  const { name: rawName, description: rawDescription } = req.body;
+  if (typeof rawName !== "string" || rawName.trim().length === 0) {
+    res.status(400).json({ error: "name is required." });
+    return;
+  }
+  if (rawName.trim().length > 30 || rawName.length > 30) {
+    res.status(400).json({ error: "name must be 30 characters or fewer." });
     return;
   }
   const name = rawName.trim();
+  let description = null;
+  if (rawDescription !== void 0 && rawDescription !== null && rawDescription !== "") {
+    if (typeof rawDescription !== "string") {
+      res.status(400).json({ error: "description must be a string." });
+      return;
+    }
+    if (rawDescription.length > 120) {
+      res.status(400).json({ error: "description must be 120 characters or fewer." });
+      return;
+    }
+    description = rawDescription.trim() || null;
+  }
   const [existing] = await db.select().from(setupTypesTable).where(and(eq(setupTypesTable.userId, userId), eq(setupTypesTable.name, name)));
   if (existing) {
     if (existing.active) {
       res.status(409).json({ error: "A setup type with that name already exists." });
       return;
     }
-    const [reactivated] = await db.update(setupTypesTable).set({ active: true }).where(eq(setupTypesTable.id, existing.id)).returning();
+    const updatePayload = { active: true };
+    if (description !== null) updatePayload.description = description;
+    const [reactivated] = await db.update(setupTypesTable).set(updatePayload).where(eq(setupTypesTable.id, existing.id)).returning();
     res.status(200).json(serialize(reactivated));
     return;
   }
@@ -64003,8 +64049,8 @@ router7.post("/setup-types", requireAuth, async (req, res) => {
   }
   const activeTypes = await db.select({ color: setupTypesTable.color }).from(setupTypesTable).where(and(eq(setupTypesTable.userId, userId), eq(setupTypesTable.active, true)));
   const usedColors = new Set(activeTypes.map((t) => t.color));
-  const color = PALETTE.find((c) => !usedColors.has(c)) ?? PALETTE[activeCount % PALETTE.length];
-  const [created] = await db.insert(setupTypesTable).values({ userId, name, color, active: true }).returning();
+  const color = pickColor(usedColors, activeCount);
+  const [created] = await db.insert(setupTypesTable).values({ userId, name, color, active: true, description }).returning();
   res.status(201).json(serialize(created));
 });
 router7.delete("/setup-types/:id", requireAuth, async (req, res) => {
