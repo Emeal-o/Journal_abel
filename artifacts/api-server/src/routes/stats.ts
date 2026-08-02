@@ -351,6 +351,28 @@ router.get("/stats/analysis", requireAuth, async (req, res) => {
       return b.totalTrades - a.totalTrades;
     });
 
+  // 12. Post-Loss Performance ("Tilt Report") — buckets each trade by how many
+  //     consecutive losses immediately preceded it, using trade ORDER (the
+  //     same orderedTrades array used for the existing streak calc above) —
+  //     not calendar dates — so backfilled trades never distort the bucket.
+  const TILT_LABELS: Record<number, string> = {
+    0: "After 0 losses (fresh)",
+    1: "After 1 loss",
+    2: "After 2 losses",
+    3: "After 3+ losses",
+  };
+  const tiltGroups = new Map<number, AnalysisTrade[]>([[0, []], [1, []], [2, []], [3, []]]);
+  let precedingLossStreak = 0;
+  for (const t of orderedTrades) {
+    const bucketKey = Math.min(precedingLossStreak, 3);
+    tiltGroups.get(bucketKey)!.push(t);
+    precedingLossStreak = t.result === "Loss" ? precedingLossStreak + 1 : 0;
+  }
+  const postLossPerformance = [0, 1, 2, 3].map(afterLosses => {
+    const trades = tiltGroups.get(afterLosses)!;
+    return { afterLosses, label: TILT_LABELS[afterLosses]!, ...computeStats(trades) };
+  });
+
   res.json({
     allTime,
     byYear,
@@ -370,6 +392,7 @@ router.get("/stats/analysis", requireAuth, async (req, res) => {
     cumulativeMonthly,
     rrrDistribution,
     bySetupType,
+    postLossPerformance,
   });
 });
 

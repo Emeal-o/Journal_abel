@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useLocation, useSearch } from "wouter";
-import { ArrowLeft, TrendingUp, TrendingDown, BarChart2, Activity, Target, Zap, X, Download, Tag } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, BarChart2, Activity, Target, Zap, X, Download, Tag, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { THEMES } from "@/components/ledger-sheet";
 import type { LedgerTheme } from "@/components/ledger-sheet";
@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAnalysis } from "@/lib/analysis-api";
-import type { AnalysisCumulativePoint, AnalysisRRRPoint, AnalysisRRRBucket, AnalysisRRRBucketTrade, AnalysisSetupTypeRow } from "@/lib/analysis-api";
+import type { AnalysisCumulativePoint, AnalysisRRRPoint, AnalysisRRRBucket, AnalysisRRRBucketTrade, AnalysisSetupTypeRow, AnalysisPostLossRow } from "@/lib/analysis-api";
 import { toRoman } from "@/lib/label-utils";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -767,6 +767,47 @@ export function AnalysisPage() {
         title={selectedSetupRow?.name ?? null}
         onClose={() => setSelectedSetupRow(null)}
       />
+
+      {/* Post-Loss Performance ("Tilt Report") */}
+      {data.postLossPerformance.some((r: AnalysisPostLossRow) => r.totalTrades > 0) && (
+        <Section title="Post-Loss Performance" icon={Flame}>
+          <div className="rounded-xl border border-white/10 overflow-hidden">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col />
+                <col style={{ width: "64px" }} />
+                <col style={{ width: "74px" }} />
+                <col style={{ width: "96px" }} />
+              </colgroup>
+              <thead>
+                <tr className="border-b border-white/10 bg-white/[0.04]">
+                  <th className="text-left px-4 py-3 text-muted-foreground font-medium">After Streak</th>
+                  <th className="text-right px-1.5 py-3 text-muted-foreground font-medium">Trades</th>
+                  <th className="text-right px-1.5 py-3 text-muted-foreground font-medium">Win Rate</th>
+                  <th className="text-right px-3 py-3 text-muted-foreground font-medium">Net RR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.postLossPerformance.map((row: AnalysisPostLossRow, i: number) => (
+                  <tr
+                    key={row.afterLosses}
+                    className={i < data.postLossPerformance.length - 1 ? "border-b border-white/5" : ""}
+                  >
+                    <td className="px-4 py-3 text-white font-semibold">{row.label}</td>
+                    <td className="px-1.5 py-3 text-right text-muted-foreground whitespace-nowrap">{row.totalTrades}</td>
+                    <td className="px-1.5 py-3 text-right font-semibold whitespace-nowrap" style={{ color: row.totalTrades > 0 ? (row.winRate >= 50 ? "#34d399" : "#fb7185") : "#64748b" }}>
+                      {row.totalTrades > 0 ? `${row.winRate}%` : "—"}
+                    </td>
+                    <td className="px-3 py-3 text-right font-mono font-semibold whitespace-nowrap" style={{ color: row.totalTrades > 0 ? rrColor(row.netRR) : "#64748b" }}>
+                      {row.totalTrades > 0 ? fmtRR(row.netRR) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      )}
 
       {/* 8. Drawdown & Recovery */}
       <Section title="Drawdown & Recovery" icon={TrendingDown}>

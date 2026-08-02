@@ -94,6 +94,11 @@ export interface AnalysisSetupTypeRow {
   trades: AnalysisRRRBucketTrade[];
 }
 
+export interface AnalysisPostLossRow extends AnalysisSummary {
+  afterLosses: number;
+  label: string;
+}
+
 export interface AnalysisData {
   allTime: AnalysisSummary;
   byYear: AnalysisYearStats[];
@@ -113,6 +118,7 @@ export interface AnalysisData {
   cumulativeMonthly: AnalysisCumulativePoint[];
   rrrDistribution: AnalysisRRRBucket[];
   bySetupType: AnalysisSetupTypeRow[];
+  postLossPerformance: AnalysisPostLossRow[];
 }
 
 // ─── fetch + hook ─────────────────────────────────────────────────────────────
