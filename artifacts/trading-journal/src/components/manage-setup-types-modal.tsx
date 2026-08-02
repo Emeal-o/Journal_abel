@@ -7,6 +7,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -190,7 +200,7 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const atCap = setupTypes.length >= MAX_ACTIVE;
@@ -223,20 +233,8 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
     );
   };
 
-  const handleDelete = (id: number, name: string) => {
-    if (editingId === id) setEditingId(null);
-    deleteSetupType.mutate(id, {
-      onSuccess: () => toast({ title: `"${name}" removed` }),
-      onError: (err) => {
-        toast({
-          title: err instanceof Error ? err.message : "Failed to remove setup type",
-          variant: "destructive",
-        });
-      },
-    });
-  };
-
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[440px] bg-background border-white/10 shadow-2xl flex flex-col gap-0 p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-white/10">
@@ -297,7 +295,7 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
                       variant="ghost"
                       size="icon"
                       className="w-7 h-7 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDelete(st.id, st.name)}
+                      onClick={() => setConfirmDelete({ id: st.id, name: st.name })}
                       disabled={deleteSetupType.isPending}
                       aria-label={`Remove ${st.name}`}
                     >
@@ -390,5 +388,47 @@ export function ManageSetupTypesModal({ open, onOpenChange }: ManageSetupTypesMo
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Delete confirmation — fires only after explicit confirm */}
+    <AlertDialog open={!!confirmDelete} onOpenChange={(open) => { if (!open) setConfirmDelete(null); }}>
+      <AlertDialogContent className="bg-background border-white/10">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remove setup type?</AlertDialogTitle>
+          <AlertDialogDescription>
+            "{confirmDelete?.name}" will be removed. Existing trades tagged with it keep their
+            tag, but the type won't appear for new trades.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel
+            className="bg-white/5 border-white/10 hover:bg-white/10 hover:text-white"
+            onClick={() => setConfirmDelete(null)}
+          >
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            onClick={() => {
+              if (!confirmDelete) return;
+              const { id, name } = confirmDelete;
+              setConfirmDelete(null);
+              if (editingId === id) setEditingId(null);
+              deleteSetupType.mutate(id, {
+                onSuccess: () => toast({ title: `"${name}" removed` }),
+                onError: (err) => {
+                  toast({
+                    title: err instanceof Error ? err.message : "Failed to remove setup type",
+                    variant: "destructive",
+                  });
+                },
+              });
+            }}
+          >
+            Remove
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
