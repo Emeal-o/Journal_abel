@@ -769,7 +769,7 @@ export function AnalysisPage() {
       />
 
       {/* Post-Loss Performance ("Tilt Report") */}
-      {data.postLossPerformance.some((r: AnalysisPostLossRow) => r.totalTrades > 0) && (
+      {(data.postLossPerformance ?? []).some((r: AnalysisPostLossRow) => r.totalTrades > 0) && (
         <Section title="Post-Loss Performance" icon={Flame}>
           <div className="rounded-xl border border-white/10 overflow-hidden">
             <table className="w-full text-sm table-fixed">
@@ -788,10 +788,10 @@ export function AnalysisPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.postLossPerformance.map((row: AnalysisPostLossRow, i: number) => (
+                {(data.postLossPerformance ?? []).map((row: AnalysisPostLossRow, i: number) => (
                   <tr
                     key={row.afterLosses}
-                    className={i < data.postLossPerformance.length - 1 ? "border-b border-white/5" : ""}
+                    className={i < (data.postLossPerformance ?? []).length - 1 ? "border-b border-white/5" : ""}
                   >
                     <td className="px-4 py-3 text-white font-semibold">{row.label}</td>
                     <td className="px-1.5 py-3 text-right text-muted-foreground whitespace-nowrap">{row.totalTrades}</td>
