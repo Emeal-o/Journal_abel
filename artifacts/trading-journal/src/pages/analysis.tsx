@@ -712,8 +712,8 @@ export function AnalysisPage() {
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.04]">
                   <th className="text-left px-4 py-3 text-muted-foreground font-medium">Setup</th>
-                  <th className="text-right px-2 py-3 text-muted-foreground font-medium whitespace-nowrap">Trades</th>
-                  <th className="text-right px-2 py-3 text-muted-foreground font-medium whitespace-nowrap">Win Rate</th>
+                  <th className="text-right px-1.5 py-3 text-muted-foreground font-medium whitespace-nowrap">Trades</th>
+                  <th className="text-right px-1.5 py-3 text-muted-foreground font-medium whitespace-nowrap">Win Rate</th>
                   <th className="text-right px-3 py-3 text-muted-foreground font-medium whitespace-nowrap">Net RR</th>
                 </tr>
               </thead>
@@ -724,7 +724,7 @@ export function AnalysisPage() {
                     className={`hover:bg-white/[0.03] cursor-pointer transition-colors ${i < data.bySetupType.length - 1 ? "border-b border-white/5" : ""}`}
                     onClick={() => setSelectedSetupRow(row)}
                   >
-                    <td className="px-4 py-3 max-w-[55%]">
+                    <td className="px-4 py-3 max-w-[36%]">
                       <div className="flex items-center gap-2 min-w-0">
                         <span
                           className="flex-shrink-0 w-2.5 h-2.5 rounded-full ring-1 ring-white/20"
@@ -733,8 +733,8 @@ export function AnalysisPage() {
                         <span className="text-white font-semibold truncate block">{row.name}</span>
                       </div>
                     </td>
-                    <td className="px-2 py-3 text-right text-muted-foreground whitespace-nowrap">{row.totalTrades}</td>
-                    <td className="px-2 py-3 text-right font-semibold whitespace-nowrap" style={{ color: row.winRate >= 50 ? "#34d399" : "#fb7185" }}>{row.winRate}%</td>
+                    <td className="px-1.5 py-3 text-right text-muted-foreground whitespace-nowrap">{row.totalTrades}</td>
+                    <td className="px-1.5 py-3 text-right font-semibold whitespace-nowrap" style={{ color: row.winRate >= 50 ? "#34d399" : "#fb7185" }}>{row.winRate}%</td>
                     <td className="px-3 py-3 text-right font-mono font-semibold whitespace-nowrap" style={{ color: rrColor(row.netRR) }}>{fmtRR(row.netRR)}</td>
                   </tr>
                 ))}
