@@ -708,7 +708,13 @@ export function AnalysisPage() {
       {data.bySetupType.length > 0 && (
         <Section title="By Setup Type" icon={Tag}>
           <div className="rounded-xl border border-white/10 overflow-hidden">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col />
+                <col style={{ width: "64px" }} />
+                <col style={{ width: "74px" }} />
+                <col style={{ width: "96px" }} />
+              </colgroup>
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.04]">
                   <th className="text-left px-4 py-3 text-muted-foreground font-medium">Setup</th>
@@ -724,7 +730,7 @@ export function AnalysisPage() {
                     className={`hover:bg-white/[0.03] cursor-pointer transition-colors ${i < data.bySetupType.length - 1 ? "border-b border-white/5" : ""}`}
                     onClick={() => setSelectedSetupRow(row)}
                   >
-                    <td className="px-4 py-3 max-w-[36%]">
+                    <td className="px-4 py-3 overflow-hidden">
                       <div className="flex items-center gap-2 min-w-0">
                         <span
                           className="flex-shrink-0 w-2.5 h-2.5 rounded-full ring-1 ring-white/20"
