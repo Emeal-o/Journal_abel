@@ -97,6 +97,7 @@ export interface AnalysisSetupTypeRow {
 export interface AnalysisPostLossRow extends AnalysisSummary {
   afterLosses: number;
   label: string;
+  trades: AnalysisRRRBucketTrade[];
 }
 
 export interface AnalysisData {

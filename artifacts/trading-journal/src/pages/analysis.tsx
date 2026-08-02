@@ -139,6 +139,8 @@ function ResultBadge({ result }: { result: string }) {
 function computeBucketStats(trades: AnalysisRRRBucketTrade[]) {
   const total = trades.length;
   const wins  = trades.filter(t => t.result === "Win").length;
+  const losses = trades.filter(t => t.result === "Loss").length;
+  const breakEvens = trades.filter(t => t.result === "BE").length;
   const winRate = total > 0 ? Math.round((wins / total) * 10000) / 100 : 0;
   const netRR = Math.round(
     trades.reduce((sum, t) => {
@@ -148,7 +150,7 @@ function computeBucketStats(trades: AnalysisRRRBucketTrade[]) {
     }, 0) * 100,
   ) / 100;
   const netPips = Math.round(trades.reduce((sum, t) => sum + t.pips, 0) * 10) / 10;
-  return { winRate, netRR, netPips };
+  return { winRate, netRR, netPips, wins, losses, breakEvens };
 }
 
 function BucketTradesModal({
@@ -204,6 +206,18 @@ function BucketTradesModal({
             </DialogDescription>
           )}
         </DialogHeader>
+
+        {/* Always-visible Win/Loss/BE breakdown */}
+        {stats && (
+          <p className="flex-shrink-0 text-xs text-muted-foreground -mt-1 mb-1">
+            {bucket?.count ?? 0} {(bucket?.count ?? 0) === 1 ? "trade" : "trades"} ·{" "}
+            <span className="text-emerald-400 font-medium">{stats.wins} Win</span>
+            {" · "}
+            <span className="text-rose-400 font-medium">{stats.losses} Loss</span>
+            {" · "}
+            <span className="text-amber-400 font-medium">{stats.breakEvens} BE</span>
+          </p>
+        )}
 
         {/* Collapsible summary row */}
         {stats && (
@@ -292,6 +306,7 @@ export function AnalysisPage() {
   const [rrrGranularity, setRRRGranularity] = useState<"monthly" | "yearly">("monthly");
   const [selectedBucket, setSelectedBucket] = useState<AnalysisRRRBucket | null>(null);
   const [selectedSetupRow, setSelectedSetupRow] = useState<AnalysisSetupTypeRow | null>(null);
+  const [selectedTiltRow, setSelectedTiltRow] = useState<AnalysisPostLossRow | null>(null);
   const [exportTheme, setExportTheme] = useState<LedgerTheme>("obsidian");
   const [exporting, setExporting] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -791,7 +806,8 @@ export function AnalysisPage() {
                 {(data.postLossPerformance ?? []).map((row: AnalysisPostLossRow, i: number) => (
                   <tr
                     key={row.afterLosses}
-                    className={i < (data.postLossPerformance ?? []).length - 1 ? "border-b border-white/5" : ""}
+                    className={`transition-colors ${row.totalTrades > 0 ? "hover:bg-white/[0.03] cursor-pointer" : ""} ${i < (data.postLossPerformance ?? []).length - 1 ? "border-b border-white/5" : ""}`}
+                    onClick={row.totalTrades > 0 ? () => setSelectedTiltRow(row) : undefined}
                   >
                     <td className="px-4 py-3 text-white font-semibold">{row.label}</td>
                     <td className="px-1.5 py-3 text-right text-muted-foreground whitespace-nowrap">{row.totalTrades}</td>
@@ -808,6 +824,23 @@ export function AnalysisPage() {
           </div>
         </Section>
       )}
+
+      {/* Post-Loss Performance drill-down modal */}
+      <BucketTradesModal
+        bucket={
+          selectedTiltRow
+            ? {
+                label: selectedTiltRow.label,
+                min: 0,
+                max: null,
+                count: selectedTiltRow.totalTrades,
+                trades: selectedTiltRow.trades,
+              }
+            : null
+        }
+        title={selectedTiltRow?.label ?? null}
+        onClose={() => setSelectedTiltRow(null)}
+      />
 
       {/* 8. Drawdown & Recovery */}
       <Section title="Drawdown & Recovery" icon={TrendingDown}>

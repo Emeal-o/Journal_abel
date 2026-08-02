@@ -369,8 +369,21 @@ router.get("/stats/analysis", requireAuth, async (req, res) => {
     precedingLossStreak = t.result === "Loss" ? precedingLossStreak + 1 : 0;
   }
   const postLossPerformance = [0, 1, 2, 3].map(afterLosses => {
-    const trades = tiltGroups.get(afterLosses)!;
-    return { afterLosses, label: TILT_LABELS[afterLosses]!, ...computeStats(trades) };
+    const bucketTrades = tiltGroups.get(afterLosses)!;
+    const stats = computeStats(bucketTrades);
+    const tradeRows = bucketTrades.map(t => {
+      const wk = weekById.get(t.weekId);
+      return {
+        id: t.id,
+        result: t.result,
+        rrr: t.rrr,
+        pips: t.pips,
+        weekId: t.weekId,
+        weekLabel: wk?.label ?? null,
+        weekStartDate: wk?.startDate ?? null,
+      };
+    });
+    return { afterLosses, label: TILT_LABELS[afterLosses]!, ...stats, trades: tradeRows };
   });
 
   res.json({
