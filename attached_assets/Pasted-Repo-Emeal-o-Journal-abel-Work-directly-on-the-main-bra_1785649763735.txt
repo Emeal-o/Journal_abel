@@ -1,0 +1,26 @@
+Repo: Emeal-o/Journal_abel. Work directly on the main branch — no feature branch, no pull request. Commit and push directly to main.
+
+This is Chunk 3 of the Setup Type feature — the final piece. The setup_types table, CRUD, trade tagging (setupTypeId on trades), and the Manage modal are already live on main. Verify this is present before starting; if any of it is missing, stop and report back rather than rebuilding it.
+
+Add a "By Setup" section to the Analysis page (analysis.tsx), positioned after the existing RRR Distribution histogram section.
+
+Data & scope:
+- Group all trades (scoped to the current user, respecting the page's existing all-time/per-year filter) by their setupTypeId.
+- For each setup type that has at least one trade, compute: win rate, net R, and trade count — using the exact same computeStats server formula already used elsewhere on this page (RRR histogram bucket modal, all-time summary). Do not reimplement stats math.
+- Trades with no setup type assigned should be grouped under an "Untagged" row, shown last.
+- Deleted/inactive setup types: if a trade references a setup type that's been soft-deleted, still show it under that type's original name (the type name is stored per-trade or joinable — do not drop these trades from the section).
+
+Display:
+- Render as a list/table of rows: setup type name (with its color swatch, same as used elsewhere), win rate, net R, trade count.
+- Sort by trade count descending.
+
+Drill-down (reuse existing pattern):
+- Tapping a row opens the same modal component currently used for RRR histogram bucket drill-down (BucketTradesModal or equivalent) — reuse it, don't fork a new component. Filter its trade list by setupTypeId instead of RRR bucket.
+- Add the setup type's description as a subtitle inside that modal when opened from this section (omit the subtitle when the modal is opened from the RRR histogram, so existing behavior there is unchanged).
+
+Guardrails:
+- Do NOT touch the RRR histogram, cumulative growth chart, Year-by-Year table, or any other existing Analysis page section — only add this new section.
+- Do NOT modify the setup_types schema or CRUD — that's Chunk 1/2, already done.
+- If the per-year Analysis view (filtered to one year) is active, this section should also filter its trades to that year, matching how other per-year-scoped sections on this page behave.
+
+After finishing, restart the frontend, confirm it builds with no errors, then commit and push directly to main. Confirm explicitly: the section renders correct win rate/net R/trade count per setup type, drill-down modal opens with the right filtered trades and shows the description subtitle, and no other Analysis page section was altered.

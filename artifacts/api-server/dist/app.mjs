@@ -63724,7 +63724,7 @@ router6.get("/stats/analysis", requireAuth, async (req, res) => {
   const allWeeksRaw = await db.select().from(weeksTable).where(eq(weeksTable.userId, userId)).orderBy(weeksTable.createdAt);
   const weeks = yearFilter != null ? allWeeksRaw.filter((w) => w.monthIndex != null && yearIndexFromMonthIndex(w.monthIndex) === yearFilter) : allWeeksRaw;
   const scopedWeekIds = new Set(weeks.map((w) => w.id));
-  const allTradesRaw = await db.select({ id: tradesTable.id, weekId: tradesTable.weekId, result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips, createdAt: tradesTable.createdAt }).from(tradesTable).where(eq(tradesTable.userId, userId)).orderBy(tradesTable.createdAt);
+  const allTradesRaw = await db.select({ id: tradesTable.id, weekId: tradesTable.weekId, result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips, createdAt: tradesTable.createdAt, setupTypeId: tradesTable.setupTypeId }).from(tradesTable).where(eq(tradesTable.userId, userId)).orderBy(tradesTable.createdAt);
   const allTrades = yearFilter != null ? allTradesRaw.filter((t) => scopedWeekIds.has(t.weekId)) : allTradesRaw;
   const tradesByWeek = /* @__PURE__ */ new Map();
   for (const t of allTrades) {
@@ -63895,6 +63895,49 @@ router6.get("/stats/analysis", requireAuth, async (req, res) => {
     });
     return { label: b2.label, min: b2.min, max: b2.max, count: bucketTrades.length, trades: bucketTrades };
   });
+  const allSetupTypesForUser = await db.select({
+    id: setupTypesTable.id,
+    name: setupTypesTable.name,
+    color: setupTypesTable.color,
+    description: setupTypesTable.description
+  }).from(setupTypesTable).where(eq(setupTypesTable.userId, userId));
+  const setupTypeById = new Map(allSetupTypesForUser.map((st) => [st.id, st]));
+  const setupGroupMap = /* @__PURE__ */ new Map();
+  for (const t of allTrades) {
+    const key = t.setupTypeId ?? null;
+    if (!setupGroupMap.has(key)) setupGroupMap.set(key, []);
+    setupGroupMap.get(key).push(t);
+  }
+  const bySetupType = Array.from(setupGroupMap.entries()).filter(([, trades]) => trades.length > 0).map(([setupTypeId, trades]) => {
+    const st = setupTypeId != null ? setupTypeById.get(setupTypeId) : null;
+    const stats = computeStats(trades);
+    const tradeRows = trades.map((t) => {
+      const wk = weekById.get(t.weekId);
+      return {
+        id: t.id,
+        result: t.result,
+        rrr: t.rrr,
+        pips: t.pips,
+        weekId: t.weekId,
+        weekLabel: wk?.label ?? null,
+        weekStartDate: wk?.startDate ?? null
+      };
+    });
+    return {
+      setupTypeId,
+      name: st?.name ?? "Untagged",
+      color: st?.color ?? null,
+      description: st?.description ?? null,
+      winRate: stats.winRate,
+      netRR: stats.netRR,
+      totalTrades: stats.totalTrades,
+      trades: tradeRows
+    };
+  }).sort((a, b2) => {
+    if (a.setupTypeId === null && b2.setupTypeId !== null) return 1;
+    if (a.setupTypeId !== null && b2.setupTypeId === null) return -1;
+    return b2.totalTrades - a.totalTrades;
+  });
   res.json({
     allTime,
     byYear,
@@ -63912,7 +63955,8 @@ router6.get("/stats/analysis", requireAuth, async (req, res) => {
     consistency,
     cumulativeWeekly,
     cumulativeMonthly,
-    rrrDistribution
+    rrrDistribution,
+    bySetupType
   });
 });
 router6.get("/stats/streak", requireAuth, async (req, res) => {
