@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
-import { db, tradesTable, weeksTable, type Week } from "@workspace/db";
+import { db, tradesTable, weeksTable, setupTypesTable, type Week } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth.js";
 
 // ─── label helpers (mirrors label-utils.ts on the client) ────────────────────
@@ -76,7 +76,7 @@ router.get("/stats/weekly", requireAuth, async (req, res) => {
 });
 
 // ─── types for the analysis endpoint ─────────────────────────────────────────
-type AnalysisTrade = { id: number; weekId: number; result: string; rrr: number; pips: number; createdAt: Date };
+type AnalysisTrade = { id: number; weekId: number; result: string; rrr: number; pips: number; createdAt: Date; setupTypeId: number | null };
 type WeekStatEntry = { week: Week; trades: AnalysisTrade[]; totalTrades: number; wins: number; losses: number; breakEvens: number; winRate: number; netRR: number; netPips: number };
 
 // GET /api/stats/analysis — rich analytics for the authenticated user.
@@ -101,7 +101,7 @@ router.get("/stats/analysis", requireAuth, async (req, res) => {
 
   // All trades in chronological order, scoped to the same user (+ year if filtered)
   const allTradesRaw: AnalysisTrade[] = await db
-    .select({ id: tradesTable.id, weekId: tradesTable.weekId, result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips, createdAt: tradesTable.createdAt })
+    .select({ id: tradesTable.id, weekId: tradesTable.weekId, result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips, createdAt: tradesTable.createdAt, setupTypeId: tradesTable.setupTypeId })
     .from(tradesTable)
     .where(eq(tradesTable.userId, userId))
     .orderBy(tradesTable.createdAt);
@@ -296,6 +296,61 @@ router.get("/stats/analysis", requireAuth, async (req, res) => {
     return { label: b.label, min: b.min, max: b.max, count: bucketTrades.length, trades: bucketTrades };
   });
 
+  // 11. By Setup Type — group all scoped trades by setupTypeId, compute stats per group.
+  //     Joins with setup_types (active + inactive) for name/color/description.
+  //     Untagged trades (setupTypeId IS NULL) are grouped last.
+  const allSetupTypesForUser = await db
+    .select({
+      id: setupTypesTable.id,
+      name: setupTypesTable.name,
+      color: setupTypesTable.color,
+      description: setupTypesTable.description,
+    })
+    .from(setupTypesTable)
+    .where(eq(setupTypesTable.userId, userId));
+  const setupTypeById = new Map(allSetupTypesForUser.map(st => [st.id, st]));
+
+  const setupGroupMap = new Map<number | null, AnalysisTrade[]>();
+  for (const t of allTrades) {
+    const key = t.setupTypeId ?? null;
+    if (!setupGroupMap.has(key)) setupGroupMap.set(key, []);
+    setupGroupMap.get(key)!.push(t);
+  }
+
+  const bySetupType = Array.from(setupGroupMap.entries())
+    .filter(([, trades]) => trades.length > 0)
+    .map(([setupTypeId, trades]) => {
+      const st = setupTypeId != null ? setupTypeById.get(setupTypeId) : null;
+      const stats = computeStats(trades);
+      const tradeRows = trades.map(t => {
+        const wk = weekById.get(t.weekId);
+        return {
+          id: t.id,
+          result: t.result,
+          rrr: t.rrr,
+          pips: t.pips,
+          weekId: t.weekId,
+          weekLabel: wk?.label ?? null,
+          weekStartDate: wk?.startDate ?? null,
+        };
+      });
+      return {
+        setupTypeId,
+        name: st?.name ?? "Untagged",
+        color: st?.color ?? null,
+        description: st?.description ?? null,
+        winRate: stats.winRate,
+        netRR: stats.netRR,
+        totalTrades: stats.totalTrades,
+        trades: tradeRows,
+      };
+    })
+    .sort((a, b) => {
+      if (a.setupTypeId === null && b.setupTypeId !== null) return 1;
+      if (a.setupTypeId !== null && b.setupTypeId === null) return -1;
+      return b.totalTrades - a.totalTrades;
+    });
+
   res.json({
     allTime,
     byYear,
@@ -314,6 +369,7 @@ router.get("/stats/analysis", requireAuth, async (req, res) => {
     cumulativeWeekly,
     cumulativeMonthly,
     rrrDistribution,
+    bySetupType,
   });
 });
 

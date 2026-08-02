@@ -83,6 +83,17 @@ export interface AnalysisRRRBucket {
   trades: AnalysisRRRBucketTrade[];
 }
 
+export interface AnalysisSetupTypeRow {
+  setupTypeId: number | null;
+  name: string;
+  color: string | null;
+  description: string | null;
+  winRate: number;
+  netRR: number;
+  totalTrades: number;
+  trades: AnalysisRRRBucketTrade[];
+}
+
 export interface AnalysisData {
   allTime: AnalysisSummary;
   byYear: AnalysisYearStats[];
@@ -101,6 +112,7 @@ export interface AnalysisData {
   cumulativeWeekly: AnalysisCumulativePoint[];
   cumulativeMonthly: AnalysisCumulativePoint[];
   rrrDistribution: AnalysisRRRBucket[];
+  bySetupType: AnalysisSetupTypeRow[];
 }
 
 // ─── fetch + hook ─────────────────────────────────────────────────────────────
