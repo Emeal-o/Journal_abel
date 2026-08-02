@@ -712,9 +712,9 @@ export function AnalysisPage() {
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.04]">
                   <th className="text-left px-4 py-3 text-muted-foreground font-medium">Setup</th>
-                  <th className="text-right px-1.5 py-3 text-muted-foreground font-medium whitespace-nowrap">Trades</th>
-                  <th className="text-right px-1.5 py-3 text-muted-foreground font-medium whitespace-nowrap">Win Rate</th>
-                  <th className="text-right px-3 py-3 text-muted-foreground font-medium whitespace-nowrap">Net RR</th>
+                  <th className="text-right px-1.5 py-3 text-muted-foreground font-medium">Trades</th>
+                  <th className="text-right px-1.5 py-3 text-muted-foreground font-medium">Win Rate</th>
+                  <th className="text-right px-3 py-3 text-muted-foreground font-medium">Net RR</th>
                 </tr>
               </thead>
               <tbody>
