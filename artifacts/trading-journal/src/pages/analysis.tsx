@@ -180,7 +180,7 @@ function BucketTradesModal({
     ? (title ?? (bucket.max != null ? `${bucket.min}–${bucket.max}R` : `${bucket.min}R+`))
     : "";
   const tradeWord = (bucket?.count ?? 0) === 1 ? "Trade" : "Trades";
-  const stats = bucket && bucket.trades.length > 0 ? computeBucketStats(bucket.trades) : null;
+  const stats = bucket && bucket.trades && bucket.trades.length > 0 ? computeBucketStats(bucket.trades) : null;
 
   return (
     <Dialog open={!!bucket} onOpenChange={(open) => { if (!open) onClose(); }}>
