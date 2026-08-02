@@ -242,7 +242,7 @@ function BucketTradesModal({
 
         {/* Trade list */}
         <div className="overflow-y-auto flex-1 -mx-6 px-6 mt-2">
-          {!bucket || bucket.trades.length === 0 ? (
+          {!bucket || !bucket.trades || bucket.trades.length === 0 ? (
             <p className="text-center text-muted-foreground text-sm py-8">No trades in this bucket.</p>
           ) : (
             <div className="space-y-2 pb-2">
