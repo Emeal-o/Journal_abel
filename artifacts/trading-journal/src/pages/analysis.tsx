@@ -154,11 +154,14 @@ function computeBucketStats(trades: AnalysisRRRBucketTrade[]) {
 function BucketTradesModal({
   bucket,
   subtitle,
+  title,
   onClose,
 }: {
   bucket: AnalysisRRRBucket | null;
   /** Optional subtitle shown below the modal title — used for setup type descriptions. */
   subtitle?: string | null;
+  /** Optional title override — used to show the setup type's name instead of the RRR range label. */
+  title?: string | null;
   onClose: () => void;
 }) {
   const [statsOpen, setStatsOpen] = useState(false);
@@ -172,7 +175,7 @@ function BucketTradesModal({
   }
 
   const rangeLabel = bucket
-    ? bucket.max != null ? `${bucket.min}–${bucket.max}R` : `${bucket.min}R+`
+    ? (title ?? (bucket.max != null ? `${bucket.min}–${bucket.max}R` : `${bucket.min}R+`))
     : "";
   const tradeWord = (bucket?.count ?? 0) === 1 ? "Trade" : "Trades";
   const stats = bucket && bucket.trades.length > 0 ? computeBucketStats(bucket.trades) : null;
@@ -705,7 +708,13 @@ export function AnalysisPage() {
       {data.bySetupType.length > 0 && (
         <Section title="By Setup Type" icon={Tag}>
           <div className="rounded-xl border border-white/10 overflow-hidden">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col style={{ width: "42%" }} />
+                <col style={{ width: "19%" }} />
+                <col style={{ width: "19%" }} />
+                <col style={{ width: "20%" }} />
+              </colgroup>
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.04]">
                   <th className="text-left px-4 py-3 text-muted-foreground font-medium">Setup</th>
@@ -721,13 +730,13 @@ export function AnalysisPage() {
                     className={`hover:bg-white/[0.03] cursor-pointer transition-colors ${i < data.bySetupType.length - 1 ? "border-b border-white/5" : ""}`}
                     onClick={() => setSelectedSetupRow(row)}
                   >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                    <td className="px-4 py-3 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         <span
                           className="flex-shrink-0 w-2.5 h-2.5 rounded-full ring-1 ring-white/20"
                           style={{ backgroundColor: row.color ?? "rgba(255,255,255,0.2)" }}
                         />
-                        <span className="text-white font-semibold">{row.name}</span>
+                        <span className="text-white font-semibold truncate">{row.name}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right text-muted-foreground">{row.totalTrades}</td>
@@ -755,6 +764,7 @@ export function AnalysisPage() {
             : null
         }
         subtitle={selectedSetupRow?.description ?? null}
+        title={selectedSetupRow?.name ?? null}
         onClose={() => setSelectedSetupRow(null)}
       />
 
