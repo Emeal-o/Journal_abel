@@ -82,6 +82,13 @@ type WeekStatEntry = { week: Week; trades: AnalysisTrade[]; totalTrades: number;
 // GET /api/stats/analysis — rich analytics for the authenticated user.
 // Optional query param: ?year=<number> — scopes all calculations to that year only.
 router.get("/stats/analysis", requireAuth, async (req, res) => {
+  // This endpoint serves private, per-user, frequently-changing analytics.
+  // Explicitly prevent any caching layer (browser, CDN/edge) from ever
+  // serving a stale copy — this data must always be freshly computed.
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  res.set("Surrogate-Control", "no-store");
   const userId = req.session.userId!;
   const yearFilter = req.query.year != null ? parseInt(req.query.year as string, 10) : null;
 
