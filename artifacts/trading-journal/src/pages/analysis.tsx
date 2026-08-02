@@ -708,13 +708,7 @@ export function AnalysisPage() {
       {data.bySetupType.length > 0 && (
         <Section title="By Setup Type" icon={Tag}>
           <div className="rounded-xl border border-white/10 overflow-hidden">
-            <table className="w-full text-sm table-fixed">
-              <colgroup>
-                <col style={{ width: "42%" }} />
-                <col style={{ width: "19%" }} />
-                <col style={{ width: "19%" }} />
-                <col style={{ width: "20%" }} />
-              </colgroup>
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.04]">
                   <th className="text-left px-4 py-3 text-muted-foreground font-medium">Setup</th>
@@ -730,13 +724,13 @@ export function AnalysisPage() {
                     className={`hover:bg-white/[0.03] cursor-pointer transition-colors ${i < data.bySetupType.length - 1 ? "border-b border-white/5" : ""}`}
                     onClick={() => setSelectedSetupRow(row)}
                   >
-                    <td className="px-4 py-3 min-w-0">
+                    <td className="px-4 py-3 max-w-0 w-full">
                       <div className="flex items-center gap-2 min-w-0">
                         <span
                           className="flex-shrink-0 w-2.5 h-2.5 rounded-full ring-1 ring-white/20"
                           style={{ backgroundColor: row.color ?? "rgba(255,255,255,0.2)" }}
                         />
-                        <span className="text-white font-semibold truncate">{row.name}</span>
+                        <span className="text-white font-semibold truncate block">{row.name}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right text-muted-foreground">{row.totalTrades}</td>
