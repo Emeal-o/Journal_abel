@@ -121,6 +121,18 @@ export function StatsPage() {
       // scale:8 × 680 px (5 440 px output) — extra resolution headroom so
       // small text stays legible after Discord's upload compression.
       // Letter-spacing is stripped to reduce SVG foreignObject hinting artefacts.
+
+      // Wait for JetBrains Mono (used by LedgerSheet for all numeric cells) to
+      // be fully loaded before capturing, so the export never silently falls
+      // back to a system monospace font with different digit spacing.
+      await Promise.all([
+        document.fonts.load('400 16px "JetBrains Mono"'),
+        document.fonts.load('600 16px "JetBrains Mono"'),
+        document.fonts.load('700 16px "JetBrains Mono"'),
+        document.fonts.load('800 16px "JetBrains Mono"'),
+      ]);
+      await document.fonts.ready;
+
       const png = await captureCardPng(node, t.pageBg, 680, 8);
       triggerDownload(png, `tradeops-${theme}-${dateStr}.png`);
 

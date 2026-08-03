@@ -320,6 +320,17 @@ export function AnalysisPage() {
       const t = THEMES[exportTheme];
       const dateStr = new Date().toISOString().slice(0, 10);
       const scopeStr = isYearScoped ? `year${yearIndex}` : "all-time";
+
+      // Wait for Inter (used by AnalysisCard for all numeric cells at weights
+      // 600–800) to be fully loaded before capturing, so the export never
+      // silently falls back to a system font with different digit spacing.
+      await Promise.all([
+        document.fonts.load('600 16px "Inter"'),
+        document.fonts.load('700 16px "Inter"'),
+        document.fonts.load('800 16px "Inter"'),
+      ]);
+      await document.fonts.ready;
+
       const png = await captureCardPng(cardRef.current, t.pageBg, EXPORT_CARD_WIDTH, 6);
       triggerDownload(png, `tradeops-analysis-${scopeStr}-${exportTheme}-${dateStr}.png`);
       toast({ title: "Analysis card downloaded" });
