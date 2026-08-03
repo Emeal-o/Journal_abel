@@ -1,0 +1,11 @@
+Repo: Emeal-o/Journal_abel. Work directly on the main branch — no feature branch, no pull request. Commit and push directly to main.
+
+In artifacts/trading-journal/src/pages/analysis.tsx, the "By Setup Type" and "Post-Loss Performance" tables both use a colgroup with FIXED pixel widths on the numeric columns (Trades/Win Rate/Net RR — currently 64px/74px/96px), which was needed to stop those columns from clipping off-screen on narrow mobile phones. That mobile fix works, but it created a new problem on wider/desktop screens: those three numeric columns stay stuck at that same tiny fixed width no matter how wide the container gets, so all the extra space goes entirely to the first (Setup / After Streak) column, and the numeric columns end up cramped together instead of spreading out proportionally the way the "Year by Year" table above them does (which uses table-layout: auto, not fixed).
+
+Fix: change each numeric column's colgroup width from a fixed pixel value to a CSS max() expression that keeps the same pixel floor (so mobile never regresses) but lets it grow as a percentage on wider screens. Specifically, for both tables' colgroup <col> elements on the three numeric columns, change:
+  width: "64px"  ->  width: "max(64px, 12%)"
+  width: "74px"  ->  width: "max(74px, 14%)"
+  width: "96px"  ->  width: "max(96px, 18%)"
+Keep table-layout: fixed on both tables — do not change it to auto. Keep the first column (Setup name / After Streak label) with no explicit width, same as now, so it still absorbs whatever space remains.
+
+After finishing, restart the frontend, confirm it builds with no errors, then commit and push directly to main. Confirm explicitly, with a description of what you see at both a narrow mobile width and a wide desktop width: (1) on mobile, the numeric columns still never clip/overflow — same protection as before, (2) on desktop, the three numeric columns now spread out more, closer to how Year by Year's columns are spaced, instead of staying cramped together at a tiny fixed width while the first column eats all the extra space.
