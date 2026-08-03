@@ -63719,6 +63719,10 @@ router6.get("/stats/weekly", requireAuth, async (req, res) => {
   res.json(result);
 });
 router6.get("/stats/analysis", requireAuth, async (req, res) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  res.set("Surrogate-Control", "no-store");
   const userId = req.session.userId;
   const yearFilter = req.query.year != null ? parseInt(req.query.year, 10) : null;
   const allWeeksRaw = await db.select().from(weeksTable).where(eq(weeksTable.userId, userId)).orderBy(weeksTable.createdAt);
@@ -63952,8 +63956,21 @@ router6.get("/stats/analysis", requireAuth, async (req, res) => {
     precedingLossStreak = t.result === "Loss" ? precedingLossStreak + 1 : 0;
   }
   const postLossPerformance = [0, 1, 2, 3].map((afterLosses) => {
-    const trades = tiltGroups.get(afterLosses);
-    return { afterLosses, label: TILT_LABELS[afterLosses], ...computeStats(trades) };
+    const bucketTrades = tiltGroups.get(afterLosses);
+    const stats = computeStats(bucketTrades);
+    const tradeRows = bucketTrades.map((t) => {
+      const wk = weekById.get(t.weekId);
+      return {
+        id: t.id,
+        result: t.result,
+        rrr: t.rrr,
+        pips: t.pips,
+        weekId: t.weekId,
+        weekLabel: wk?.label ?? null,
+        weekStartDate: wk?.startDate ?? null
+      };
+    });
+    return { afterLosses, label: TILT_LABELS[afterLosses], ...stats, trades: tradeRows };
   });
   res.json({
     allTime,
