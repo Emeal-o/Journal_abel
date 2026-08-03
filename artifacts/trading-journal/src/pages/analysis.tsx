@@ -726,9 +726,9 @@ export function AnalysisPage() {
             <table className="w-full text-sm table-fixed">
               <colgroup>
                 <col />
-                <col style={{ width: "64px" }} />
-                <col style={{ width: "74px" }} />
-                <col style={{ width: "96px" }} />
+                <col style={{ width: "max(64px, 12%)" }} />
+                <col style={{ width: "max(74px, 14%)" }} />
+                <col style={{ width: "max(96px, 18%)" }} />
               </colgroup>
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.04]">
@@ -790,9 +790,9 @@ export function AnalysisPage() {
             <table className="w-full text-sm table-fixed">
               <colgroup>
                 <col />
-                <col style={{ width: "64px" }} />
-                <col style={{ width: "74px" }} />
-                <col style={{ width: "96px" }} />
+                <col style={{ width: "max(64px, 12%)" }} />
+                <col style={{ width: "max(74px, 14%)" }} />
+                <col style={{ width: "max(96px, 18%)" }} />
               </colgroup>
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.04]">
