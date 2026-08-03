@@ -6,12 +6,20 @@
  */
 import domtoimage from "dom-to-image-more";
 
-/** Zero out every inline letter-spacing inside `root`; returns a restore fn. */
+/**
+ * Zero out negative inline letter-spacing inside `root`; returns a restore fn.
+ *
+ * Only negative values (tight/numeric kerning, e.g. "-0.01em") are stripped —
+ * these are the ones that cause SVG foreignObject hinting artefacts in
+ * dom-to-image-more. Positive wide-tracking values (e.g. "0.16em" on label
+ * elements) are intentional design and must be preserved in the exported PNG.
+ */
 export function stripLetterSpacing(root: HTMLElement): () => void {
   const saved: Array<[HTMLElement, string]> = [];
   root.querySelectorAll<HTMLElement>("*").forEach((el) => {
-    if (el.style.letterSpacing) {
-      saved.push([el, el.style.letterSpacing]);
+    const ls = el.style.letterSpacing;
+    if (ls && ls.startsWith("-")) {
+      saved.push([el, ls]);
       el.style.letterSpacing = "normal";
     }
   });
