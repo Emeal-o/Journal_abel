@@ -14,26 +14,31 @@
 import type { Trade, TradeInput, TradeUpdate } from "@workspace/api-client-react";
 
 /**
- * Trade as returned from the server — extends the generated type with setupTypeId,
- * which the server always serialises from the DB row but which is not yet in the spec.
+ * Trade as returned from the server — extends the generated type with setupTypeId
+ * and direction, which the server always serialises from the DB row but which are
+ * not yet in the OpenAPI spec.
  */
 export type TradeWithSetupType = Trade & {
   /** @nullable — ID of the active setup type tagged on this trade, or null if none. */
   setupTypeId?: number | null;
+  /** @nullable — "Long" | "Short", or null for legacy trades that pre-date this field. */
+  direction?: "Long" | "Short" | null;
 };
 
 /**
- * Body for POST /api/trades — extends the generated TradeInput with setupTypeId,
- * accepted by the server defensively outside the schema-validated body.
+ * Body for POST /api/trades — extends the generated TradeInput with setupTypeId
+ * and direction, accepted by the server defensively outside the schema-validated body.
  */
 export type TradeInputWithSetupType = TradeInput & {
   setupTypeId?: number | null;
+  direction?: "Long" | "Short" | null;
 };
 
 /**
- * Body for PATCH /api/trades/:id — extends the generated TradeUpdate with setupTypeId.
- * Pass null to clear the tag; omit to leave it unchanged.
+ * Body for PATCH /api/trades/:id — extends the generated TradeUpdate with setupTypeId
+ * and direction. Pass null to clear; omit to leave unchanged.
  */
 export type TradeUpdateWithSetupType = TradeUpdate & {
   setupTypeId?: number | null;
+  direction?: "Long" | "Short" | null;
 };

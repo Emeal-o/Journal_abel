@@ -57999,6 +57999,8 @@ var tradesTable = pgTable("trades", {
   notes: text("notes"),
   flagEmoji: text("flag_emoji"),
   setupTypeId: integer("setup_type_id").references(() => setupTypesTable.id, { onDelete: "set null" }),
+  direction: text("direction"),
+  // "Long" | "Short" | null (null for legacy trades)
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 var insertTradeSchema = createInsertSchema(tradesTable).omit({ id: true, tradeNumber: true, createdAt: true, userId: true });
@@ -63565,6 +63567,15 @@ router5.post("/trades", requireAuth, async (req, res) => {
     }
     setupTypeId = parsed;
   }
+  let direction = null;
+  const rawDirection = req.body.direction;
+  if (rawDirection !== void 0 && rawDirection !== null) {
+    if (rawDirection !== "Long" && rawDirection !== "Short") {
+      res.status(400).json({ error: "direction must be 'Long' or 'Short'." });
+      return;
+    }
+    direction = rawDirection;
+  }
   const existingTrades = await db.select({ id: tradesTable.id }).from(tradesTable).where(and(eq(tradesTable.weekId, body.weekId), eq(tradesTable.userId, userId)));
   const tradeNumber = existingTrades.length + 1;
   const [trade] = await db.insert(tradesTable).values({
@@ -63576,7 +63587,8 @@ router5.post("/trades", requireAuth, async (req, res) => {
     pips: body.pips,
     notes: body.notes ?? null,
     flagEmoji: body.flagEmoji ?? null,
-    setupTypeId
+    setupTypeId,
+    direction
   }).returning();
   res.status(201).json({ ...trade, createdAt: trade.createdAt.toISOString() });
 });
@@ -63613,6 +63625,18 @@ router5.patch("/trades/:id", requireAuth, async (req, res) => {
       patchSetupTypeId = parsed;
     }
   }
+  let patchDirection = void 0;
+  const rawDirection = req.body.direction;
+  if (rawDirection !== void 0) {
+    if (rawDirection === null) {
+      patchDirection = null;
+    } else if (rawDirection === "Long" || rawDirection === "Short") {
+      patchDirection = rawDirection;
+    } else {
+      res.status(400).json({ error: "direction must be 'Long', 'Short', or null." });
+      return;
+    }
+  }
   const [existing] = await db.select({ id: tradesTable.id, weekId: tradesTable.weekId }).from(tradesTable).where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId)));
   if (!existing) {
     res.status(404).json({ error: "Not found" });
@@ -63623,7 +63647,11 @@ router5.patch("/trades/:id", requireAuth, async (req, res) => {
     res.status(403).json({ error: "Cannot modify trades in an archived week." });
     return;
   }
-  const updateFields = patchSetupTypeId !== void 0 ? { ...body, setupTypeId: patchSetupTypeId } : { ...body };
+  const updateFields = {
+    ...body,
+    ...patchSetupTypeId !== void 0 ? { setupTypeId: patchSetupTypeId } : {},
+    ...patchDirection !== void 0 ? { direction: patchDirection } : {}
+  };
   const [trade] = await db.update(tradesTable).set(updateFields).where(and(eq(tradesTable.id, id), eq(tradesTable.userId, userId))).returning();
   if (!trade) {
     res.status(404).json({ error: "Not found" });

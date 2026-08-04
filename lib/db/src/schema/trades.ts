@@ -16,6 +16,7 @@ export const tradesTable = pgTable("trades", {
   notes: text("notes"),
   flagEmoji: text("flag_emoji"),
   setupTypeId: integer("setup_type_id").references(() => setupTypesTable.id, { onDelete: "set null" }),
+  direction: text("direction"), // "Long" | "Short" | null (null for legacy trades)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

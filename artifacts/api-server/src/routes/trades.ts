@@ -78,6 +78,17 @@ router.post("/trades", requireAuth, async (req, res) => {
     setupTypeId = parsed;
   }
 
+  // Read direction defensively from raw body — "Long" | "Short" | null.
+  let direction: "Long" | "Short" | null = null;
+  const rawDirection = (req.body as Record<string, unknown>).direction;
+  if (rawDirection !== undefined && rawDirection !== null) {
+    if (rawDirection !== "Long" && rawDirection !== "Short") {
+      res.status(400).json({ error: "direction must be 'Long' or 'Short'." });
+      return;
+    }
+    direction = rawDirection;
+  }
+
   // Auto-increment trade number within the week for this user
   const existingTrades = await db
     .select({ id: tradesTable.id })
@@ -95,6 +106,7 @@ router.post("/trades", requireAuth, async (req, res) => {
     notes: body.notes ?? null,
     flagEmoji: body.flagEmoji ?? null,
     setupTypeId,
+    direction,
   }).returning();
   res.status(201).json({ ...trade!, createdAt: trade!.createdAt.toISOString() });
 });
@@ -141,6 +153,20 @@ router.patch("/trades/:id", requireAuth, async (req, res) => {
     }
   }
 
+  // Read direction defensively — undefined = leave unchanged; null = clear; "Long"/"Short" = set.
+  let patchDirection: "Long" | "Short" | null | undefined = undefined;
+  const rawDirection = (req.body as Record<string, unknown>).direction;
+  if (rawDirection !== undefined) {
+    if (rawDirection === null) {
+      patchDirection = null;
+    } else if (rawDirection === "Long" || rawDirection === "Short") {
+      patchDirection = rawDirection;
+    } else {
+      res.status(400).json({ error: "direction must be 'Long', 'Short', or null." });
+      return;
+    }
+  }
+
   // Verify ownership and that the parent week isn't archived before mutating
   const [existing] = await db
     .select({ id: tradesTable.id, weekId: tradesTable.weekId })
@@ -157,9 +183,11 @@ router.patch("/trades/:id", requireAuth, async (req, res) => {
     return;
   }
 
-  const updateFields = patchSetupTypeId !== undefined
-    ? { ...body, setupTypeId: patchSetupTypeId }
-    : { ...body };
+  const updateFields = {
+    ...body,
+    ...(patchSetupTypeId !== undefined ? { setupTypeId: patchSetupTypeId } : {}),
+    ...(patchDirection !== undefined ? { direction: patchDirection } : {}),
+  };
 
   const [trade] = await db
     .update(tradesTable)

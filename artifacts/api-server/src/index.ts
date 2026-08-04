@@ -79,6 +79,9 @@ async function runStartupMigrations() {
   // Optional description on setup_types — idempotent; existing rows default to NULL.
   await db.execute(sql`ALTER TABLE setup_types ADD COLUMN IF NOT EXISTS description TEXT`);
 
+  // Direction on trades — "Long" | "Short" | null (null for legacy trades pre-dating this field).
+  await db.execute(sql`ALTER TABLE trades ADD COLUMN IF NOT EXISTS direction TEXT`);
+
   // setup_type_change_log — audit trail for admin setup-type reassignments.
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS setup_type_change_log (

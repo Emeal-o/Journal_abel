@@ -50,6 +50,7 @@ const tradeSchema = z.object({
   notes: z.string().optional(),
   flagEmoji: z.string().optional(),
   setupTypeId: z.number().nullable().optional(),
+  direction: z.enum(["Long", "Short"], { message: "Please select Long or Short." }),
 });
 
 type TradeFormValues = z.infer<typeof tradeSchema>;
@@ -79,6 +80,7 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
       notes: "",
       flagEmoji: "",
       setupTypeId: null,
+      direction: undefined,
     },
   });
 
@@ -91,6 +93,9 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
         notes: trade.notes || "",
         flagEmoji: trade.flagEmoji || "",
         setupTypeId: trade.setupTypeId ?? null,
+        // Pre-select existing direction; undefined leaves neither toggle selected
+        // (forces the user to pick one for old trades that pre-date this field).
+        direction: (trade.direction as "Long" | "Short" | undefined) ?? undefined,
       });
     } else if (open && !trade) {
       form.reset({
@@ -100,16 +105,17 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
         notes: "",
         flagEmoji: "",
         setupTypeId: null,
+        direction: undefined,
       });
     }
   }, [open, trade, form]);
 
   const onSubmit = (data: TradeFormValues) => {
-    const { setupTypeId, ...rest } = data;
+    const { setupTypeId, direction, ...rest } = data;
     if (isEditing) {
-      // TradeUpdateWithSetupType structurally satisfies TradeUpdate (it adds an optional field),
+      // TradeUpdateWithSetupType structurally satisfies TradeUpdate (it adds optional fields),
       // so it is assignable to the hook's expected type without a cast.
-      const updatePayload: TradeUpdateWithSetupType = { ...rest, setupTypeId: setupTypeId ?? null };
+      const updatePayload: TradeUpdateWithSetupType = { ...rest, setupTypeId: setupTypeId ?? null, direction: direction ?? null };
       updateTrade.mutate(
         { id: trade.id, data: updatePayload },
         {
@@ -128,7 +134,7 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
       );
     } else {
       // Same pattern: TradeInputWithSetupType satisfies TradeInput structurally.
-      const createPayload: TradeInputWithSetupType = { ...rest, weekId, setupTypeId: setupTypeId ?? undefined };
+      const createPayload: TradeInputWithSetupType = { ...rest, weekId, setupTypeId: setupTypeId ?? undefined, direction: direction ?? null };
       createTrade.mutate(
         { data: createPayload },
         {
@@ -243,6 +249,39 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
                       className="bg-white/5 border-white/10 w-24"
                       {...field}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Direction — required toggle: Long or Short */}
+            <FormField
+              control={form.control}
+              name="direction"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Direction</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-2">
+                      {(["Long", "Short"] as const).map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => field.onChange(option)}
+                          className={[
+                            "flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors",
+                            field.value === option
+                              ? option === "Long"
+                                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                                : "bg-rose-500/20 border-rose-500/50 text-rose-400"
+                              : "bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10",
+                          ].join(" ")}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
