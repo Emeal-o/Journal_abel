@@ -72,6 +72,26 @@ function SetupTypeChip({ setupTypeId, setupTypes }: { setupTypeId?: number | nul
   );
 }
 
+// ─── direction chip ───────────────────────────────────────────────────────────
+
+function DirectionChip({ direction }: { direction?: "Long" | "Short" | null }) {
+  if (!direction) return null;
+  const isLong = direction === "Long";
+  return (
+    <span
+      className={[
+        "inline-flex items-center rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none ring-1 ring-inset",
+        isLong
+          ? "bg-sky-500/15 text-sky-400 ring-sky-500/25"
+          : "bg-amber-500/15 text-amber-400 ring-amber-500/25",
+      ].join(" ")}
+      title={`Direction: ${direction}`}
+    >
+      {direction}
+    </span>
+  );
+}
+
 // ─── week card ────────────────────────────────────────────────────────────────
 
 export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) {
@@ -230,6 +250,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                         </Badge>
                       )}
                       <SetupTypeChip setupTypeId={trade.setupTypeId} setupTypes={setupTypes} />
+                      <DirectionChip direction={trade.direction as "Long" | "Short" | null | undefined} />
                       {trade.flagEmoji && (
                         <span className="text-sm leading-none" title="Flag">{trade.flagEmoji}</span>
                       )}
@@ -314,6 +335,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                             </Badge>
                           )}
                           <SetupTypeChip setupTypeId={trade.setupTypeId} setupTypes={setupTypes} />
+                          <DirectionChip direction={trade.direction as "Long" | "Short" | null | undefined} />
                           {trade.flagEmoji && (
                             <span className="text-sm leading-none" title="Flag">{trade.flagEmoji}</span>
                           )}
