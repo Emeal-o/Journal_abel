@@ -1,0 +1,20 @@
+Repo: Emeal-o/Journal_abel. Work directly on the main branch — no feature branch, no pull request. Commit and push directly to main.
+
+GOAL: Add a "Direction" field (Long or Short) to trades, following the exact same pattern already used for the Setup Type field (nullable at the DB/schema level for backward compatibility with existing archived trades, but REQUIRED going forward in the Add/Edit Trade form for new trades).
+
+BACKEND:
+1. Add a nullable `direction` column to the trades table schema (text type, values will be 'Long' or 'Short', null allowed for existing rows). Use `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` migration pattern consistent with how setupTypeId and flag_emoji were added previously.
+2. Update the trades POST/PUT routes to accept an optional `direction` field in the request body and persist it.
+3. Do NOT make direction required at the database/API level — only enforce "required" in the frontend form for NEW trade submissions. This is important: existing archived trades will have direction = null until manually backfilled via SQL later, so the schema and API must allow null.
+
+FRONTEND — Add/Edit Trade form:
+1. Add a Direction field with two toggle buttons side by side, labeled "Long" and "Short" (not a dropdown — a simple two-option toggle, similar visual weight to the existing Win/Loss/BE result buttons if those exist as toggles, otherwise style consistent with the rest of the form). Place it near the Setup Type dropdown.
+2. Make this field REQUIRED for new trade submissions — the form should not submit without one selected, with a clear validation message if the user tries.
+3. When editing an existing trade that already has a direction, pre-select the correct toggle. When editing an old trade where direction is null, show neither toggle selected but still require picking one before the edit can be saved (i.e. editing an old trade is also an opportunity to fill in direction — but do NOT force this to be mandatory-on-every-edit if that would block quick unrelated edits; use your judgment on the least disruptive way to require it going forward without making minor edits to old trades painful — explain what you chose and why).
+4. Where Setup Type currently shows on trades (Stats table, week cards, wherever it's displayed inline), do NOT add Direction display yet — this prompt is ONLY the form + data capture, not display elsewhere. That will be a separate follow-up.
+
+DO NOT touch: the Analysis page, Setup Type feature, emoji flag feature, notes field, or any other part of the trade form. This is additive only.
+
+After finishing, verify in the Neon SQL console that the `direction` column actually exists in PRODUCTION (not just dev) using: SELECT column_name FROM information_schema.columns WHERE table_name = 'trades' AND column_name = 'direction'; — do not skip this, past schema changes have silently failed to reach production before. If this is a backend change, also remember to rebuild: run `node ./build.mjs` inside artifacts/api-server before committing, so the compiled dist/app.mjs actually includes this change — do not skip this step.
+
+Restart both frontend and backend, confirm both build with no errors, then commit and push directly to main. Confirm explicitly: (1) the direction column exists in production Neon (paste the verification query result), (2) new trades cannot be submitted without selecting Long or Short, (3) exactly what you decided for editing old trades with null direction and why, (4) confirm dist/app.mjs was rebuilt if stats.ts or any other api-server file was touched.
