@@ -22,6 +22,7 @@ import {
 import { useAnalysis } from "@/lib/analysis-api";
 import type { AnalysisCumulativePoint, AnalysisRRRPoint, AnalysisRRRBucket, AnalysisRRRBucketTrade, AnalysisSetupTypeRow, AnalysisPostLossRow } from "@/lib/analysis-api";
 import { toRoman } from "@/lib/label-utils";
+import { getWinRateColor } from "@/lib/utils";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -308,7 +309,7 @@ function WinRateRing({
 }) {
   // dashOffset=0 → full arc visible; dashOffset=circumference → no arc visible
   const dashOffset = hasData ? RING_C - (winRate / 100) * RING_C : RING_C;
-  const arcColor = hasData ? (winRate >= 50 ? "#34d399" : "#fb7185") : "rgba(255,255,255,0.08)";
+  const arcColor = hasData ? getWinRateColor(winRate) : "rgba(255,255,255,0.08)";
 
   return (
     <div
@@ -843,7 +844,7 @@ export function AnalysisPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right text-muted-foreground whitespace-nowrap">{row.totalTrades}</td>
-                    <td className="px-4 py-3 text-right font-semibold whitespace-nowrap" style={{ color: row.winRate >= 50 ? "#34d399" : "#fb7185" }}>{row.winRate}%</td>
+                    <td className="px-4 py-3 text-right font-semibold whitespace-nowrap" style={{ color: getWinRateColor(row.winRate) }}>{row.winRate}%</td>
                     <td className="px-4 py-3 text-right font-mono font-semibold whitespace-nowrap" style={{ color: rrColor(row.netRR) }}>{fmtRR(row.netRR)}</td>
                   </tr>
                 ))}
@@ -1033,30 +1034,36 @@ export function AnalysisPage() {
                     <span className="text-xs font-semibold text-white truncate">{row.name}</span>
                   </div>
 
-                  {/* Two rings */}
-                  <div className="flex justify-around">
-                    <WinRateRing
-                      label="L"
-                      winRate={longStats?.winRate ?? 0}
-                      tradeCount={longTrades.length}
-                      hasData={!!longStats}
-                      onClick={longStats ? () => setSelectedDirectionCell({
-                        bucket: { label: `${row.name} — Long`, min: 0, max: null, count: longTrades.length, trades: longTrades },
-                        title: `${row.name} — Long`,
-                        subtitle: row.description,
-                      }) : undefined}
-                    />
-                    <WinRateRing
-                      label="S"
-                      winRate={shortStats?.winRate ?? 0}
-                      tradeCount={shortTrades.length}
-                      hasData={!!shortStats}
-                      onClick={shortStats ? () => setSelectedDirectionCell({
-                        bucket: { label: `${row.name} — Short`, min: 0, max: null, count: shortTrades.length, trades: shortTrades },
-                        title: `${row.name} — Short`,
-                        subtitle: row.description,
-                      }) : undefined}
-                    />
+                  {/* Two rings — grid-cols-2 gives each ring an equal-width cell;
+                      the inner flex justify-center ensures the ring is
+                      centered within that cell independent of label width */}
+                  <div className="grid grid-cols-2">
+                    <div className="flex justify-center">
+                      <WinRateRing
+                        label="L"
+                        winRate={longStats?.winRate ?? 0}
+                        tradeCount={longTrades.length}
+                        hasData={!!longStats}
+                        onClick={longStats ? () => setSelectedDirectionCell({
+                          bucket: { label: `${row.name} — Long`, min: 0, max: null, count: longTrades.length, trades: longTrades },
+                          title: `${row.name} — Long`,
+                          subtitle: row.description,
+                        }) : undefined}
+                      />
+                    </div>
+                    <div className="flex justify-center">
+                      <WinRateRing
+                        label="S"
+                        winRate={shortStats?.winRate ?? 0}
+                        tradeCount={shortTrades.length}
+                        hasData={!!shortStats}
+                        onClick={shortStats ? () => setSelectedDirectionCell({
+                          bucket: { label: `${row.name} — Short`, min: 0, max: null, count: shortTrades.length, trades: shortTrades },
+                          title: `${row.name} — Short`,
+                          subtitle: row.description,
+                        }) : undefined}
+                      />
+                    </div>
                   </div>
                 </div>
               );
