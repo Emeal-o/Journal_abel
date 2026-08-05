@@ -228,7 +228,7 @@ function BucketTradesModal({
           >
             <div className="grid grid-cols-3 gap-2 pt-1 pb-3">
               {[
-                { label: "Win Rate", value: `${stats.winRate}%`,  accent: stats.winRate >= 50 ? "#34d399" : "#fb7185" },
+                { label: "Win Rate", value: `${stats.winRate}%`,  accent: getWinRateColor(stats.winRate) },
                 { label: "Net RR",   value: fmtRR(stats.netRR),   accent: rrColor(stats.netRR) },
                 { label: "Net Pips", value: `${stats.netPips > 0 ? "+" : ""}${stats.netPips}`, accent: rrColor(stats.netPips) },
               ].map(({ label, value, accent }) => (
@@ -573,7 +573,7 @@ export function AnalysisPage() {
       >
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatTile label="Total Trades" value={String(data.allTime.totalTrades)} sub={`${data.allTime.wins}W · ${data.allTime.losses}L · ${data.allTime.breakEvens}BE`} />
-          <StatTile label="Win Rate" value={`${data.allTime.winRate}%`} accent={data.allTime.winRate >= 50 ? "#34d399" : "#fb7185"} />
+          <StatTile label="Win Rate" value={`${data.allTime.winRate}%`} accent={getWinRateColor(data.allTime.winRate)} />
           <StatTile label="Net RR" value={fmtRR(data.allTime.netRR)} accent={rrColor(data.allTime.netRR)} />
           <StatTile label="Net Pips" value={`${data.allTime.netPips > 0 ? "+" : ""}${data.allTime.netPips}`} accent={rrColor(data.allTime.netPips)} />
         </div>
@@ -654,7 +654,7 @@ export function AnalysisPage() {
                   <tr key={y.yearIndex ?? "active"} className={i < data.byYear.length - 1 ? "border-b border-white/5" : ""}>
                     <td className="px-4 py-3 text-white font-semibold">{y.label}</td>
                     <td className="px-4 py-3 text-right text-muted-foreground">{y.totalTrades}</td>
-                    <td className="px-4 py-3 text-right" style={{ color: y.winRate >= 50 ? "#34d399" : "#fb7185" }}>{y.winRate}%</td>
+                    <td className="px-4 py-3 text-right" style={{ color: getWinRateColor(y.winRate) }}>{y.winRate}%</td>
                     <td className="px-4 py-3 text-right font-mono font-semibold" style={{ color: rrColor(y.netRR) }}>{fmtRR(y.netRR)}</td>
                   </tr>
                 ))}
@@ -900,7 +900,7 @@ export function AnalysisPage() {
                   >
                     <td className="px-4 py-3 text-white font-semibold">{row.label}</td>
                     <td className="px-4 py-3 text-right text-muted-foreground whitespace-nowrap">{row.totalTrades}</td>
-                    <td className="px-4 py-3 text-right font-semibold whitespace-nowrap" style={{ color: row.totalTrades > 0 ? (row.winRate >= 50 ? "#34d399" : "#fb7185") : "#64748b" }}>
+                    <td className="px-4 py-3 text-right font-semibold whitespace-nowrap" style={{ color: row.totalTrades > 0 ? getWinRateColor(row.winRate) : "#64748b" }}>
                       {row.totalTrades > 0 ? `${row.winRate}%` : "—"}
                     </td>
                     <td className="px-4 py-3 text-right font-mono font-semibold whitespace-nowrap" style={{ color: row.totalTrades > 0 ? rrColor(row.netRR) : "#64748b" }}>
