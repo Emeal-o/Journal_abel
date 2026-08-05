@@ -1,0 +1,26 @@
+TASK: Extend the existing `getWinRateColor()` helper (in artifacts/trading-journal/src/lib/utils.ts, already used by the "By Direction" rings and "By Setup Type" table) to three more Win Rate displays on the Analysis page that are still using old hardcoded red/green logic:
+
+1. **All-Time Summary card** — the "WIN RATE" stat card (currently shows e.g. 35.9% in flat red/rose regardless of value).
+2. **Year by Year table** — the Win Rate column (currently flat red/green binary, e.g. shows 35.9% and 0% both in red).
+3. **Post-Loss Performance table** — the Win Rate column (currently flat red/green binary across "After 0/1/2/3+ losses" rows).
+
+For all three, replace the existing win-rate-to-color logic with a call to the shared `getWinRateColor(rate: number)` function — do NOT duplicate or reimplement the color logic, import and reuse the existing function exactly as it's used in the By Setup Type table.
+
+For reference, the existing scale is:
+- 0% to <20%: `#EF4444` (Crimson Red)
+- 20% to <40%: `#F97316` (Orange)
+- 40% to <60%: `#EAB308` (Gold Yellow)
+- 60% to <80%: `#10B981` (Emerald Green)
+- 80% to <90%: `#A855F7` (Amethyst Violet)
+- 90% to 100%: `#06B6D4` (Cyan Diamond)
+
+WHAT NOT TO DO
+- Do not touch "By Direction" rings or "By Setup Type" table — already correct, leave as is.
+- Do not change any other styling, layout, or values in these three sections — this is a text/stroke color swap only.
+- Do not add a minimum-sample-size threshold or any other new logic to Post-Loss Performance — just apply the existing color function to its Win Rate column as-is, same as everywhere else. (If you notice the bucket sizes are small, that's expected and not something to change here.)
+- Do not touch the backend — this is frontend-only in artifacts/trading-journal.
+
+AFTER BUILDING
+- Confirm the build succeeds locally.
+- Take a screenshot showing all five sections (By Direction, By Setup Type, All-Time Summary, Year by Year, Post-Loss Performance) confirming they all now use the same 6-tier color scale consistently for the same win rate values.
+- Report back exactly what files were changed.
