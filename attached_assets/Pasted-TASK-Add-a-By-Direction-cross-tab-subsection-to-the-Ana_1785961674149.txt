@@ -1,0 +1,32 @@
+TASK: Add a "By Direction" cross-tab subsection to the Analysis page, directly below the existing "By Setup Type" section. This shows each setup type's performance split by trade direction (Long vs Short).
+
+STEP 0 — DO THIS FIRST
+A previous session on a different Replit account started this task but hit a quota limit before committing anything. Before writing any code, check `git log` / GitHub main on `Emeal-o/Journal_abel` for artifacts/api-server/src/routes/stats.ts, artifacts/trading-journal/src/lib/analysis-api.ts, and artifacts/trading-journal/src/pages/analysis.tsx. Confirm none of them already contain partial/broken changes related to a "direction" cross-tab or "By Direction" section. If you find partial changes, stop and report exactly what's there before proceeding — do not build on top of unknown partial work.
+
+CONTEXT
+- Trades table already has `direction` (nullable text: 'long' | 'short' | null) and `setup_type_id` (FK to setup_types). Both fields are fully backfilled for user_id=1.
+- The existing "By Setup Type" section on the Analysis page already computes win rate / net R / trade count per setup type. Reuse that same aggregation logic and styling — same table conventions used elsewhere on Analysis page (table-layout:fixed, colgroup with max(px,%) widths, px-4 py-3 padding).
+- `BucketTradesModal` component already exists and is used for drill-down on RRR histogram, By Setup Type, and Post-Loss Performance sections — reuse it here too, do not build a new modal.
+- The `direction` field is NOT currently included in the AnalysisTrade type or the bySetupType trade rows returned by the analysis API (artifacts/api-server/src/routes/stats.ts) — you will need to add it there first.
+
+WHAT TO BUILD
+1. Backend (artifacts/api-server/src/routes/stats.ts): add `direction` to the AnalysisTrade type, add `direction: tradesTable.direction` to the relevant `.select()` call, and include `direction` in the bySetupType tradeRows mapping.
+2. Frontend types (artifacts/trading-journal/src/lib/analysis-api.ts): add `direction?: string | null` to AnalysisRRRBucketTrade (or the equivalent type used by bySetupType trades).
+3. New subsection titled "By Direction" placed immediately after "By Setup Type" on the Analysis page (artifacts/trading-journal/src/pages/analysis.tsx).
+4. Table layout: one row per active setup type (same setup types shown in "By Setup Type"). For each row, show two paired sub-columns: Long stats and Short stats, each showing win rate, net R, trade count.
+5. Minimum sample size rule: if a setup type + direction combination has fewer than 3 trades, render "—" for that cell instead of computed numbers. Trades where `direction` is null are excluded entirely from this section (not lumped into either column).
+6. Clicking a Long or Short sub-column cell opens `BucketTradesModal` filtered to that setup type + direction's trades, title like "{Setup Type Name} — Long"/"— Short", subtitle reuses the setup type's description. Cells showing "—" are not clickable.
+7. Same per-user scoping and archived+active combined trade scope as the existing By Setup Type section.
+
+WHAT NOT TO DO
+- Do not modify the existing "By Setup Type" section's logic or layout.
+- Do not create a new modal component — reuse BucketTradesModal.
+- Do not add outcome-bias/hindsight features — this is a historical stats view only.
+- Do not touch the trades or setup_types schema — both fields already exist and are backfilled.
+
+CRITICAL DEPLOY RULE — READ BEFORE PUSHING
+artifacts/api-server is compiled via esbuild into dist/app.mjs, which is committed to the repo and is what Vercel actually deploys — NOT the live TypeScript source. Since this task touches artifacts/api-server/src/routes/stats.ts, you MUST run `node ./build.mjs` inside artifacts/api-server and commit the regenerated dist/app.mjs in the same push. Skipping this means the backend change silently never reaches production even though the source looks correct.
+
+AFTER BUILDING
+- Confirm the build succeeds locally before pushing to main.
+- Report back exactly what files were changed, and confirm dist/app.mjs was rebuilt and committed.
