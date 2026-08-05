@@ -1,0 +1,33 @@
+TASK: Two fixes to the Analysis page "By Direction" section and "By Setup Type" table: (1) apply a unified 6-tier win-rate color scale across both, (2) fix ring centering — rings are currently off-center within their L/S column, with visibly more empty space on one side than the other.
+
+1. GLOBAL WIN RATE COLOR SCALE
+Create a shared helper function `getWinRateColor(rate: number): string` (place it in a shared lib/utils file used by both the rings and the table — do not duplicate logic) that returns:
+- 0% to <20%: `#EF4444` (Crimson Red)
+- 20% to <40%: `#F97316` (Orange)
+- 40% to <60%: `#EAB308` (Gold Yellow)
+- 60% to <80%: `#10B981` (Emerald Green)
+- 80% to <90%: `#A855F7` (Amethyst Violet)
+- 90% to 100%: `#06B6D4` (Cyan Diamond)
+
+Apply this function to:
+- The SVG progress ring stroke color in "By Direction" (both L and S rings, only for rings with >=3 trades — rings below minimum sample size keep existing dim/muted "<3" treatment untouched).
+- The Win Rate column text color in "By Setup Type" table (replace existing hardcoded red/green logic with this same function).
+- Optional light background tint (~10% opacity of same hex) behind the Win Rate value in the table if it fits existing styling conventions — use judgment, skip if inconsistent.
+
+2. RING CENTERING FIX
+Currently the L and S rings are not centered within their column — there's visibly more empty space on one side of the ring than the other within its slot (the L ring in particular sits closer to one edge of its half of the card than the other). Fix by:
+- Ensuring the L and S columns are equal-width (use CSS grid with `grid-template-columns: 1fr 1fr` or flex with `flex: 1` on each column wrapper, not `justify-between` on unequal-width children).
+- Ensuring the ring SVG itself is horizontally centered within its column via `mx-auto` or `justify-center` on its wrapper, independent of the width of the "L"/"S" label text above/below it (the label and ring should be centered on the same axis, not let the label's width influence the ring's position).
+- Verify by screenshot that both rings sit with equal left/right margins within their respective card halves.
+
+WHAT NOT TO DO
+- Do not change the "<3" minimum sample size caption/behavior — leave exactly as is.
+- Do not touch the SVG stroke-dasharray/stroke-dashoffset arc calculation — the arc proportions are already correct, this is a color and layout fix only.
+- Do not change the overall card grid structure (2 cards per row) or any other section on the Analysis page.
+- Do not touch the backend — this is a frontend-only fix in artifacts/trading-journal.
+
+AFTER BUILDING
+- Confirm the build succeeds locally.
+- Take a screenshot at mobile viewport width (375px) showing the By Direction section with at least 3 different win rates, confirming: correct tier colors AND both rings centered with equal margins on both sides within their column.
+- Also screenshot the By Setup Type table to confirm its Win Rate column uses the same color scale.
+- Report back exactly what files were changed.
