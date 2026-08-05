@@ -1,0 +1,37 @@
+TASK: Replace the existing "By Direction" table section on the Analysis page with a mobile-friendly grid of small win/loss RADIAL PROGRESS RING charts, one per setup type, split by Long/Short. The previous table implementation does not fit mobile screens (7 columns, text collides/truncates) — remove it entirely and replace with this new design.
+
+STEP 0 — REMOVE OLD IMPLEMENTATION
+In artifacts/trading-journal/src/pages/analysis.tsx, find and remove the existing "By Direction" table section (the one with grouped LONG/SHORT column headers). Remove its associated state variable and modal trigger for that table. Do NOT remove the backend `direction` field additions (artifacts/api-server/src/routes/stats.ts) or the frontend type addition (artifacts/trading-journal/src/lib/analysis-api.ts) — those stay, this task only replaces the UI section that displays the data.
+
+CRITICAL VISUAL SPEC — THIS IS NOT A STATIC RING/DONUT SHAPE
+The ring must be a functional radial progress indicator, not a plain outline. Concretely: an SVG circle (or two stacked circles) using `stroke-dasharray`/`stroke-dashoffset` (or recharts' RadialBarChart if that's already a dependency — check package.json first) where the colored arc length is proportional to win rate. Starting at 12 o'clock, going clockwise: the win% portion of the circumference is drawn in a bright accent color (green, matching this app's existing win-color convention used elsewhere e.g. RRR histogram/win rate displays), and the remaining portion of the circumference is a dim/muted grey stroke (not black, not fully transparent — should read as "track" of the ring, similar to how loading spinners show an unfilled track). A ring at 0% should show almost no colored arc; a ring at 100% should be a full colored circle. Do NOT just draw a static two-tone ring shape that doesn't respond to the actual percentage — verify the arc length changes correctly for different win rates by checking at least two different setup types with different win% in your screenshot.
+
+LAYOUT
+Place a new section titled "By Direction" at the bottom of the Analysis page (after whatever is currently the last section — check current order and append after it).
+
+Responsive grid of setup-type cards, 2 columns wide on mobile (match existing grid/breakpoint conventions used elsewhere on this page, e.g. Best Month/Worst Month cards).
+
+Each card contains:
+- Setup type's existing color dot + name (same color mapping as "By Setup Type")
+- Two progress rings side by side within the card: left ring labeled "L" (Long), right ring labeled "S" (Short), label positioned above or below each ring
+- Center of each ring shows the win% as text (e.g. "47%"), sized to fit inside the ring's hole without overflowing
+- Small muted trade count below or beside each ring (e.g. "17 trades")
+
+Minimum sample size rule: if a setup type + direction combination has fewer than 3 trades, render that ring fully in the dim/muted track color (no colored arc at all) with "—" in the center instead of a percentage, and it must not be tappable. Trades where `direction` is null are excluded entirely (not counted in either ring's calculation).
+
+Interaction: tapping a ring with data (>=3 trades) opens the existing `BucketTradesModal` filtered to that setup type + direction, title like "{Setup Type Name} — Long" / "— Short", subtitle reuses the setup type's description. Reuse existing drill-down logic/state pattern from the removed table if still usable, otherwise rebuild minimally.
+
+WHAT NOT TO DO
+- Do not build a static/non-proportional ring — this is the most important constraint, re-read the Critical Visual Spec section above.
+- Do not use a scrollable/overflow-x container.
+- Do not modify "By Setup Type" or any other existing section.
+- Do not add a new charting library if SVG stroke-dasharray or an existing recharts dependency can do this.
+- Do not add outcome-bias/hindsight commentary — historical stats only.
+
+CRITICAL DEPLOY RULE
+artifacts/api-server is compiled via esbuild into dist/app.mjs, which is committed to the repo and is what Vercel actually deploys. This task is frontend-only (analysis.tsx) and should NOT require backend changes since the direction field is already wired into the API. If you do need to touch artifacts/api-server/src for any reason, you MUST run `node ./build.mjs` inside artifacts/api-server and force-add + commit the regenerated dist/app.mjs (`git add -f`, it's gitignored by default) in the same push.
+
+AFTER BUILDING
+- Confirm the build succeeds locally.
+- Take a screenshot of the new section at mobile viewport width (375px) showing at least two setup types with visibly different win rates, to prove the arc length is actually proportional and not static, before pushing.
+- Report back exactly what files were changed.
