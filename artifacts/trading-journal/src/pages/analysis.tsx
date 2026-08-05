@@ -287,6 +287,82 @@ function BucketTradesModal({
   );
 }
 
+// ─── win-rate radial progress ring ────────────────────────────────────────────
+
+const RING_R = 28;
+const RING_STROKE = 5;
+const RING_C = 2 * Math.PI * RING_R; // circumference ≈ 175.9
+
+function WinRateRing({
+  winRate,
+  tradeCount,
+  label,
+  hasData,
+  onClick,
+}: {
+  winRate: number;
+  tradeCount: number;
+  label: string;
+  hasData: boolean;
+  onClick?: () => void;
+}) {
+  // dashOffset=0 → full arc visible; dashOffset=circumference → no arc visible
+  const dashOffset = hasData ? RING_C - (winRate / 100) * RING_C : RING_C;
+  const arcColor = hasData ? (winRate >= 50 ? "#34d399" : "#fb7185") : "rgba(255,255,255,0.08)";
+
+  return (
+    <div
+      className={`flex flex-col items-center gap-1 select-none${hasData && onClick ? " cursor-pointer group" : ""}`}
+      onClick={hasData && onClick ? onClick : undefined}
+      role={hasData && onClick ? "button" : undefined}
+      tabIndex={hasData && onClick ? 0 : undefined}
+      onKeyDown={hasData && onClick ? (e) => { if (e.key === "Enter" || e.key === " ") onClick?.(); } : undefined}
+    >
+      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
+      <div className="relative w-[72px] h-[72px]">
+        <svg
+          width="72"
+          height="72"
+          viewBox="0 0 72 72"
+          className={hasData && onClick ? "transition-opacity duration-150 group-hover:opacity-75" : ""}
+        >
+          {/* Track */}
+          <circle
+            cx="36" cy="36" r={RING_R}
+            fill="none"
+            stroke="rgba(255,255,255,0.08)"
+            strokeWidth={RING_STROKE}
+          />
+          {/* Progress arc — rotated so 0% starts at 12 o'clock */}
+          <circle
+            cx="36" cy="36" r={RING_R}
+            fill="none"
+            stroke={arcColor}
+            strokeWidth={RING_STROKE}
+            strokeLinecap="round"
+            strokeDasharray={RING_C}
+            strokeDashoffset={dashOffset}
+            transform="rotate(-90 36 36)"
+            style={{ transition: "stroke-dashoffset 0.4s ease" }}
+          />
+        </svg>
+        {/* Center label */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <span
+            className="text-[12px] font-bold leading-none"
+            style={{ color: hasData ? arcColor : "#475569" }}
+          >
+            {hasData ? `${Math.round(winRate)}%` : "—"}
+          </span>
+        </div>
+      </div>
+      <span className="text-[10px] text-muted-foreground">
+        {hasData ? `${tradeCount} trades` : "< 3"}
+      </span>
+    </div>
+  );
+}
+
 // ─── export constants ─────────────────────────────────────────────────────────
 
 const THEME_ORDER: LedgerTheme[] = ["obsidian", "midnight", "ember", "matrix", "aurora", "goldrush", "sakura", "vapor", "autumn"];
@@ -795,134 +871,6 @@ export function AnalysisPage() {
         onClose={() => setSelectedSetupRow(null)}
       />
 
-      {/* By Direction */}
-      {data.bySetupType.length > 0 && (
-        <Section title="By Direction" icon={ArrowLeftRight}>
-          <div className="rounded-xl border border-white/10 overflow-hidden">
-            <table className="w-full text-sm table-fixed">
-              <colgroup>
-                <col />
-                <col style={{ width: "max(52px, 8%)" }} />
-                <col style={{ width: "max(64px, 10%)" }} />
-                <col style={{ width: "max(80px, 13%)" }} />
-                <col style={{ width: "max(52px, 8%)" }} />
-                <col style={{ width: "max(64px, 10%)" }} />
-                <col style={{ width: "max(80px, 13%)" }} />
-              </colgroup>
-              <thead>
-                <tr className="border-b border-white/5 bg-white/[0.04]">
-                  <th className="text-left px-4 py-2 text-muted-foreground font-medium" rowSpan={2}>Setup</th>
-                  <th className="text-center px-4 py-2 text-sky-400 font-semibold text-xs uppercase tracking-wider" colSpan={3}>Long</th>
-                  <th className="text-center px-4 py-2 text-amber-400 font-semibold text-xs uppercase tracking-wider border-l border-white/10" colSpan={3}>Short</th>
-                </tr>
-                <tr className="border-b border-white/10 bg-white/[0.04]">
-                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs">Trades</th>
-                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs">Win %</th>
-                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs">Net R</th>
-                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs border-l border-white/10">Trades</th>
-                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs">Win %</th>
-                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs">Net R</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.bySetupType.map((row, i) => {
-                  const longTrades = row.trades.filter(t => t.direction === "Long");
-                  const shortTrades = row.trades.filter(t => t.direction === "Short");
-                  const longStats = longTrades.length >= 3 ? computeBucketStats(longTrades) : null;
-                  const shortStats = shortTrades.length >= 3 ? computeBucketStats(shortTrades) : null;
-                  const isLast = i === data.bySetupType.length - 1;
-
-                  const openLong = longStats
-                    ? () => setSelectedDirectionCell({
-                        bucket: { label: `${row.name} — Long`, min: 0, max: null, count: longTrades.length, trades: longTrades },
-                        title: `${row.name} — Long`,
-                        subtitle: row.description,
-                      })
-                    : undefined;
-
-                  const openShort = shortStats
-                    ? () => setSelectedDirectionCell({
-                        bucket: { label: `${row.name} — Short`, min: 0, max: null, count: shortTrades.length, trades: shortTrades },
-                        title: `${row.name} — Short`,
-                        subtitle: row.description,
-                      })
-                    : undefined;
-
-                  return (
-                    <tr key={row.setupTypeId ?? "untagged"} className={!isLast ? "border-b border-white/5" : ""}>
-                      {/* Setup label */}
-                      <td className="px-4 py-3 overflow-hidden">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span
-                            className="flex-shrink-0 w-2.5 h-2.5 rounded-full ring-1 ring-white/20"
-                            style={{ backgroundColor: row.color ?? "rgba(255,255,255,0.2)" }}
-                          />
-                          <span className="text-white font-semibold truncate block">{row.name}</span>
-                        </div>
-                      </td>
-                      {/* Long — Trades */}
-                      <td
-                        className={`px-4 py-3 text-right whitespace-nowrap ${openLong ? "cursor-pointer text-muted-foreground hover:text-white transition-colors" : "text-muted-foreground/40"}`}
-                        onClick={openLong}
-                      >
-                        {longStats ? longTrades.length : "—"}
-                      </td>
-                      {/* Long — Win % */}
-                      <td
-                        className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${openLong ? "cursor-pointer" : ""}`}
-                        style={{ color: longStats ? (longStats.winRate >= 50 ? "#34d399" : "#fb7185") : "rgba(100,116,139,0.4)" }}
-                        onClick={openLong}
-                      >
-                        {longStats ? `${longStats.winRate}%` : "—"}
-                      </td>
-                      {/* Long — Net R */}
-                      <td
-                        className={`px-4 py-3 text-right font-mono font-semibold whitespace-nowrap ${openLong ? "cursor-pointer" : ""}`}
-                        style={{ color: longStats ? rrColor(longStats.netRR) : "rgba(100,116,139,0.4)" }}
-                        onClick={openLong}
-                      >
-                        {longStats ? fmtRR(longStats.netRR) : "—"}
-                      </td>
-                      {/* Short — Trades */}
-                      <td
-                        className={`px-4 py-3 text-right whitespace-nowrap border-l border-white/10 ${openShort ? "cursor-pointer text-muted-foreground hover:text-white transition-colors" : "text-muted-foreground/40"}`}
-                        onClick={openShort}
-                      >
-                        {shortStats ? shortTrades.length : "—"}
-                      </td>
-                      {/* Short — Win % */}
-                      <td
-                        className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${openShort ? "cursor-pointer" : ""}`}
-                        style={{ color: shortStats ? (shortStats.winRate >= 50 ? "#34d399" : "#fb7185") : "rgba(100,116,139,0.4)" }}
-                        onClick={openShort}
-                      >
-                        {shortStats ? `${shortStats.winRate}%` : "—"}
-                      </td>
-                      {/* Short — Net R */}
-                      <td
-                        className={`px-4 py-3 text-right font-mono font-semibold whitespace-nowrap ${openShort ? "cursor-pointer" : ""}`}
-                        style={{ color: shortStats ? rrColor(shortStats.netRR) : "rgba(100,116,139,0.4)" }}
-                        onClick={openShort}
-                      >
-                        {shortStats ? fmtRR(shortStats.netRR) : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Section>
-      )}
-
-      {/* By Direction drill-down modal */}
-      <BucketTradesModal
-        bucket={selectedDirectionCell?.bucket ?? null}
-        title={selectedDirectionCell?.title ?? null}
-        subtitle={selectedDirectionCell?.subtitle ?? null}
-        onClose={() => setSelectedDirectionCell(null)}
-      />
-
       {/* Post-Loss Performance ("Tilt Report") */}
       {(data.postLossPerformance ?? []).some((r: AnalysisPostLossRow) => r.totalTrades > 0) && (
         <Section title="Post-Loss Performance" icon={Flame}>
@@ -1060,6 +1008,70 @@ export function AnalysisPage() {
           </div>
         </div>
       </Section>
+
+      {/* By Direction — radial ring grid */}
+      {data.bySetupType.length > 0 && (
+        <Section title="By Direction" icon={ArrowLeftRight}>
+          <div className="grid grid-cols-2 gap-3">
+            {data.bySetupType.map((row) => {
+              const longTrades = row.trades.filter(t => t.direction === "Long");
+              const shortTrades = row.trades.filter(t => t.direction === "Short");
+              const longStats = longTrades.length >= 3 ? computeBucketStats(longTrades) : null;
+              const shortStats = shortTrades.length >= 3 ? computeBucketStats(shortTrades) : null;
+
+              return (
+                <div
+                  key={row.setupTypeId ?? "untagged"}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4"
+                >
+                  {/* Setup header */}
+                  <div className="flex items-center gap-2 mb-4 min-w-0">
+                    <span
+                      className="flex-shrink-0 w-2.5 h-2.5 rounded-full ring-1 ring-white/20"
+                      style={{ backgroundColor: row.color ?? "rgba(255,255,255,0.2)" }}
+                    />
+                    <span className="text-xs font-semibold text-white truncate">{row.name}</span>
+                  </div>
+
+                  {/* Two rings */}
+                  <div className="flex justify-around">
+                    <WinRateRing
+                      label="L"
+                      winRate={longStats?.winRate ?? 0}
+                      tradeCount={longTrades.length}
+                      hasData={!!longStats}
+                      onClick={longStats ? () => setSelectedDirectionCell({
+                        bucket: { label: `${row.name} — Long`, min: 0, max: null, count: longTrades.length, trades: longTrades },
+                        title: `${row.name} — Long`,
+                        subtitle: row.description,
+                      }) : undefined}
+                    />
+                    <WinRateRing
+                      label="S"
+                      winRate={shortStats?.winRate ?? 0}
+                      tradeCount={shortTrades.length}
+                      hasData={!!shortStats}
+                      onClick={shortStats ? () => setSelectedDirectionCell({
+                        bucket: { label: `${row.name} — Short`, min: 0, max: null, count: shortTrades.length, trades: shortTrades },
+                        title: `${row.name} — Short`,
+                        subtitle: row.description,
+                      }) : undefined}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Section>
+      )}
+
+      {/* By Direction drill-down modal */}
+      <BucketTradesModal
+        bucket={selectedDirectionCell?.bucket ?? null}
+        title={selectedDirectionCell?.title ?? null}
+        subtitle={selectedDirectionCell?.subtitle ?? null}
+        onClose={() => setSelectedDirectionCell(null)}
+      />
 
       {/* Hidden export card, rendered off-screen for dom-to-image-more capture */}
       <div style={{ position: "fixed", top: -9999, left: -9999, pointerEvents: "none" }}>
