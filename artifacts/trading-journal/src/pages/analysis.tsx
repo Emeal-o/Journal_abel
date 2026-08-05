@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useLocation, useSearch } from "wouter";
-import { ArrowLeft, TrendingUp, TrendingDown, BarChart2, Activity, Target, Zap, X, Download, Tag, Flame } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, BarChart2, Activity, Target, Zap, X, Download, Tag, Flame, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { THEMES } from "@/components/ledger-sheet";
 import type { LedgerTheme } from "@/components/ledger-sheet";
@@ -307,6 +307,7 @@ export function AnalysisPage() {
   const [selectedBucket, setSelectedBucket] = useState<AnalysisRRRBucket | null>(null);
   const [selectedSetupRow, setSelectedSetupRow] = useState<AnalysisSetupTypeRow | null>(null);
   const [selectedTiltRow, setSelectedTiltRow] = useState<AnalysisPostLossRow | null>(null);
+  const [selectedDirectionCell, setSelectedDirectionCell] = useState<{ bucket: AnalysisRRRBucket; title: string; subtitle: string | null } | null>(null);
   const [exportTheme, setExportTheme] = useState<LedgerTheme>("obsidian");
   const [exporting, setExporting] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -792,6 +793,134 @@ export function AnalysisPage() {
         subtitle={selectedSetupRow?.description ?? null}
         title={selectedSetupRow?.name ?? null}
         onClose={() => setSelectedSetupRow(null)}
+      />
+
+      {/* By Direction */}
+      {data.bySetupType.length > 0 && (
+        <Section title="By Direction" icon={ArrowLeftRight}>
+          <div className="rounded-xl border border-white/10 overflow-hidden">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col />
+                <col style={{ width: "max(52px, 8%)" }} />
+                <col style={{ width: "max(64px, 10%)" }} />
+                <col style={{ width: "max(80px, 13%)" }} />
+                <col style={{ width: "max(52px, 8%)" }} />
+                <col style={{ width: "max(64px, 10%)" }} />
+                <col style={{ width: "max(80px, 13%)" }} />
+              </colgroup>
+              <thead>
+                <tr className="border-b border-white/5 bg-white/[0.04]">
+                  <th className="text-left px-4 py-2 text-muted-foreground font-medium" rowSpan={2}>Setup</th>
+                  <th className="text-center px-4 py-2 text-sky-400 font-semibold text-xs uppercase tracking-wider" colSpan={3}>Long</th>
+                  <th className="text-center px-4 py-2 text-amber-400 font-semibold text-xs uppercase tracking-wider border-l border-white/10" colSpan={3}>Short</th>
+                </tr>
+                <tr className="border-b border-white/10 bg-white/[0.04]">
+                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs">Trades</th>
+                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs">Win %</th>
+                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs">Net R</th>
+                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs border-l border-white/10">Trades</th>
+                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs">Win %</th>
+                  <th className="text-right px-4 py-2 text-muted-foreground font-medium text-xs">Net R</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.bySetupType.map((row, i) => {
+                  const longTrades = row.trades.filter(t => t.direction === "Long");
+                  const shortTrades = row.trades.filter(t => t.direction === "Short");
+                  const longStats = longTrades.length >= 3 ? computeBucketStats(longTrades) : null;
+                  const shortStats = shortTrades.length >= 3 ? computeBucketStats(shortTrades) : null;
+                  const isLast = i === data.bySetupType.length - 1;
+
+                  const openLong = longStats
+                    ? () => setSelectedDirectionCell({
+                        bucket: { label: `${row.name} — Long`, min: 0, max: null, count: longTrades.length, trades: longTrades },
+                        title: `${row.name} — Long`,
+                        subtitle: row.description,
+                      })
+                    : undefined;
+
+                  const openShort = shortStats
+                    ? () => setSelectedDirectionCell({
+                        bucket: { label: `${row.name} — Short`, min: 0, max: null, count: shortTrades.length, trades: shortTrades },
+                        title: `${row.name} — Short`,
+                        subtitle: row.description,
+                      })
+                    : undefined;
+
+                  return (
+                    <tr key={row.setupTypeId ?? "untagged"} className={!isLast ? "border-b border-white/5" : ""}>
+                      {/* Setup label */}
+                      <td className="px-4 py-3 overflow-hidden">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className="flex-shrink-0 w-2.5 h-2.5 rounded-full ring-1 ring-white/20"
+                            style={{ backgroundColor: row.color ?? "rgba(255,255,255,0.2)" }}
+                          />
+                          <span className="text-white font-semibold truncate block">{row.name}</span>
+                        </div>
+                      </td>
+                      {/* Long — Trades */}
+                      <td
+                        className={`px-4 py-3 text-right whitespace-nowrap ${openLong ? "cursor-pointer text-muted-foreground hover:text-white transition-colors" : "text-muted-foreground/40"}`}
+                        onClick={openLong}
+                      >
+                        {longStats ? longTrades.length : "—"}
+                      </td>
+                      {/* Long — Win % */}
+                      <td
+                        className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${openLong ? "cursor-pointer" : ""}`}
+                        style={{ color: longStats ? (longStats.winRate >= 50 ? "#34d399" : "#fb7185") : "rgba(100,116,139,0.4)" }}
+                        onClick={openLong}
+                      >
+                        {longStats ? `${longStats.winRate}%` : "—"}
+                      </td>
+                      {/* Long — Net R */}
+                      <td
+                        className={`px-4 py-3 text-right font-mono font-semibold whitespace-nowrap ${openLong ? "cursor-pointer" : ""}`}
+                        style={{ color: longStats ? rrColor(longStats.netRR) : "rgba(100,116,139,0.4)" }}
+                        onClick={openLong}
+                      >
+                        {longStats ? fmtRR(longStats.netRR) : "—"}
+                      </td>
+                      {/* Short — Trades */}
+                      <td
+                        className={`px-4 py-3 text-right whitespace-nowrap border-l border-white/10 ${openShort ? "cursor-pointer text-muted-foreground hover:text-white transition-colors" : "text-muted-foreground/40"}`}
+                        onClick={openShort}
+                      >
+                        {shortStats ? shortTrades.length : "—"}
+                      </td>
+                      {/* Short — Win % */}
+                      <td
+                        className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${openShort ? "cursor-pointer" : ""}`}
+                        style={{ color: shortStats ? (shortStats.winRate >= 50 ? "#34d399" : "#fb7185") : "rgba(100,116,139,0.4)" }}
+                        onClick={openShort}
+                      >
+                        {shortStats ? `${shortStats.winRate}%` : "—"}
+                      </td>
+                      {/* Short — Net R */}
+                      <td
+                        className={`px-4 py-3 text-right font-mono font-semibold whitespace-nowrap ${openShort ? "cursor-pointer" : ""}`}
+                        style={{ color: shortStats ? rrColor(shortStats.netRR) : "rgba(100,116,139,0.4)" }}
+                        onClick={openShort}
+                      >
+                        {shortStats ? fmtRR(shortStats.netRR) : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      )}
+
+      {/* By Direction drill-down modal */}
+      <BucketTradesModal
+        bucket={selectedDirectionCell?.bucket ?? null}
+        title={selectedDirectionCell?.title ?? null}
+        subtitle={selectedDirectionCell?.subtitle ?? null}
+        onClose={() => setSelectedDirectionCell(null)}
       />
 
       {/* Post-Loss Performance ("Tilt Report") */}

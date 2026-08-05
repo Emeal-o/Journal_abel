@@ -76,7 +76,7 @@ router.get("/stats/weekly", requireAuth, async (req, res) => {
 });
 
 // ─── types for the analysis endpoint ─────────────────────────────────────────
-type AnalysisTrade = { id: number; weekId: number; result: string; rrr: number; pips: number; createdAt: Date; setupTypeId: number | null };
+type AnalysisTrade = { id: number; weekId: number; result: string; rrr: number; pips: number; createdAt: Date; setupTypeId: number | null; direction: string | null };
 type WeekStatEntry = { week: Week; trades: AnalysisTrade[]; totalTrades: number; wins: number; losses: number; breakEvens: number; winRate: number; netRR: number; netPips: number };
 
 // GET /api/stats/analysis — rich analytics for the authenticated user.
@@ -108,7 +108,7 @@ router.get("/stats/analysis", requireAuth, async (req, res) => {
 
   // All trades in chronological order, scoped to the same user (+ year if filtered)
   const allTradesRaw: AnalysisTrade[] = await db
-    .select({ id: tradesTable.id, weekId: tradesTable.weekId, result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips, createdAt: tradesTable.createdAt, setupTypeId: tradesTable.setupTypeId })
+    .select({ id: tradesTable.id, weekId: tradesTable.weekId, result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips, createdAt: tradesTable.createdAt, setupTypeId: tradesTable.setupTypeId, direction: tradesTable.direction })
     .from(tradesTable)
     .where(eq(tradesTable.userId, userId))
     .orderBy(tradesTable.createdAt);
@@ -339,6 +339,7 @@ router.get("/stats/analysis", requireAuth, async (req, res) => {
           weekId: t.weekId,
           weekLabel: wk?.label ?? null,
           weekStartDate: wk?.startDate ?? null,
+          direction: t.direction ?? null,
         };
       });
       return {

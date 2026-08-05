@@ -63756,7 +63756,7 @@ router6.get("/stats/analysis", requireAuth, async (req, res) => {
   const allWeeksRaw = await db.select().from(weeksTable).where(eq(weeksTable.userId, userId)).orderBy(weeksTable.createdAt);
   const weeks = yearFilter != null ? allWeeksRaw.filter((w) => w.monthIndex != null && yearIndexFromMonthIndex(w.monthIndex) === yearFilter) : allWeeksRaw;
   const scopedWeekIds = new Set(weeks.map((w) => w.id));
-  const allTradesRaw = await db.select({ id: tradesTable.id, weekId: tradesTable.weekId, result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips, createdAt: tradesTable.createdAt, setupTypeId: tradesTable.setupTypeId }).from(tradesTable).where(eq(tradesTable.userId, userId)).orderBy(tradesTable.createdAt);
+  const allTradesRaw = await db.select({ id: tradesTable.id, weekId: tradesTable.weekId, result: tradesTable.result, rrr: tradesTable.rrr, pips: tradesTable.pips, createdAt: tradesTable.createdAt, setupTypeId: tradesTable.setupTypeId, direction: tradesTable.direction }).from(tradesTable).where(eq(tradesTable.userId, userId)).orderBy(tradesTable.createdAt);
   const allTrades = yearFilter != null ? allTradesRaw.filter((t) => scopedWeekIds.has(t.weekId)) : allTradesRaw;
   const tradesByWeek = /* @__PURE__ */ new Map();
   for (const t of allTrades) {
@@ -63952,7 +63952,8 @@ router6.get("/stats/analysis", requireAuth, async (req, res) => {
         pips: t.pips,
         weekId: t.weekId,
         weekLabel: wk?.label ?? null,
-        weekStartDate: wk?.startDate ?? null
+        weekStartDate: wk?.startDate ?? null,
+        direction: t.direction ?? null
       };
     });
     return {

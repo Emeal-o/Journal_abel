@@ -73,6 +73,7 @@ export interface AnalysisRRRBucketTrade {
   weekId: number;
   weekLabel: string | null;
   weekStartDate: string | null;
+  direction?: string | null;
 }
 
 export interface AnalysisRRRBucket {
