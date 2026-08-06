@@ -1,0 +1,41 @@
+TASK: Stage 2 — add Display Preferences to the Settings page (artifacts/trading-journal). Frontend only, no backend/schema changes.
+
+SCOPE: New "Display" section on /settings, matching the existing grouped-card visual style from Stage 1a (rounded-2xl bg-white/[0.03] border border-white/10 card, section label above in uppercase/wide-tracking JetBrains Mono, icons on each row, hairline dividers between rows within the card).
+
+Add a new section labeled "DISPLAY" (same style as "PREFERENCES" and "INFORMATION") with these 4 rows:
+
+1. DEFAULT LANDING PAGE
+- Row label: "Default Landing Page", icon: Home (lucide-react)
+- Value preview: current selection ("Journal" or "Analysis"), tap opens a simple selector (bottom sheet, dropdown, or inline expand — match whatever selection pattern already exists elsewhere in the app, e.g. check how the existing Weekly/Monthly toggle on the Analysis page cumulative growth chart is built, reuse that pattern if reasonable)
+- Options: "Journal" (default) or "Analysis"
+- Store the selection in localStorage (key: "tradeops_default_landing"), read it on app load to decide which page to show first when the user opens the app root
+
+2. DEFAULT RRR VS PIPS DISPLAY
+- Row label: "Default Stat Display", icon: BarChart3 or similar (lucide-react)
+- Value preview: current selection ("RRR" or "Pips")
+- Options: "RRR" (default) or "Pips"
+- Store in localStorage (key: "tradeops_default_stat_display")
+- This should control which value shows by default wherever the app currently displays both RRR and Pips as alternatives (check existing trade rows/stats cards for where this toggle would apply — if there's no existing dual-display toggle mechanism to hook into, just store the preference for now and note in your response that wiring it into specific display components would be a separate follow-up task)
+
+3. FONT SIZE
+- Row label: "Font Size", icon: Type (lucide-react)
+- Value preview: current selection ("Small", "Default", "Large")
+- Options: Small / Default (default) / Large — apply via a CSS class on the root element (e.g. adjusting a root font-size CSS variable, scale factor like 0.9x / 1x / 1.1x)
+- Store in localStorage (key: "tradeops_font_size"), apply on app load
+
+4. REDUCE MOTION
+- Row label: "Reduce Motion", icon: Zap or ZapOff (lucide-react)
+- This is a toggle switch (on/off), not a multi-option selector — use whatever Switch/Toggle component already exists in the app's component library (check for an existing shadcn/ui Switch or similar)
+- Default: off (unless prefers-reduced-motion media query is already true, in which case default to on)
+- Store in localStorage (key: "tradeops_reduce_motion")
+- When on, this should suppress non-essential transitions/animations app-wide — at minimum, respect it in this Settings page's own transitions since that's the safest, most contained place to verify it works; do not attempt to touch every animation across the whole app in this task unless it's trivial to do so from a single root-level CSS class toggle
+
+GENERAL:
+- All 4 rows go in ONE grouped card under the "DISPLAY" section header, consistent with the existing card style
+- Use localStorage only — no backend/database involvement, no new API routes
+- Keep existing Stage 1a rows (Manage Setup Types, About, Sign out) completely unchanged — this task only ADDS the new Display section, positioned between "PREFERENCES" and "INFORMATION" (or wherever fits best structurally — use your judgment, just don't disturb the existing sections)
+- Match tap target sizing (44px min) and spacing already established
+
+DO NOT touch: any backend files, artifacts/api-server, database schema, or the Setup Types/About/Sign out functionality.
+
+After changes: confirm build passes, confirm the four new rows render and are interactive (selections persist across a page reload), and push to main.
