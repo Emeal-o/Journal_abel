@@ -1,0 +1,30 @@
+TASK: Add soft, per-user rate limiting to trade and week creation endpoints. This is NOT a hard monthly cap — it must not block legitimate bulk backfilling (e.g. logging 30 weeks / 150 trades in one sitting). It exists purely to catch accidental double-submits/bugs and prevent someone from spamming test data.
+
+CONTEXT
+- Backend: artifacts/api-server (Express + Drizzle + Neon Postgres). Relevant routes: artifacts/api-server/src/routes/trades.ts and weeks.ts, specifically their POST/create handlers.
+- The trades and weeks tables should already have a `created_at` timestamp column — verify this first (check the schema file, likely artifacts/api-server/src/db/schema.ts or similar). If either table is missing `created_at`, stop and report back rather than adding a new column (that would need a migration + prod verification, which is out of scope for this task — flag it instead).
+- All checks must be scoped by `user_id` — every user's limits are fully independent of every other user's activity (this app has multiple isolated users, currently user_id=1 and user_id=2 in the trades table).
+
+RATE LIMIT RULES TO IMPLEMENT
+1. BURST GUARD: before creating a new trade OR week, count how many trades/weeks (respectively) that same user_id created in the last 60 seconds (query `created_at >= NOW() - INTERVAL '60 seconds' AND user_id = ?`). If the count is already >= 5, reject the new creation.
+2. DAILY CAP: before creating a new trade, count how many trades that user_id created in the last 24 hours (rolling window, not calendar-day reset — `created_at >= NOW() - INTERVAL '24 hours'`). If count >= 150, reject. Same pattern for weeks with a threshold of 30.
+3. Both checks apply independently — a request must pass both the burst guard AND the daily cap to succeed.
+
+REJECTION BEHAVIOR
+- Return an HTTP 429 status with a clear JSON error message. For the burst guard: something like "You're creating entries too quickly — please wait a moment and try again." For the daily cap: "You've reached today's creation limit. This resets on a rolling 24-hour basis — try again later."
+- On the frontend (artifacts/trading-journal), make sure the Add Trade / Add Week forms surface this 429 error message to the user in whatever toast/error-display pattern is already used for other API errors on those forms — do not add a new error UI pattern, reuse the existing one.
+
+WHAT NOT TO DO
+- Do not add a hard monthly or all-time cap — only the rolling 60-second burst guard and rolling 24-hour daily cap described above.
+- Do not apply any rate limit to reads (GET requests) — only to trade/week creation (POST).
+- Do not apply rate limiting to admin operations, SQL-console-driven corrections, or any non-UI-driven data changes — this only affects the app's own create endpoints.
+- Do not change the 36-month rolling FIFO cap logic if it already exists — this is a separate, additive safeguard, not a replacement.
+- Do not touch archived data immutability logic.
+
+CRITICAL DEPLOY RULE — READ BEFORE PUSHING
+artifacts/api-server is compiled via esbuild into dist/app.mjs, which is committed to the repo and is what Vercel actually deploys — NOT the live TypeScript source. Since this task touches artifacts/api-server/src/routes/trades.ts and weeks.ts, you MUST run `node ./build.mjs` inside artifacts/api-server and commit the regenerated dist/app.mjs (force-add with `git add -f` since it's gitignored by default) in the same push. Skipping this means the backend change silently never reaches production even though the source looks correct.
+
+AFTER BUILDING
+- Confirm the build succeeds locally before pushing to main.
+- Test that creating 6 trades within 60 seconds triggers the burst guard on the 6th.
+- Report back exactly what files were changed, and confirm dist/app.mjs was rebuilt and committed.
