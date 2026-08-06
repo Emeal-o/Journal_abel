@@ -1,19 +1,9 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Activity, Archive, BookOpen, LineChart, LogOut } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { useQueryClient } from "@tanstack/react-query";
+import { Activity, Archive, BookOpen, LineChart, Settings } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { logout } = useAuth();
-  const queryClient = useQueryClient();
-
-  async function handleLogout() {
-    await logout();
-    // Clear all cached query data so the next session starts fresh
-    queryClient.clear();
-  }
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col font-sans selection:bg-primary/30">
@@ -65,17 +55,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <span className="hidden sm:inline">Archive</span>
             </Link>
 
-            {/* Divider */}
-            <div className="w-px h-5 bg-border/50 mx-1" />
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-2.5 sm:px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition-all duration-200"
-              title="Sign out"
+            <Link
+              href="/settings"
+              className={cn(
+                "flex items-center gap-2 px-2.5 sm:px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                location === "/settings"
+                  ? "bg-white/10 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-white hover:bg-white/5"
+              )}
+              title="Settings"
             >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </Link>
           </nav>
         </div>
       </header>

@@ -9,6 +9,7 @@ import { ArchivePage } from "@/pages/archive";
 import { AnalysisPage } from "@/pages/analysis";
 import { LoginPage } from "@/pages/login";
 import { AdminPage } from "@/pages/admin";
+import { SettingsPage } from "@/pages/settings";
 import { Layout } from "@/components/layout";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -40,6 +41,7 @@ function AuthGate() {
         <Route path="/stats" component={StatsPage} />
         <Route path="/archive" component={ArchivePage} />
         <Route path="/analysis" component={AnalysisPage} />
+        <Route path="/settings" component={SettingsPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
