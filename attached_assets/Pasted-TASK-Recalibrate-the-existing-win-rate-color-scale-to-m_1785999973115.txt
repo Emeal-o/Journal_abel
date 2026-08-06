@@ -1,0 +1,24 @@
+TASK: Recalibrate the existing win-rate color scale to match trading reality (a 40-50% win rate can be a highly profitable baseline for high-R:R strategies, unlike academic grading where 50% is "failing"). Update the shared `getWinRateColor()` helper (in artifacts/trading-journal/src/lib/utils.ts) with new tier boundaries, and it will automatically propagate everywhere it's already used.
+
+1. UPDATE THE COLOR HELPER
+Update `getWinRateColor(rate: number): string` to the following trader-calibrated 6-tier scale (replacing the current boundaries):
+- 0% to <25%: `#EF4444` (Crimson Red) — Edge breakdown / heavy drawdown
+- 25% to <40%: `#F97316` (Amber Orange) — Requires high R:R to stay profitable
+- 40% to <50%: `#84CC16` (Lime Green) — Profitable baseline (classic trend-following zone)
+- 50% to <65%: `#10B981` (Emerald Green) — High efficiency
+- 65% to <80%: `#A855F7` (Amethyst Violet) — Elite consistency
+- 80% to 100%: `#06B6D4` (Cyan Diamond) — Statistical outlier / S-tier
+
+Since this is a single shared function, updating it here should automatically apply the new scale everywhere it's already called — confirm this is true by checking all current call sites (By Direction rings, By Setup Type table, All-Time Summary card, Year by Year table, Post-Loss Performance table, and BucketTradesModal mini-stats) after the change.
+
+2. SCOPE EXCLUSIONS — IMPORTANT
+- Do NOT touch the SVG arc-math (`strokeDasharray`/`strokeDashoffset`) logic — it is already correct, leave it exactly as is.
+- Do NOT touch the "<3" minimum sample size caption/behavior in the By Direction rings — leave exactly as is.
+- Do NOT touch Net RR/Net R coloring anywhere in the app — that remains its own separate green/red binary signal and should not be merged with or influenced by this win-rate scale.
+- Do NOT change any layout, spacing, or non-color styling anywhere.
+- Do NOT touch the backend — this is a frontend-only constant/threshold update in artifacts/trading-journal.
+
+AFTER BUILDING
+- Confirm the build succeeds locally.
+- Take a screenshot showing at least By Direction and By Setup Type with a few different win rates, confirming the new thresholds are applied correctly (e.g. a ~44% value should now show Lime Green instead of the old Gold/Yellow).
+- Report back exactly what changed and confirm no other logic was touched.
