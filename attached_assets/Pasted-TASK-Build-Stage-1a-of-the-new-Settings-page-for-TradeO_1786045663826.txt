@@ -1,0 +1,50 @@
+TASK: Build Stage 1a of the new Settings page for TradeOps (artifacts/trading-journal).
+
+SCOPE (frontend only — no schema/backend changes in this chunk):
+
+1. NEW ROUTE + PAGE: /settings
+- New file: src/pages/settings.tsx (or match existing page file convention in the repo)
+- Add a Settings entry point accessible from the main nav (wherever Journal/Archive/Analysis links live) — use a gear/settings icon
+- Page background matches the existing app shell (same near-black background used across Journal/Archive/Analysis)
+
+2. VISUAL STYLE (match existing app conventions — check card-export.ts / existing card components for exact tokens):
+- Font: JetBrains Mono throughout (already used app-wide)
+- Section headers: uppercase, wide letter-spacing, small size — same treatment as labels like "NET RR" / "GRAND TOTAL" on the Stats card
+- Settings rows: icon + label + chevron-right, separated by hairline dividers (border-b, low-opacity), NOT boxed/card-style — keep it a quiet flat list
+- Comfortable tap targets for mobile (min 44px row height)
+- Respect prefers-reduced-motion for any transitions
+
+3. ROW 1 — Setup Types shortcut:
+- Label: "Manage Setup Types"
+- Left of the label, show a small inline row of colored dots previewing the user's current active setup type colors (reuse the color values already used for setup type chips)
+- Tapping navigates to / opens the existing Manage Setup Types modal (reuse existing component, do not rebuild)
+
+4. ROW 2 — About section:
+- Label: "About"
+- Tapping expands or navigates to a simple About view with this exact copy (static/hardcoded for now, will become DB-backed in a later chunk — leave a clear `// TODO: replace hardcoded content with GET /api/app-settings in Stage 1b` comment above it):
+
+```
+TradeOps
+Version 1.4
+
+A private trading journal for logging, reviewing, and analyzing your trades over time.
+
+Track weekly performance, break down results by setup and direction, and see your long-term stats — win rate, R:R, drawdown, and more.
+
+This journal only works if it's honest — every entry relies on you logging your real trades.
+
+Built by Emeal
+```
+
+- Visual treatment: put a thin horizontal gradient bar (blue-to-teal, same gradient direction/colors as the PWA icon's sparkline mark) above the "TradeOps" title as a small signature accent. Keep everything else in this section plain text, well-spaced, no extra decoration.
+
+5. ROW 3 — Logout:
+- Move the existing Logout action (find wherever it currently lives) into this Settings page
+- Place it at the BOTTOM of the page with extra vertical spacing above it (visually separated from the rows above, so it can't be tapped by accident)
+- Red/danger-tinted text color, same red used elsewhere in the app for destructive actions (check existing delete-confirmation AlertDialog styling for the exact red token)
+- Keep any existing confirm-before-logout behavior if present; otherwise a direct tap is fine (logout is non-destructive/reversible)
+- Remove the Logout entry point from its old location once moved (don't leave it in two places)
+
+DO NOT touch: database schema, any backend routes, Setup Types CRUD logic itself, or the Manage Setup Types modal's internals — this chunk only adds a shortcut TO it.
+
+After making changes: confirm the app still builds and the /settings route is reachable from nav. Push to main when done.
