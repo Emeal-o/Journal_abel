@@ -760,8 +760,8 @@ var require_depd = __commonJS({
       return deprecate;
     }
     function eehaslisteners(emitter, type) {
-      var count3 = typeof emitter.listenerCount !== "function" ? emitter.listeners(type).length : emitter.listenerCount(type);
-      return count3 > 0;
+      var count2 = typeof emitter.listenerCount !== "function" ? emitter.listeners(type).length : emitter.listenerCount(type);
+      return count2 > 0;
     }
     function isignored(namespace) {
       if (process.noDeprecation) {
@@ -18395,14 +18395,14 @@ var require_urlencoded = __commonJS({
       };
     }
     function parameterCount(body, limit) {
-      let count3 = 0;
+      let count2 = 0;
       let index = -1;
       do {
-        count3++;
-        if (count3 > limit) return void 0;
+        count2++;
+        if (count2 > limit) return void 0;
         index = body.indexOf("&", index + 1);
       } while (index !== -1);
-      return count3;
+      return count2;
     }
   }
 });
@@ -21703,13 +21703,13 @@ var require_mediaType = __commonJS({
       return spec.q > 0;
     }
     function quoteCount(string4) {
-      var count3 = 0;
+      var count2 = 0;
       var index = 0;
       while ((index = string4.indexOf('"', index)) !== -1) {
-        count3++;
+        count2++;
         index++;
       }
-      return count3;
+      return count2;
     }
     function splitKeyValuePair(str) {
       var index = str.indexOf("=");
@@ -23014,8 +23014,8 @@ var require_send = __commonJS({
       }
     }
     function hasListeners(emitter, type) {
-      var count3 = typeof emitter.listenerCount !== "function" ? emitter.listeners(type).length : emitter.listenerCount(type);
-      return count3 > 0;
+      var count2 = typeof emitter.listenerCount !== "function" ? emitter.listeners(type).length : emitter.listenerCount(type);
+      return count2 > 0;
     }
     function normalizeList(val, name) {
       var list = [].concat(val || []);
@@ -26208,11 +26208,11 @@ var require_binaryParsers = __commonJS({
         var array2 = [];
         var i2;
         if (dimension.length > 1) {
-          var count3 = dimension.shift();
-          for (i2 = 0; i2 < count3; i2++) {
+          var count2 = dimension.shift();
+          for (i2 = 0; i2 < count2; i2++) {
             array2[i2] = parse4(dimension, elementType2);
           }
-          dimension.unshift(count3);
+          dimension.unshift(count2);
         } else {
           for (i2 = 0; i2 < dimension[0]; i2++) {
             array2[i2] = parseElement(elementType2);
@@ -50392,8 +50392,8 @@ function az_default() {
 }
 
 // ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v4/locales/be.js
-function getBelarusianPlural(count3, one, few, many) {
-  const absCount = Math.abs(count3);
+function getBelarusianPlural(count2, one, few, many) {
+  const absCount = Math.abs(count2);
   const lastDigit = absCount % 10;
   const lastTwoDigits = absCount % 100;
   if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
@@ -53538,8 +53538,8 @@ function pt_default() {
 }
 
 // ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v4/locales/ru.js
-function getRussianPlural(count3, one, few, many) {
-  const absCount = Math.abs(count3);
+function getRussianPlural(count2, one, few, many) {
+  const absCount = Math.abs(count2);
   const lastDigit = absCount % 10;
   const lastTwoDigits = absCount % 100;
   if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
@@ -63438,6 +63438,22 @@ router4.get("/weeks", requireAuth, async (req, res) => {
 router4.post("/weeks", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const body = CreateWeekBody.parse(req.body);
+  const [{ burstCount }] = await db.select({ burstCount: count() }).from(weeksTable).where(and(
+    eq(weeksTable.userId, userId),
+    sql`${weeksTable.createdAt} >= NOW() - INTERVAL '60 seconds'`
+  ));
+  if (burstCount >= 5) {
+    res.status(429).json({ error: "You're creating entries too quickly \u2014 please wait a moment and try again." });
+    return;
+  }
+  const [{ dailyCount }] = await db.select({ dailyCount: count() }).from(weeksTable).where(and(
+    eq(weeksTable.userId, userId),
+    sql`${weeksTable.createdAt} >= NOW() - INTERVAL '24 hours'`
+  ));
+  if (dailyCount >= 30) {
+    res.status(429).json({ error: "You've reached today's creation limit. This resets on a rolling 24-hour basis \u2014 try again later." });
+    return;
+  }
   const [week] = await db.insert(weeksTable).values({
     userId,
     label: body.label,
@@ -63547,6 +63563,22 @@ router5.get("/trades", requireAuth, async (req, res) => {
 router5.post("/trades", requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const body = CreateTradeBody.parse(req.body);
+  const [{ burstCount }] = await db.select({ burstCount: count() }).from(tradesTable).where(and(
+    eq(tradesTable.userId, userId),
+    sql`${tradesTable.createdAt} >= NOW() - INTERVAL '60 seconds'`
+  ));
+  if (burstCount >= 5) {
+    res.status(429).json({ error: "You're creating entries too quickly \u2014 please wait a moment and try again." });
+    return;
+  }
+  const [{ dailyCount }] = await db.select({ dailyCount: count() }).from(tradesTable).where(and(
+    eq(tradesTable.userId, userId),
+    sql`${tradesTable.createdAt} >= NOW() - INTERVAL '24 hours'`
+  ));
+  if (dailyCount >= 150) {
+    res.status(429).json({ error: "You've reached today's creation limit. This resets on a rolling 24-hour basis \u2014 try again later." });
+    return;
+  }
   const [week] = await db.select({ id: weeksTable.id }).from(weeksTable).where(and(eq(weeksTable.id, body.weekId), eq(weeksTable.userId, userId)));
   if (!week) {
     res.status(404).json({ error: "Week not found" });
