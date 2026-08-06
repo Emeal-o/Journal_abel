@@ -1,0 +1,30 @@
+TASK: Visual restyle of the /settings page (artifacts/trading-journal) — same rows/functionality, better structure. No new features, no backend changes.
+
+CURRENT STATE: Settings page is a flat list of plain text rows separated by hairline dividers. Too flat/plain — needs more visual structure, similar to standard iOS/Android settings screens (grouped cards with icons), but styled to match TradeOps's existing dark/JetBrains Mono aesthetic — NOT a generic light iOS look.
+
+RESTYLE SPEC:
+
+1. GROUPED CARDS:
+- Wrap each section's rows in a rounded container (border-radius ~16px), background slightly lighter than the page background (e.g. a very subtle elevated dark shade — check existing card/modal components in the app for the exact "elevated surface" color token already in use, reuse it, don't invent a new one)
+- Section label ("PREFERENCES", "INFORMATION") sits ABOVE its card, same uppercase/wide-tracking JetBrains Mono style already used
+- Rows inside a card are separated by a subtle hairline divider (low opacity), NOT full card-per-row — grouped rows share one rounded card per section, like standard OS settings screens
+
+2. ICONS ON EVERY ROW:
+- Add a small icon (use lucide-react, already available) to the LEFT of each row's label, sized consistently (~20px), muted/gray tone matching existing icon usage in the app
+- "Manage Setup Types" row: keep the existing colored-dots preview, but ALSO add a small settings/sliders icon to its left (dots stay as the value-preview element on read, icon establishes visual rhythm)
+- "About" row: use an info-circle icon
+- "Sign out" row: use a log-out icon (still red/destructive tint, unchanged position/spacing at the bottom, separated from the grouped cards above)
+
+3. VALUE PREVIEWS (right-aligned, before the chevron, muted gray text):
+- "Manage Setup Types" row: show a small count next to the dots, e.g. "9 active" (query however the app currently gets the active setup type count)
+- "About" row: no value preview needed, just the chevron
+
+4. SPACING/POLISH:
+- Consistent padding matching the row height already established (44px min tap target — keep this)
+- Comfortable gap between each section's card (roughly 24–32px)
+- Keep the existing gradient bar signature element in the About expanded view as-is — do not remove it
+- Respect prefers-reduced-motion for any transitions (unchanged requirement from before)
+
+DO NOT: add any new settings rows/features, touch backend/schema, modify the About page's copy, or change the Sign out button's confirmation behavior.
+
+After changes: confirm build passes, take a screenshot of the live /settings page if possible, and push to main.
