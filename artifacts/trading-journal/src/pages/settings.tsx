@@ -1,9 +1,18 @@
 import { useState } from "react";
-import { ChevronRight, ChevronDown, SlidersHorizontal, Info, LogOut } from "lucide-react";
+import {
+  ChevronRight, ChevronDown,
+  SlidersHorizontal, Info, LogOut,
+  Home, BarChart3, Type, Zap, Check,
+} from "lucide-react";
 import { ManageSetupTypesModal } from "@/components/manage-setup-types-modal";
 import { useSetupTypes } from "@/lib/setup-types-api";
 import { useAuth } from "@/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";
+import { Switch } from "@/components/ui/switch";
+import {
+  useDisplayPrefs,
+  type LandingPage, type StatDisplay, type FontSizePref,
+} from "@/hooks/use-display-prefs";
 
 // ── Section label ──────────────────────────────────────────────────────────────
 
@@ -25,18 +34,18 @@ function SettingsCard({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ── Individual row ─────────────────────────────────────────────────────────────
+// ── Standard chevron row (nav to modal or inline expand) ───────────────────────
 
-interface RowProps {
+interface ChevronRowProps {
   icon: React.ReactNode;
   label: string;
-  valueParts?: React.ReactNode;   // optional right-side preview before the chevron
+  valueParts?: React.ReactNode;
   onClick: () => void;
   isOpen?: boolean;
-  last?: boolean;                 // suppress bottom divider on the last row in a card
+  last?: boolean;
 }
 
-function SettingsRow({ icon, label, valueParts, onClick, isOpen, last }: RowProps) {
+function ChevronRow({ icon, label, valueParts, onClick, isOpen, last }: ChevronRowProps) {
   return (
     <button
       onClick={onClick}
@@ -47,13 +56,8 @@ function SettingsRow({ icon, label, valueParts, onClick, isOpen, last }: RowProp
         !last ? "border-b border-white/[0.06]" : "",
       ].join(" ")}
     >
-      {/* Left icon */}
       <span className="flex-shrink-0 text-muted-foreground/40">{icon}</span>
-
-      {/* Label */}
       <span className="flex-1 min-w-0">{label}</span>
-
-      {/* Right: value preview + chevron */}
       <span className="flex items-center gap-2 flex-shrink-0">
         {valueParts}
         {isOpen
@@ -65,7 +69,90 @@ function SettingsRow({ icon, label, valueParts, onClick, isOpen, last }: RowProp
   );
 }
 
-// ── About expanded panel (lives inside the Information card) ───────────────────
+// ── Select row — expands inline to show options ────────────────────────────────
+
+interface SelectRowProps<T extends string> {
+  icon: React.ReactNode;
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onSelect: (v: T) => void;
+  displayLabel: string;   // shown as value preview (already computed by caller)
+  last?: boolean;
+}
+
+function SelectRow<T extends string>({
+  icon, label, value, options, onSelect, displayLabel, last,
+}: SelectRowProps<T>) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <ChevronRow
+        icon={icon}
+        label={label}
+        isOpen={open}
+        last={!open && last}
+        valueParts={
+          <span className="text-xs text-muted-foreground/50 font-mono">{displayLabel}</span>
+        }
+        onClick={() => setOpen((v) => !v)}
+      />
+      {open && (
+        <div className={["border-t border-white/[0.06]", !last ? "border-b border-white/[0.06]" : ""].join(" ")}>
+          {options.map((opt, i) => (
+            <button
+              key={opt.value}
+              onClick={() => { onSelect(opt.value); setOpen(false); }}
+              className={[
+                "w-full flex items-center justify-between gap-3 min-h-[44px] px-6 py-3",
+                "font-mono text-sm transition-colors motion-reduce:transition-none",
+                "hover:bg-white/[0.03]",
+                opt.value === value ? "text-white" : "text-muted-foreground/60",
+                i < options.length - 1 ? "border-b border-white/[0.04]" : "",
+              ].join(" ")}
+            >
+              <span>{opt.label}</span>
+              {opt.value === value && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── Toggle row — switch on the right ──────────────────────────────────────────
+
+interface ToggleRowProps {
+  icon: React.ReactNode;
+  label: string;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+  last?: boolean;
+}
+
+function ToggleRow({ icon, label, checked, onCheckedChange, last }: ToggleRowProps) {
+  return (
+    <div
+      className={[
+        "w-full flex items-center gap-3 min-h-[44px] px-4 py-3",
+        "font-mono text-sm text-foreground/80",
+        !last ? "border-b border-white/[0.06]" : "",
+      ].join(" ")}
+    >
+      <span className="flex-shrink-0 text-muted-foreground/40">{icon}</span>
+      <span className="flex-1 min-w-0">{label}</span>
+      <Switch
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        aria-label={label}
+      />
+    </div>
+  );
+}
+
+// ── About expanded panel ───────────────────────────────────────────────────────
 
 function AboutPanel() {
   return (
@@ -99,19 +186,34 @@ function AboutPanel() {
 
 export function SettingsPage() {
   const [setupTypesOpen, setSetupTypesOpen] = useState(false);
-  const [aboutOpen, setAboutOpen] = useState(false);
+  const [aboutOpen, setAboutOpen]           = useState(false);
 
   const { data: setupTypes = [] } = useSetupTypes();
   const { logout } = useAuth();
   const queryClient = useQueryClient();
+  const prefs = useDisplayPrefs();
 
   async function handleLogout() {
     await logout();
     queryClient.clear();
   }
 
-  const active = setupTypes.filter((s) => s.active);
+  const active       = setupTypes.filter((s) => s.active);
   const activeColors = active.map((s) => s.color);
+
+  const landingOptions: { value: LandingPage; label: string }[] = [
+    { value: "journal",  label: "Journal"  },
+    { value: "analysis", label: "Analysis" },
+  ];
+  const statOptions: { value: StatDisplay; label: string }[] = [
+    { value: "rrr",  label: "RRR"  },
+    { value: "pips", label: "Pips" },
+  ];
+  const fontOptions: { value: FontSizePref; label: string }[] = [
+    { value: "small",   label: "Small"   },
+    { value: "default", label: "Default" },
+    { value: "large",   label: "Large"   },
+  ];
 
   return (
     <div className="max-w-lg mx-auto">
@@ -121,7 +223,7 @@ export function SettingsPage() {
       <div className="mb-6">
         <SectionHeader>Preferences</SectionHeader>
         <SettingsCard>
-          <SettingsRow
+          <ChevronRow
             last
             icon={<SlidersHorizontal className="w-5 h-5" />}
             label="Manage Setup Types"
@@ -150,11 +252,49 @@ export function SettingsPage() {
         </SettingsCard>
       </div>
 
-      {/* ── Information ─────────────────────────────────────────────────────── */}
+      {/* ── Display ──────────────────────────────────────────────────────────── */}
+      <div className="mb-6">
+        <SectionHeader>Display</SectionHeader>
+        <SettingsCard>
+          <SelectRow
+            icon={<Home className="w-5 h-5" />}
+            label="Default Landing Page"
+            value={prefs.defaultLanding}
+            options={landingOptions}
+            onSelect={prefs.setDefaultLanding}
+            displayLabel={landingOptions.find((o) => o.value === prefs.defaultLanding)!.label}
+          />
+          <SelectRow
+            icon={<BarChart3 className="w-5 h-5" />}
+            label="Default Stat Display"
+            value={prefs.defaultStatDisplay}
+            options={statOptions}
+            onSelect={prefs.setDefaultStatDisplay}
+            displayLabel={statOptions.find((o) => o.value === prefs.defaultStatDisplay)!.label}
+          />
+          <SelectRow
+            icon={<Type className="w-5 h-5" />}
+            label="Font Size"
+            value={prefs.fontSize}
+            options={fontOptions}
+            onSelect={prefs.setFontSize}
+            displayLabel={fontOptions.find((o) => o.value === prefs.fontSize)!.label}
+          />
+          <ToggleRow
+            last
+            icon={<Zap className="w-5 h-5" />}
+            label="Reduce Motion"
+            checked={prefs.reduceMotion}
+            onCheckedChange={prefs.setReduceMotion}
+          />
+        </SettingsCard>
+      </div>
+
+      {/* ── Information ──────────────────────────────────────────────────────── */}
       <div className="mb-6">
         <SectionHeader>Information</SectionHeader>
         <SettingsCard>
-          <SettingsRow
+          <ChevronRow
             last={!aboutOpen}
             icon={<Info className="w-5 h-5" />}
             label="About"

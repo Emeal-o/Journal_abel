@@ -12,6 +12,7 @@ import { AdminPage } from "@/pages/admin";
 import { SettingsPage } from "@/pages/settings";
 import { Layout } from "@/components/layout";
 import { useAuth } from "@/hooks/use-auth";
+import { DisplayPrefsProvider, useDisplayPrefs } from "@/hooks/use-display-prefs";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +25,7 @@ const queryClient = new QueryClient({
 
 function AuthGate() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { defaultLanding } = useDisplayPrefs();
 
   if (isLoading) {
     // Blank screen while we check the session — avoids a flash of the login page
@@ -34,10 +36,12 @@ function AuthGate() {
     return <LoginPage />;
   }
 
+  const RootPage = defaultLanding === "analysis" ? AnalysisPage : JournalPage;
+
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={JournalPage} />
+        <Route path="/" component={RootPage} />
         <Route path="/stats" component={StatsPage} />
         <Route path="/archive" component={ArchivePage} />
         <Route path="/analysis" component={AnalysisPage} />
@@ -56,20 +60,22 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          {/* /admin has its own independent auth (admin password), so it must
-              sit outside AuthGate — otherwise a signed-out browser would be
-              redirected to the regular journal login page instead. */}
-          <Switch>
-            <Route path="/admin" component={AdminPage} />
-            <Route>
-              <AuthGate />
-            </Route>
-          </Switch>
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <DisplayPrefsProvider>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            {/* /admin has its own independent auth (admin password), so it must
+                sit outside AuthGate — otherwise a signed-out browser would be
+                redirected to the regular journal login page instead. */}
+            <Switch>
+              <Route path="/admin" component={AdminPage} />
+              <Route>
+                <AuthGate />
+              </Route>
+            </Switch>
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </DisplayPrefsProvider>
     </QueryClientProvider>
   );
 }

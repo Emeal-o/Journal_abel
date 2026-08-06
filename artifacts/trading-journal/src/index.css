@@ -1,5 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+
+/* ── Display prefs: font scale ───────────────────────────────────────────── */
+:root { --font-scale: 1; }
+html { font-size: calc(16px * var(--font-scale)); }
+
+/* ── Display prefs: reduce motion ────────────────────────────────────────── */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
