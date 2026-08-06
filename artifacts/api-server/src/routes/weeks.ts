@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and, isNull, isNotNull, sql } from "drizzle-orm";
+import { eq, count, desc, and, isNull, isNotNull, sql } from "drizzle-orm";
 import { db, weeksTable, tradesTable, type Week, type Trade } from "@workspace/db";
 import {
   CreateWeekBody,
@@ -42,6 +42,35 @@ router.get("/weeks", requireAuth, async (req, res) => {
 router.post("/weeks", requireAuth, async (req, res) => {
   const userId = req.session.userId!;
   const body = CreateWeekBody.parse(req.body);
+
+  // ── Rate limiting (per-user, POST only) ─────────────────────────────────
+  // Burst guard: max 5 weeks in any rolling 60-second window.
+  const [{ burstCount }] = await db
+    .select({ burstCount: count() })
+    .from(weeksTable)
+    .where(and(
+      eq(weeksTable.userId, userId),
+      sql`${weeksTable.createdAt} >= NOW() - INTERVAL '60 seconds'`,
+    ));
+  if (burstCount >= 5) {
+    res.status(429).json({ error: "You're creating entries too quickly — please wait a moment and try again." });
+    return;
+  }
+
+  // Daily cap: max 30 weeks in any rolling 24-hour window.
+  const [{ dailyCount }] = await db
+    .select({ dailyCount: count() })
+    .from(weeksTable)
+    .where(and(
+      eq(weeksTable.userId, userId),
+      sql`${weeksTable.createdAt} >= NOW() - INTERVAL '24 hours'`,
+    ));
+  if (dailyCount >= 30) {
+    res.status(429).json({ error: "You've reached today's creation limit. This resets on a rolling 24-hour basis — try again later." });
+    return;
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
   const [week] = await db.insert(weeksTable).values({
     userId,
     label: body.label,

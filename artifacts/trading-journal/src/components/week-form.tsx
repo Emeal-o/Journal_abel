@@ -139,8 +139,14 @@ export function WeekForm({ week, open, onOpenChange }: WeekFormProps) {
           queryClient.invalidateQueries({ queryKey: getListWeeksQueryKey() });
           onOpenChange(false);
         },
-        onError: () => {
-          toast({ title: "Failed to create week", variant: "destructive" });
+        onError: (error) => {
+          // Surface the server's own message for 429 rate-limit responses;
+          // fall back to the generic message for all other errors.
+          const apiErr = error as { status?: number; data?: { error?: string } };
+          const title = apiErr?.status === 429
+            ? (apiErr?.data?.error ?? "Too many requests — please wait and try again.")
+            : "Failed to create week";
+          toast({ title, variant: "destructive" });
         },
       }
     );

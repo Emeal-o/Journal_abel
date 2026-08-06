@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, count, desc, and } from "drizzle-orm";
+import { eq, count, desc, and, sql } from "drizzle-orm";
 import { db, tradesTable, weeksTable, setupTypesTable, type Trade } from "@workspace/db";
 import {
   CreateTradeBody,
@@ -48,6 +48,34 @@ router.get("/trades", requireAuth, async (req, res) => {
 router.post("/trades", requireAuth, async (req, res) => {
   const userId = req.session.userId!;
   const body = CreateTradeBody.parse(req.body);
+
+  // ── Rate limiting (per-user, POST only) ─────────────────────────────────
+  // Burst guard: max 5 trades in any rolling 60-second window.
+  const [{ burstCount }] = await db
+    .select({ burstCount: count() })
+    .from(tradesTable)
+    .where(and(
+      eq(tradesTable.userId, userId),
+      sql`${tradesTable.createdAt} >= NOW() - INTERVAL '60 seconds'`,
+    ));
+  if (burstCount >= 5) {
+    res.status(429).json({ error: "You're creating entries too quickly — please wait a moment and try again." });
+    return;
+  }
+
+  // Daily cap: max 150 trades in any rolling 24-hour window.
+  const [{ dailyCount }] = await db
+    .select({ dailyCount: count() })
+    .from(tradesTable)
+    .where(and(
+      eq(tradesTable.userId, userId),
+      sql`${tradesTable.createdAt} >= NOW() - INTERVAL '24 hours'`,
+    ));
+  if (dailyCount >= 150) {
+    res.status(429).json({ error: "You've reached today's creation limit. This resets on a rolling 24-hour basis — try again later." });
+    return;
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   // Verify the target week belongs to this user
   const [week] = await db
