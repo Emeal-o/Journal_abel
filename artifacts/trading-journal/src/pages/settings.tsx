@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChevronRight, ChevronDown,
   SlidersHorizontal, Info, LogOut,
@@ -13,6 +14,7 @@ import {
   useDisplayPrefs,
   type LandingPage, type StatDisplay, type FontSizePref,
 } from "@/hooks/use-display-prefs";
+import { APP_SETTINGS_QUERY_KEY, getAppSettings } from "@/lib/app-settings-api";
 
 // ── Section label ──────────────────────────────────────────────────────────────
 
@@ -155,28 +157,43 @@ function ToggleRow({ icon, label, checked, onCheckedChange, last }: ToggleRowPro
 // ── About expanded panel ───────────────────────────────────────────────────────
 
 function AboutPanel() {
+  const aboutQuery = useQuery({
+    queryKey: APP_SETTINGS_QUERY_KEY,
+    queryFn: getAppSettings,
+  });
+
   return (
     <div className="px-4 pb-5 pt-3 space-y-3 font-mono border-t border-white/[0.06]">
-      {/* TODO: replace hardcoded content with GET /api/app-settings in Stage 1b */}
-
       {/* Gradient accent bar — blue-to-teal, matching PWA icon sparkline mark */}
       <div className="h-[2px] w-16 rounded-full bg-gradient-to-r from-blue-500 to-teal-400" />
 
-      <div className="space-y-0.5">
-        <p className="text-sm font-semibold text-white tracking-tight">TradeOps</p>
-        <p className="text-xs text-muted-foreground">Version 1.4</p>
-      </div>
+      {aboutQuery.isLoading && (
+        <p className="text-xs text-muted-foreground animate-pulse">Loading About…</p>
+      )}
 
-      <p className="text-xs text-muted-foreground/80 leading-relaxed">
-        A private trading journal for logging, reviewing, and analyzing your trades over time.
-      </p>
-      <p className="text-xs text-muted-foreground/80 leading-relaxed">
-        Track weekly performance, break down results by setup and direction, and see your long-term
-        stats — win rate, R:R, drawdown, and more.
-      </p>
-      <p className="text-xs text-muted-foreground/80 leading-relaxed">
-        This journal only works if it's honest — every entry relies on you logging your real trades.
-      </p>
+      {aboutQuery.isError && (
+        <p className="text-xs text-destructive">Failed to load About content.</p>
+      )}
+
+      {aboutQuery.data && (
+        <>
+          <div className="space-y-0.5">
+            <p className="text-sm font-semibold text-white tracking-tight">TradeOps</p>
+            <p className="text-xs text-muted-foreground">Version {aboutQuery.data.version}</p>
+          </div>
+
+          <p className="text-xs text-muted-foreground/80 leading-relaxed">
+            {aboutQuery.data.tagline}
+          </p>
+          <p className="text-xs text-muted-foreground/80 leading-relaxed">
+            {aboutQuery.data.description}
+          </p>
+          <p className="text-xs text-muted-foreground/80 leading-relaxed">
+            {aboutQuery.data.honesty_note}
+          </p>
+        </>
+      )}
+
       <p className="text-xs text-muted-foreground/50 pt-1">Built by Emeal</p>
     </div>
   );

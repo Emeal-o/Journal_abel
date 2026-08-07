@@ -64,6 +64,7 @@ export interface AdminSetupType {
   active: boolean;
 }
 
+
 /** True if the browser currently holds a valid admin session. */
 export async function getAdminSession(): Promise<boolean> {
   const res = await adminFetch("/api/admin/me");

@@ -5,7 +5,8 @@ import { sql } from "drizzle-orm";
 
 /**
  * Idempotent startup migration: ensures tables managed outside drizzle-kit
- * (sessions, login_events) exist before the server starts accepting traffic.
+ * (sessions, login_events, app_settings) exist before the server starts
+ * accepting traffic.
  * Safe to run on every boot — uses CREATE TABLE/INDEX IF NOT EXISTS.
  */
 async function runStartupMigrations() {
@@ -20,6 +21,28 @@ async function runStartupMigrations() {
   `);
   await db.execute(sql`
     CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON sessions (expire)
+  `);
+  // app_settings — the single public About configuration row.
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      id           INTEGER PRIMARY KEY,
+      version      TEXT NOT NULL,
+      tagline      TEXT NOT NULL,
+      description  TEXT NOT NULL,
+      honesty_note TEXT NOT NULL,
+      updated_at   TIMESTAMP DEFAULT NOW() NOT NULL
+    )
+  `);
+  await db.execute(sql`
+    INSERT INTO app_settings (id, version, tagline, description, honesty_note)
+    VALUES (
+      1,
+      '1.4',
+      'A private trading journal for logging, reviewing, and analyzing your trades over time.',
+      'Track weekly performance, break down results by setup and direction, and see your long-term stats — win rate, R:R, drawdown, and more.',
+      'This journal only works if it''s honest — every entry relies on you logging your real trades.'
+    )
+    ON CONFLICT (id) DO NOTHING
   `);
   // login_events table — for auth attempt logging.
   await db.execute(sql`

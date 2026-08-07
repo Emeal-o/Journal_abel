@@ -20651,27 +20651,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router9;
+    module.exports = Router10;
     module.exports.Route = Route;
-    function Router9(options) {
-      if (!(this instanceof Router9)) {
-        return new Router9(options);
+    function Router10(options) {
+      if (!(this instanceof Router10)) {
+        return new Router10(options);
       }
       const opts = options || {};
-      function router9(req, res, next) {
-        router9.handle(req, res, next);
+      function router10(req, res, next) {
+        router10.handle(req, res, next);
       }
-      Object.setPrototypeOf(router9, this);
-      router9.caseSensitive = opts.caseSensitive;
-      router9.mergeParams = opts.mergeParams;
-      router9.params = {};
-      router9.strict = opts.strict;
-      router9.stack = [];
-      return router9;
+      Object.setPrototypeOf(router10, this);
+      router10.caseSensitive = opts.caseSensitive;
+      router10.mergeParams = opts.mergeParams;
+      router10.params = {};
+      router10.strict = opts.strict;
+      router10.stack = [];
+      return router10;
     }
-    Router9.prototype = function() {
+    Router10.prototype = function() {
     };
-    Router9.prototype.param = function param(name, fn) {
+    Router10.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20691,7 +20691,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router9.prototype.handle = function handle(req, res, callback) {
+    Router10.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20818,7 +20818,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router9.prototype.use = function use(handler) {
+    Router10.prototype.use = function use(handler) {
       let offset = 0;
       let path = "/";
       if (typeof handler !== "function") {
@@ -20851,7 +20851,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router9.prototype.route = function route(path) {
+    Router10.prototype.route = function route(path) {
       const route2 = new Route(path);
       const layer = new Layer(path, {
         sensitive: this.caseSensitive,
@@ -20866,7 +20866,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router9.prototype[method] = function(path) {
+      Router10.prototype[method] = function(path) {
         const route = this.route(path);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21049,13 +21049,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router9 = require_router();
+    var Router10 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router9 = null;
+      var router10 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21064,13 +21064,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router9 === null) {
-            router9 = new Router9({
+          if (router10 === null) {
+            router10 = new Router10({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router9;
+          return router10;
         }
       });
     };
@@ -21141,15 +21141,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router9 = this.router;
+      var router10 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router9.use(path, fn2);
+          return router10.use(path, fn2);
         }
         debug(".use app under %s", path);
         fn2.mountpath = path;
         fn2.parent = this;
-        router9.use(path, function mounted_app(req, res, next) {
+        router10.use(path, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -23722,7 +23722,7 @@ var require_express = __commonJS({
     var EventEmitter = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router9 = require_router();
+    var Router10 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23744,8 +23744,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router9.Route;
-    exports.Router = Router9;
+    exports.Route = Router10.Route;
+    exports.Router = Router10;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -37514,7 +37514,7 @@ var require_ip_address = __commonJS({
 });
 
 // src/app.ts
-var import_express9 = __toESM(require_express2(), 1);
+var import_express10 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_express_session = __toESM(require_express_session(), 1);
 var import_connect_pg_simple = __toESM(require_connect_pg_simple(), 1);
@@ -46540,6 +46540,8 @@ var esm_default = import_lib.default;
 // ../../lib/db/src/schema/index.ts
 var schema_exports = {};
 __export(schema_exports, {
+  appSettingsTable: () => appSettingsTable,
+  insertAppSettingsSchema: () => insertAppSettingsSchema,
   insertTradeSchema: () => insertTradeSchema,
   insertWeekSchema: () => insertWeekSchema,
   loginEventsTable: () => loginEventsTable,
@@ -58024,6 +58026,19 @@ var setupTypeChangeLogTable = pgTable("setup_type_change_log", {
   changedAt: timestamp("changed_at").defaultNow().notNull()
 });
 
+// ../../lib/db/src/schema/app-settings.ts
+var appSettingsTable = pgTable("app_settings", {
+  id: integer("id").primaryKey(),
+  version: text("version").notNull(),
+  tagline: text("tagline").notNull(),
+  description: text("description").notNull(),
+  honestyNote: text("honesty_note").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+var insertAppSettingsSchema = createInsertSchema(appSettingsTable).omit({
+  updatedAt: true
+});
+
 // ../../lib/db/src/index.ts
 var { Pool: Pool2 } = esm_default;
 if (!process.env.DATABASE_URL && !process.env.PGHOST) {
@@ -58067,7 +58082,7 @@ var pool = new Pool2(buildPgPoolConfig());
 var db = drizzle(createQueryClient(), { schema: schema_exports });
 
 // src/routes/index.ts
-var import_express8 = __toESM(require_express2(), 1);
+var import_express9 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -64277,16 +64292,87 @@ router7.delete("/setup-types/:id", requireAuth, async (req, res) => {
 });
 var setup_types_default = router7;
 
-// src/routes/index.ts
+// src/routes/app-settings.ts
+var import_express8 = __toESM(require_express2(), 1);
 var router8 = (0, import_express8.Router)();
-router8.use(health_default);
-router8.use(auth_default);
-router8.use(admin_default);
-router8.use(weeks_default);
-router8.use(trades_default);
-router8.use(stats_default);
-router8.use(setup_types_default);
-var routes_default = router8;
+function validateAppSettingsInput(body) {
+  if (typeof body !== "object" || body === null) {
+    return { success: false, error: "Request body must be an object." };
+  }
+  const b2 = body;
+  const fields = [
+    { key: "version", max: 50 },
+    { key: "tagline", max: 500 },
+    { key: "description", max: 2e3 },
+    { key: "honesty_note", max: 2e3 }
+  ];
+  const data = {};
+  for (const { key, max } of fields) {
+    const value = b2[key];
+    if (typeof value !== "string") {
+      return { success: false, error: `Field "${key}" must be a string.` };
+    }
+    const trimmed = value.trim();
+    if (trimmed.length < 1) {
+      return { success: false, error: `Field "${key}" must not be empty.` };
+    }
+    if (trimmed.length > max) {
+      return { success: false, error: `Field "${key}" must be at most ${max} characters.` };
+    }
+    data[key] = trimmed;
+  }
+  return { success: true, data };
+}
+function serializeAppSettings(settings) {
+  return {
+    id: settings.id,
+    version: settings.version,
+    tagline: settings.tagline,
+    description: settings.description,
+    honesty_note: settings.honestyNote,
+    updated_at: settings.updatedAt.toISOString()
+  };
+}
+router8.get("/app-settings", async (_req, res) => {
+  const [settings] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.id, 1));
+  if (!settings) {
+    res.status(404).json({ error: "App settings are not configured." });
+    return;
+  }
+  res.json(serializeAppSettings(settings));
+});
+router8.put("/app-settings", requireAdmin, async (req, res) => {
+  const parsed = validateAppSettingsInput(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid About content.", details: parsed.error });
+    return;
+  }
+  const [settings] = await db.update(appSettingsTable).set({
+    version: parsed.data.version,
+    tagline: parsed.data.tagline,
+    description: parsed.data.description,
+    honestyNote: parsed.data.honesty_note,
+    updatedAt: /* @__PURE__ */ new Date()
+  }).where(eq(appSettingsTable.id, 1)).returning();
+  if (!settings) {
+    res.status(404).json({ error: "App settings are not configured." });
+    return;
+  }
+  res.json(serializeAppSettings(settings));
+});
+var app_settings_default = router8;
+
+// src/routes/index.ts
+var router9 = (0, import_express9.Router)();
+router9.use(health_default);
+router9.use(auth_default);
+router9.use(admin_default);
+router9.use(weeks_default);
+router9.use(trades_default);
+router9.use(stats_default);
+router9.use(setup_types_default);
+router9.use(app_settings_default);
+var routes_default = router9;
 
 // src/lib/logger.ts
 var import_pino = __toESM(require_pino(), 1);
@@ -64307,7 +64393,7 @@ var logger = (0, import_pino.default)({
 });
 
 // src/app.ts
-var app = (0, import_express9.default)();
+var app = (0, import_express10.default)();
 app.set("trust proxy", 1);
 app.use(
   (0, import_pino_http.pinoHttp)({
@@ -64342,8 +64428,8 @@ app.use(
   })
 );
 app.use((0, import_cookie_parser.default)());
-app.use(import_express9.default.json());
-app.use(import_express9.default.urlencoded({ extended: true }));
+app.use(import_express10.default.json());
+app.use(import_express10.default.urlencoded({ extended: true }));
 var UNSAFE_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
 app.use((req, res, next) => {
   if (process.env.NODE_ENV !== "production") return next();
