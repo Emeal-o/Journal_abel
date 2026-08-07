@@ -182,13 +182,13 @@ function AboutPanel() {
             <p className="text-xs text-muted-foreground">Version {aboutQuery.data.version}</p>
           </div>
 
-          <p className="text-xs text-muted-foreground/80 leading-relaxed">
+          <p className="text-xs text-muted-foreground/80 leading-relaxed whitespace-pre-line">
             {aboutQuery.data.tagline}
           </p>
-          <p className="text-xs text-muted-foreground/80 leading-relaxed">
+          <p className="text-xs text-muted-foreground/80 leading-relaxed whitespace-pre-line">
             {aboutQuery.data.description}
           </p>
-          <p className="text-xs text-muted-foreground/80 leading-relaxed">
+          <p className="text-xs text-muted-foreground/80 leading-relaxed whitespace-pre-line">
             {aboutQuery.data.honesty_note}
           </p>
         </>
