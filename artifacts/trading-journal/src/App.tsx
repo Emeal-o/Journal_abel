@@ -1,4 +1,5 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { useEffect, useRef } from "react";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,6 +27,18 @@ const queryClient = new QueryClient({
 function AuthGate() {
   const { isAuthenticated, isLoading } = useAuth();
   const { defaultLanding } = useDisplayPrefs();
+  const [location, navigate] = useLocation();
+  const initialLocation = useRef(location);
+  const handledInitialLanding = useRef(false);
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || handledInitialLanding.current) return;
+
+    handledInitialLanding.current = true;
+    if (initialLocation.current === "/" && defaultLanding === "analysis") {
+      navigate("/analysis", { replace: true });
+    }
+  }, [defaultLanding, isAuthenticated, isLoading, navigate]);
 
   if (isLoading) {
     // Blank screen while we check the session — avoids a flash of the login page
@@ -36,12 +49,10 @@ function AuthGate() {
     return <LoginPage />;
   }
 
-  const RootPage = defaultLanding === "analysis" ? AnalysisPage : JournalPage;
-
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={RootPage} />
+        <Route path="/" component={JournalPage} />
         <Route path="/stats" component={StatsPage} />
         <Route path="/archive" component={ArchivePage} />
         <Route path="/analysis" component={AnalysisPage} />
