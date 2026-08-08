@@ -179,13 +179,13 @@ html.theme-amoled {
 }
 
 html.theme-dim {
-  --background: 222 32% 12%;
-  --border: 218 28% 24%;
-  --input: 218 28% 24%;
-  --card: 222 30% 15%;
-  --card-border: 218 28% 24%;
-  --popover: 222 32% 13%;
-  --popover-border: 218 28% 24%;
+  --background: 222 38% 20%;
+  --border: 218 32% 32%;
+  --input: 218 32% 32%;
+  --card: 222 36% 23%;
+  --card-border: 218 32% 32%;
+  --popover: 222 38% 21%;
+  --popover-border: 218 32% 32%;
 
   --surface-1: 218 35% 100% / 0.07;
   --surface-2: 218 35% 100% / 0.09;
