@@ -1,23 +1,24 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// — Types —————————————————————————————————————
 
-export type LandingPage     = "journal" | "analysis";
-export type StatDisplay     = "rrr" | "pips";
-export type FontSizePref    = "small" | "default" | "large";
+export type LandingPage    = "journal" | "analysis";
+export type StatDisplay    = "rrr" | "pips";
+export type FontSizePref   = "small" | "default" | "large";
+export type ThemePref      = "current" | "amoled" | "dim";
 
 export interface DisplayPrefs {
   defaultLanding:     LandingPage;
   defaultStatDisplay: StatDisplay;
   fontSize:           FontSizePref;
   reduceMotion:       boolean;
-  setDefaultLanding:     (v: LandingPage)  => void;
-  setDefaultStatDisplay: (v: StatDisplay)  => void;
+  theme:              ThemePref;
+  setDefaultLanding:     (v: LandingPage) => void;
+  setDefaultStatDisplay: (v: StatDisplay) => void;
   setFontSize:           (v: FontSizePref) => void;
-  setReduceMotion:       (v: boolean)      => void;
+  setReduceMotion:       (v: boolean) => void;
+  setTheme:              (v: ThemePref) => void;
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -38,11 +39,11 @@ function systemReduceMotion() {
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-// ── Context ────────────────────────────────────────────────────────────────────
+// — Context —————————————————————————————————————
 
 const Ctx = createContext<DisplayPrefs | null>(null);
 
-// ── Provider ───────────────────────────────────────────────────────────────────
+// — Provider —————————————————————————————————————
 
 export function DisplayPrefsProvider({ children }: { children: React.ReactNode }) {
   const [defaultLanding, _setDefaultLanding] = useState<LandingPage>(() =>
@@ -58,6 +59,9 @@ export function DisplayPrefsProvider({ children }: { children: React.ReactNode }
     const stored = localStorage.getItem("tradeops_reduce_motion");
     return stored !== null ? stored === "true" : systemReduceMotion();
   });
+  const [theme, _setTheme] = useState<ThemePref>(() =>
+    read<ThemePref>("tradeops_theme", "current"),
+  );
 
   // Apply font scale to :root
   useEffect(() => {
@@ -69,6 +73,13 @@ export function DisplayPrefsProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     document.documentElement.classList.toggle("reduce-motion", reduceMotion);
   }, [reduceMotion]);
+
+  // Apply theme class to :root
+  useEffect(() => {
+    document.documentElement.classList.remove("theme-amoled", "theme-dim");
+    if (theme === "amoled") document.documentElement.classList.add("theme-amoled");
+    if (theme === "dim") document.documentElement.classList.add("theme-dim");
+  }, [theme]);
 
   function setDefaultLanding(v: LandingPage) {
     write("tradeops_default_landing", v);
@@ -86,18 +97,22 @@ export function DisplayPrefsProvider({ children }: { children: React.ReactNode }
     write("tradeops_reduce_motion", String(v));
     _setReduceMotion(v);
   }
+  function setTheme(v: ThemePref) {
+    write("tradeops_theme", v);
+    _setTheme(v);
+  }
 
   return (
     <Ctx.Provider value={{
-      defaultLanding, defaultStatDisplay, fontSize, reduceMotion,
-      setDefaultLanding, setDefaultStatDisplay, setFontSize, setReduceMotion,
+      defaultLanding, defaultStatDisplay, fontSize, reduceMotion, theme,
+      setDefaultLanding, setDefaultStatDisplay, setFontSize, setReduceMotion, setTheme,
     }}>
       {children}
     </Ctx.Provider>
   );
 }
 
-// ── Hook ───────────────────────────────────────────────────────────────────────
+// — Hook —————————————————————————————————————
 
 export function useDisplayPrefs(): DisplayPrefs {
   const ctx = useContext(Ctx);

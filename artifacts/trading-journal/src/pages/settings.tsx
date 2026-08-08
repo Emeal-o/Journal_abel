@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ChevronRight, ChevronDown,
   SlidersHorizontal, Info, LogOut, HelpCircle, Bug,
-  Home, BarChart3, Type, Zap, Check,
+  Home, BarChart3, Type, Zap, Palette, Check,
 } from "lucide-react";
 import { ManageSetupTypesModal } from "@/components/manage-setup-types-modal";
 import { useSetupTypes } from "@/lib/setup-types-api";
@@ -12,7 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 import {
   useDisplayPrefs,
-  type LandingPage, type StatDisplay, type FontSizePref,
+  type LandingPage, type StatDisplay, type FontSizePref, type ThemePref,
 } from "@/hooks/use-display-prefs";
 import { APP_SETTINGS_QUERY_KEY, getAppSettings } from "@/lib/app-settings-api";
 
@@ -311,6 +311,11 @@ export function SettingsPage() {
     { value: "default", label: "Default" },
     { value: "large",   label: "Large"   },
   ];
+  const themeOptions: { value: ThemePref; label: string }[] = [
+    { value: "current", label: "Current" },
+    { value: "amoled",  label: "AMOLED"  },
+    { value: "dim",     label: "Dim"     },
+  ];
 
   return (
     <div className="max-w-lg mx-auto">
@@ -376,6 +381,14 @@ export function SettingsPage() {
             options={fontOptions}
             onSelect={prefs.setFontSize}
             displayLabel={fontOptions.find((o) => o.value === prefs.fontSize)!.label}
+          />
+          <SelectRow
+            icon={<Palette className="w-5 h-5" />}
+            label="Theme"
+            value={prefs.theme}
+            options={themeOptions}
+            onSelect={prefs.setTheme}
+            displayLabel={themeOptions.find((o) => o.value === prefs.theme)!.label}
           />
           <ToggleRow
             last

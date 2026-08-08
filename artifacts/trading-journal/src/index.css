@@ -53,6 +53,17 @@ html.reduce-motion *::after {
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-destructive-border: var(--destructive-border);
 
+  --color-surface-1: hsl(var(--surface-1));
+  --color-surface-2: hsl(var(--surface-2));
+  --color-surface-3: hsl(var(--surface-3));
+  --color-surface-4: hsl(var(--surface-4));
+  --color-surface-hover: hsl(var(--surface-hover));
+  --color-surface-active: hsl(var(--surface-active));
+  --color-surface-border: hsl(var(--surface-border));
+  --color-surface-border-subtle: hsl(var(--surface-border-subtle));
+  --color-surface-border-faint: hsl(var(--surface-border-faint));
+  --color-surface-border-strong: hsl(var(--surface-border-strong));
+
   --font-sans: var(--app-font-sans);
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
@@ -98,6 +109,18 @@ html.reduce-motion *::after {
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
   --radius: 0.5rem;
+
+  /* Shared translucent surface tokens used by cards, controls, and dividers. */
+  --surface-1: 0 0% 100% / 0.03;
+  --surface-2: 0 0% 100% / 0.05;
+  --surface-3: 0 0% 100% / 0.10;
+  --surface-4: 0 0% 100% / 0.01;
+  --surface-hover: 0 0% 100% / 0.06;
+  --surface-active: 0 0% 100% / 0.10;
+  --surface-border: 0 0% 100% / 0.10;
+  --surface-border-subtle: 0 0% 100% / 0.06;
+  --surface-border-faint: 0 0% 100% / 0.04;
+  --surface-border-strong: 0 0% 100% / 0.20;
 }
 
 .dark {
@@ -130,6 +153,50 @@ html.reduce-motion *::after {
 
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
+}
+
+/* AMOLED keeps the page truly black while lifting surfaces enough to remain
+   visually distinct. Dim adds a cool slate-blue tint without becoming light. */
+html.theme-amoled {
+  --background: 0 0% 0%;
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --card: 0 0% 4%;
+  --card-border: 0 0% 20%;
+  --popover: 0 0% 2%;
+  --popover-border: 0 0% 20%;
+
+  --surface-1: 0 0% 100% / 0.06;
+  --surface-2: 0 0% 100% / 0.08;
+  --surface-3: 0 0% 100% / 0.14;
+  --surface-4: 0 0% 100% / 0.03;
+  --surface-hover: 0 0% 100% / 0.10;
+  --surface-active: 0 0% 100% / 0.14;
+  --surface-border: 0 0% 100% / 0.16;
+  --surface-border-subtle: 0 0% 100% / 0.10;
+  --surface-border-faint: 0 0% 100% / 0.07;
+  --surface-border-strong: 0 0% 100% / 0.24;
+}
+
+html.theme-dim {
+  --background: 222 32% 12%;
+  --border: 218 28% 24%;
+  --input: 218 28% 24%;
+  --card: 222 30% 15%;
+  --card-border: 218 28% 24%;
+  --popover: 222 32% 13%;
+  --popover-border: 218 28% 24%;
+
+  --surface-1: 218 35% 100% / 0.07;
+  --surface-2: 218 35% 100% / 0.09;
+  --surface-3: 218 35% 100% / 0.14;
+  --surface-4: 218 35% 100% / 0.03;
+  --surface-hover: 218 35% 100% / 0.10;
+  --surface-active: 218 35% 100% / 0.14;
+  --surface-border: 218 35% 100% / 0.16;
+  --surface-border-subtle: 218 35% 100% / 0.10;
+  --surface-border-faint: 218 35% 100% / 0.07;
+  --surface-border-strong: 218 35% 100% / 0.24;
 }
 
 @layer base {
