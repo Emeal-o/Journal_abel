@@ -26,19 +26,6 @@ const queryClient = new QueryClient({
 
 function AuthGate() {
   const { isAuthenticated, isLoading } = useAuth();
-  const { defaultLanding } = useDisplayPrefs();
-  const [location, navigate] = useLocation();
-  const initialLocation = useRef(location);
-  const handledInitialLanding = useRef(false);
-
-  useEffect(() => {
-    if (isLoading || !isAuthenticated || handledInitialLanding.current) return;
-
-    handledInitialLanding.current = true;
-    if (initialLocation.current === "/" && defaultLanding === "analysis") {
-      navigate("/analysis", { replace: true });
-    }
-  }, [defaultLanding, isAuthenticated, isLoading, navigate]);
 
   if (isLoading) {
     // Blank screen while we check the session — avoids a flash of the login page
@@ -63,6 +50,25 @@ function AuthGate() {
   );
 }
 
+function InitialLandingRedirect() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { defaultLanding } = useDisplayPrefs();
+  const [location, navigate] = useLocation();
+  const initialLocation = useRef(location);
+  const handledInitialLanding = useRef(false);
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || handledInitialLanding.current) return;
+
+    handledInitialLanding.current = true;
+    if (initialLocation.current === "/" && defaultLanding === "analysis") {
+      navigate("/analysis", { replace: true });
+    }
+  }, [defaultLanding, isAuthenticated, isLoading, navigate]);
+
+  return null;
+}
+
 function App() {
   // Force dark mode
   if (typeof window !== "undefined") {
@@ -74,6 +80,7 @@ function App() {
       <DisplayPrefsProvider>
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <InitialLandingRedirect />
             {/* /admin has its own independent auth (admin password), so it must
                 sit outside AuthGate — otherwise a signed-out browser would be
                 redirected to the regular journal login page instead. */}
