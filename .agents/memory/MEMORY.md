@@ -1,3 +1,4 @@
 - [TradeOps app structure](tradeops-structure.md) — full-stack pnpm monorepo; trading journal with weeks+trades DB, api-server routes, Vite+React frontend at root path.
 - [Mobile right-edge dead space](mobile-right-edge-deadspace.md) — nav-bar horizontal overflow, not a container bug; check for overflowing elements before blaming content width.
 - [Drizzle push TTY prompt](drizzle-push-tty.md) — drizzle-kit push can't be answered non-interactively on a fresh DB; create tables via raw SQL DDL instead.
+- [Partial development database](partial-development-db.md) — startup migrations can expose partially provisioned dev tables; verify prerequisite schemas before debugging feature code.
