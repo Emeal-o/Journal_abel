@@ -30,17 +30,29 @@ async function runStartupMigrations() {
       tagline      TEXT NOT NULL,
       description  TEXT NOT NULL,
       honesty_note TEXT NOT NULL,
+      bug_report_email TEXT NOT NULL,
       updated_at   TIMESTAMP DEFAULT NOW() NOT NULL
     )
   `);
+  // Stage 3: add the admin-editable bug-report destination to existing installs.
   await db.execute(sql`
-    INSERT INTO app_settings (id, version, tagline, description, honesty_note)
+    ALTER TABLE app_settings
+      ADD COLUMN IF NOT EXISTS bug_report_email TEXT
+  `);
+  await db.execute(sql`
+    UPDATE app_settings
+    SET bug_report_email = 'tradeops37@gmail.com'
+    WHERE id = 1 AND bug_report_email IS NULL
+  `);
+  await db.execute(sql`
+    INSERT INTO app_settings (id, version, tagline, description, honesty_note, bug_report_email)
     VALUES (
       1,
       '1.4',
       'A private trading journal for logging, reviewing, and analyzing your trades over time.',
       'Track weekly performance, break down results by setup and direction, and see your long-term stats — win rate, R:R, drawdown, and more.',
-      'This journal only works if it''s honest — every entry relies on you logging your real trades.'
+      'This journal only works if it''s honest — every entry relies on you logging your real trades.',
+      'tradeops37@gmail.com'
     )
     ON CONFLICT (id) DO NOTHING
   `);

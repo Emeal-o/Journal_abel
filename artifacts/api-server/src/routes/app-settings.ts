@@ -10,6 +10,7 @@ type AppSettingsInput = {
   tagline: string;
   description: string;
   honesty_note: string;
+  bug_report_email: string;
 };
 
 function validateAppSettingsInput(body: unknown): { success: true; data: AppSettingsInput } | { success: false; error: string } {
@@ -22,6 +23,7 @@ function validateAppSettingsInput(body: unknown): { success: true; data: AppSett
     { key: "tagline", max: 500 },
     { key: "description", max: 2000 },
     { key: "honesty_note", max: 2000 },
+    { key: "bug_report_email", max: 254 },
   ];
   const data: Partial<AppSettingsInput> = {};
   for (const { key, max } of fields) {
@@ -48,6 +50,7 @@ function serializeAppSettings(settings: typeof appSettingsTable.$inferSelect) {
     tagline: settings.tagline,
     description: settings.description,
     honesty_note: settings.honestyNote,
+    bug_report_email: settings.bugReportEmail,
     updated_at: settings.updatedAt.toISOString(),
   };
 }
@@ -82,6 +85,7 @@ router.put("/app-settings", requireAdmin, async (req, res) => {
       tagline: parsed.data.tagline,
       description: parsed.data.description,
       honestyNote: parsed.data.honesty_note,
+      bugReportEmail: parsed.data.bug_report_email,
       updatedAt: new Date(),
     })
     .where(eq(appSettingsTable.id, 1))

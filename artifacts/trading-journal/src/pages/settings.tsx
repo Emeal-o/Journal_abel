@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ChevronRight, ChevronDown,
-  SlidersHorizontal, Info, LogOut,
+  SlidersHorizontal, Info, LogOut, HelpCircle, Bug,
   Home, BarChart3, Type, Zap, Check,
 } from "lucide-react";
 import { ManageSetupTypesModal } from "@/components/manage-setup-types-modal";
@@ -156,40 +156,39 @@ function ToggleRow({ icon, label, checked, onCheckedChange, last }: ToggleRowPro
 
 // ── About expanded panel ───────────────────────────────────────────────────────
 
-function AboutPanel() {
-  const aboutQuery = useQuery({
-    queryKey: APP_SETTINGS_QUERY_KEY,
-    queryFn: getAppSettings,
-  });
-
+function AboutPanel({ settings, isLoading, isError }: {
+  settings?: Awaited<ReturnType<typeof getAppSettings>>;
+  isLoading: boolean;
+  isError: boolean;
+}) {
   return (
     <div className="px-4 pb-5 pt-3 space-y-3 font-mono border-t border-white/[0.06]">
       {/* Gradient accent bar — blue-to-teal, matching PWA icon sparkline mark */}
       <div className="h-[2px] w-16 rounded-full bg-gradient-to-r from-blue-500 to-teal-400" />
 
-      {aboutQuery.isLoading && (
+      {isLoading && (
         <p className="text-xs text-muted-foreground animate-pulse">Loading About…</p>
       )}
 
-      {aboutQuery.isError && (
+      {isError && (
         <p className="text-xs text-destructive">Failed to load About content.</p>
       )}
 
-      {aboutQuery.data && (
+      {settings && (
         <>
           <div className="space-y-0.5">
             <p className="text-sm font-semibold text-white tracking-tight">TradeOps</p>
-            <p className="text-xs text-muted-foreground">Version {aboutQuery.data.version}</p>
+            <p className="text-xs text-muted-foreground">Version {settings.version}</p>
           </div>
 
           <p className="text-xs text-muted-foreground/80 leading-relaxed whitespace-pre-line">
-            {aboutQuery.data.tagline}
+            {settings.tagline}
           </p>
           <p className="text-xs text-muted-foreground/80 leading-relaxed whitespace-pre-line">
-            {aboutQuery.data.description}
+            {settings.description}
           </p>
           <p className="text-xs text-muted-foreground/80 leading-relaxed whitespace-pre-line">
-            {aboutQuery.data.honesty_note}
+            {settings.honesty_note}
           </p>
         </>
       )}
@@ -199,13 +198,94 @@ function AboutPanel() {
   );
 }
 
+const FAQ_ITEMS = [
+  {
+    question: "Why am I rate-limited?",
+    answer:
+      "TradeOps uses a burst guard of 5 trades or weeks per 60 seconds and daily soft caps of 150 trades and 30 weeks per 24 hours. These limits help prevent accidental spam while still allowing legitimate bulk backfilling.",
+  },
+  {
+    question: "Why does RRR show a positive number even on losses?",
+    answer:
+      "RRR always reflects the planned setup risk-reward ratio, not the outcome. A losing trade still had a real planned ratio when you entered it.",
+  },
+  {
+    question: "What do the win rate colors mean?",
+    answer:
+      "The six-tier scale runs from red for the lowest win rates to cyan for the highest. A 40–50% win rate can be a legitimate profitable baseline for high-R:R strategies, so it is not automatically a bad result.",
+  },
+  {
+    question: "Why do some stats show “<3” instead of a percentage?",
+    answer:
+      "It means there are fewer than 3 trades in that category. The sample is too small for a meaningful percentage.",
+  },
+  {
+    question: "Why can’t I edit or delete archived trades/weeks?",
+    answer:
+      "Archived data is intentionally immutable to preserve an honest historical record. Genuine corrections are handled manually by the admin.",
+  },
+] as const;
+
+function FaqPanel() {
+  return (
+    <div className="border-t border-white/[0.06] px-4 pb-5 pt-2 font-mono">
+      <div className="divide-y divide-white/[0.06]">
+        {FAQ_ITEMS.map((item) => (
+          <div key={item.question} className="py-3 first:pt-2 last:pb-0">
+            <p className="text-xs font-semibold text-white/90">{item.question}</p>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground/80">
+              {item.answer}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ReportBugRow({ email, isLoading }: { email?: string; isLoading: boolean }) {
+  const subject = encodeURIComponent("TradeOps Bug Report");
+  const body = encodeURIComponent(
+    "Describe what happened:\n\nSteps to reproduce:\n\n",
+  );
+  const href = email ? `mailto:${email}?subject=${subject}&body=${body}` : undefined;
+
+  return (
+    <a
+      href={href}
+      aria-disabled={!href}
+      onClick={(event) => {
+        if (!href) event.preventDefault();
+      }}
+      className={[
+        "w-full flex items-center gap-3 min-h-[44px] px-4 py-3",
+        "font-mono text-sm text-foreground/80 hover:text-white transition-colors",
+        !href ? "cursor-not-allowed opacity-60" : "",
+      ].join(" ")}
+    >
+      <span className="flex-shrink-0 text-muted-foreground/40">
+        <Bug className="w-5 h-5" />
+      </span>
+      <span className="flex-1 min-w-0">Report a Bug</span>
+      <span className="text-xs text-muted-foreground/50">
+        {isLoading ? "Loading…" : email ? "Email" : "Unavailable"}
+      </span>
+    </a>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export function SettingsPage() {
   const [setupTypesOpen, setSetupTypesOpen] = useState(false);
   const [aboutOpen, setAboutOpen]           = useState(false);
+  const [faqOpen, setFaqOpen]               = useState(false);
 
   const { data: setupTypes = [] } = useSetupTypes();
+  const aboutQuery = useQuery({
+    queryKey: APP_SETTINGS_QUERY_KEY,
+    queryFn: getAppSettings,
+  });
   const { logout } = useAuth();
   const queryClient = useQueryClient();
   const prefs = useDisplayPrefs();
@@ -318,7 +398,29 @@ export function SettingsPage() {
             onClick={() => setAboutOpen((v) => !v)}
             isOpen={aboutOpen}
           />
-          {aboutOpen && <AboutPanel />}
+          {aboutOpen && (
+            <AboutPanel
+              settings={aboutQuery.data}
+              isLoading={aboutQuery.isLoading}
+              isError={aboutQuery.isError}
+            />
+          )}
+        </SettingsCard>
+      </div>
+
+      {/* ── Help ──────────────────────────────────────────────────────────────── */}
+      <div className="mb-6">
+        <SectionHeader>Help</SectionHeader>
+        <SettingsCard>
+          <ChevronRow
+            last={!faqOpen}
+            icon={<HelpCircle className="w-5 h-5" />}
+            label="FAQ"
+            onClick={() => setFaqOpen((v) => !v)}
+            isOpen={faqOpen}
+          />
+          {faqOpen && <FaqPanel />}
+          <ReportBugRow email={aboutQuery.data?.bug_report_email} isLoading={aboutQuery.isLoading} />
         </SettingsCard>
       </div>
 

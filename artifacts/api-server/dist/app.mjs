@@ -58033,6 +58033,7 @@ var appSettingsTable = pgTable("app_settings", {
   tagline: text("tagline").notNull(),
   description: text("description").notNull(),
   honestyNote: text("honesty_note").notNull(),
+  bugReportEmail: text("bug_report_email").notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 var insertAppSettingsSchema = createInsertSchema(appSettingsTable).omit({
@@ -64304,7 +64305,8 @@ function validateAppSettingsInput(body) {
     { key: "version", max: 50 },
     { key: "tagline", max: 500 },
     { key: "description", max: 2e3 },
-    { key: "honesty_note", max: 2e3 }
+    { key: "honesty_note", max: 2e3 },
+    { key: "bug_report_email", max: 254 }
   ];
   const data = {};
   for (const { key, max } of fields) {
@@ -64330,6 +64332,7 @@ function serializeAppSettings(settings) {
     tagline: settings.tagline,
     description: settings.description,
     honesty_note: settings.honestyNote,
+    bug_report_email: settings.bugReportEmail,
     updated_at: settings.updatedAt.toISOString()
   };
 }
@@ -64352,6 +64355,7 @@ router8.put("/app-settings", requireAdmin, async (req, res) => {
     tagline: parsed.data.tagline,
     description: parsed.data.description,
     honestyNote: parsed.data.honesty_note,
+    bugReportEmail: parsed.data.bug_report_email,
     updatedAt: /* @__PURE__ */ new Date()
   }).where(eq(appSettingsTable.id, 1)).returning();
   if (!settings) {

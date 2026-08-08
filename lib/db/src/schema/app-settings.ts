@@ -8,6 +8,7 @@ export const appSettingsTable = pgTable("app_settings", {
   tagline: text("tagline").notNull(),
   description: text("description").notNull(),
   honestyNote: text("honesty_note").notNull(),
+  bugReportEmail: text("bug_report_email").notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
