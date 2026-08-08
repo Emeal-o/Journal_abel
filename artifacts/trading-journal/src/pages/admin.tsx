@@ -672,7 +672,9 @@ function AdminPanel() {
                 className="flex items-center justify-between rounded-lg border border-border/50 bg-background/40 px-4 py-3"
               >
                 <div>
-                  <p className="text-sm font-medium">User {user.id}</p>
+                  <p className="text-sm font-medium">
+                    User {user.id}{user.nickname ? ` (${user.nickname})` : ""}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     Created {new Date(user.createdAt).toLocaleDateString()}
                   </p>

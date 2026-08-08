@@ -11,8 +11,11 @@
 CREATE TABLE IF NOT EXISTS users (
   id         SERIAL PRIMARY KEY,
   code_hash  TEXT   NOT NULL UNIQUE,
+  nickname   TEXT,
   created_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS nickname TEXT;
 
 CREATE TABLE IF NOT EXISTS weeks (
   id          SERIAL  PRIMARY KEY,

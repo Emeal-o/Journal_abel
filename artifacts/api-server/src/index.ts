@@ -70,6 +70,8 @@ async function runStartupMigrations() {
     CREATE INDEX IF NOT EXISTS idx_login_events_created_at
       ON login_events(created_at DESC)
   `);
+  // Optional self-service profile nickname; NULL means not set.
+  await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS nickname TEXT`);
   // Optional emoji flag on trades — idempotent; existing rows default to NULL (no flag).
   await db.execute(sql`ALTER TABLE trades ADD COLUMN IF NOT EXISTS flag_emoji TEXT`);
 

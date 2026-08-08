@@ -7,6 +7,7 @@ import tradesRouter from "./trades.js";
 import statsRouter from "./stats.js";
 import setupTypesRouter from "./setup-types.js";
 import appSettingsRouter from "./app-settings.js";
+import profileRouter from "./profile.js";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(tradesRouter);
 router.use(statsRouter);
 router.use(setupTypesRouter);
 router.use(appSettingsRouter);
+router.use(profileRouter);
 
 export default router;

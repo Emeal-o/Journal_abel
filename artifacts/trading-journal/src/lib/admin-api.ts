@@ -19,6 +19,7 @@ async function parseErrorMessage(res: Response, fallback: string): Promise<strin
 
 export interface AdminUser {
   id: number;
+  nickname: string | null;
   createdAt: string;
   tradeCount: number;
   weekCount: number;

@@ -107,6 +107,7 @@ router.get("/admin/users", requireAdmin, async (_req, res) => {
   const users = await db
     .select({
       id: usersTable.id,
+      nickname: usersTable.nickname,
       createdAt: usersTable.createdAt,
       tradeCount: sql<number>`cast(count(distinct ${tradesTable.id}) as int)`,
       weekCount: sql<number>`cast(count(distinct ${weeksTable.id}) as int)`,
@@ -115,7 +116,7 @@ router.get("/admin/users", requireAdmin, async (_req, res) => {
     .from(usersTable)
     .leftJoin(tradesTable, eq(tradesTable.userId, usersTable.id))
     .leftJoin(weeksTable, eq(weeksTable.userId, usersTable.id))
-    .groupBy(usersTable.id, usersTable.createdAt)
+    .groupBy(usersTable.id, usersTable.nickname, usersTable.createdAt)
     .orderBy(usersTable.id);
 
   res.json(users);

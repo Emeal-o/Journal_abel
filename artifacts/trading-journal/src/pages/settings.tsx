@@ -1,20 +1,24 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronRight, ChevronDown,
   SlidersHorizontal, Info, LogOut, HelpCircle, Bug,
-  Home, BarChart3, Type, Zap, Palette, Check,
+  Home, BarChart3, Type, Zap, Palette, Check, User,
 } from "lucide-react";
 import { ManageSetupTypesModal } from "@/components/manage-setup-types-modal";
 import { useSetupTypes } from "@/lib/setup-types-api";
 import { useAuth } from "@/hooks/use-auth";
-import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 import {
   useDisplayPrefs,
   type LandingPage, type StatDisplay, type FontSizePref, type ThemePref,
 } from "@/hooks/use-display-prefs";
 import { APP_SETTINGS_QUERY_KEY, getAppSettings } from "@/lib/app-settings-api";
+import {
+  PROFILE_QUERY_KEY,
+  getProfile,
+  updateProfile,
+} from "@/lib/profile-api";
 
 // ── Section label ──────────────────────────────────────────────────────────────
 
@@ -154,6 +158,85 @@ function ToggleRow({ icon, label, checked, onCheckedChange, last }: ToggleRowPro
   );
 }
 
+function ProfileRow({ nickname, onSaved }: { nickname: string | null; onSaved: (nickname: string | null) => void }) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(nickname ?? "");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) setValue(nickname ?? "");
+  }, [nickname, open]);
+
+  const saveMutation = useMutation({
+    mutationFn: updateProfile,
+    onSuccess: (profile) => {
+      onSaved(profile.nickname);
+      setValue(profile.nickname ?? "");
+      setError(null);
+      setOpen(false);
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : "Failed to save nickname.");
+    },
+  });
+
+  function handleSave() {
+    saveMutation.mutate(value);
+  }
+
+  return (
+    <>
+      <ChevronRow
+        icon={<User className="w-5 h-5" />}
+        label="Nickname"
+        valueParts={
+          <span className="text-xs text-muted-foreground/50 font-mono">
+            {nickname || "Not set"}
+          </span>
+        }
+        onClick={() => {
+          setError(null);
+          setOpen((current) => !current);
+        }}
+        isOpen={open}
+        last={!open}
+      />
+      {open && (
+        <div className="border-t border-white/[0.06] px-4 py-3">
+          <div className="flex items-center gap-2">
+            <input
+              aria-label="Nickname"
+              maxLength={40}
+              autoFocus
+              value={value}
+              onChange={(event) => {
+                setValue(event.target.value);
+                setError(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") handleSave();
+              }}
+              className="min-w-0 flex-1 rounded-lg border border-white/10 bg-background/60 px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+              disabled={saveMutation.isPending}
+              placeholder="Enter a nickname"
+            />
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+              className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saveMutation.isPending ? "Saving…" : "Save"}
+            </button>
+          </div>
+          {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+          <p className="mt-2 text-[10px] font-mono text-muted-foreground/50">Up to 40 characters. Leave blank to clear.</p>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ── About expanded panel ───────────────────────────────────────────────────────
 
 function AboutPanel({ settings, isLoading, isError }: {
@@ -289,6 +372,10 @@ export function SettingsPage() {
   const { logout } = useAuth();
   const queryClient = useQueryClient();
   const prefs = useDisplayPrefs();
+  const profileQuery = useQuery({
+    queryKey: PROFILE_QUERY_KEY,
+    queryFn: getProfile,
+  });
 
   async function handleLogout() {
     await logout();
@@ -320,6 +407,28 @@ export function SettingsPage() {
   return (
     <div className="max-w-lg mx-auto">
       <h1 className="text-2xl font-semibold tracking-tight mb-6">Settings</h1>
+
+      {/* ── Profile ──────────────────────────────────────────────────────────── */}
+      <div className="mb-6">
+        <SectionHeader>Profile</SectionHeader>
+        <SettingsCard>
+          {profileQuery.isLoading ? (
+            <div className="min-h-[44px] px-4 py-3 text-sm font-mono text-muted-foreground/50">Loading…</div>
+          ) : profileQuery.isError ? (
+            <div className="min-h-[44px] px-4 py-3 text-sm font-mono text-destructive">Failed to load profile.</div>
+          ) : (
+            <ProfileRow
+              nickname={profileQuery.data?.nickname ?? null}
+              onSaved={(nickname) => {
+                queryClient.setQueryData(PROFILE_QUERY_KEY, {
+                  id: profileQuery.data?.id ?? 0,
+                  nickname,
+                });
+              }}
+            />
+          )}
+        </SettingsCard>
+      </div>
 
       {/* ── Preferences ─────────────────────────────────────────────────────── */}
       <div className="mb-6">
