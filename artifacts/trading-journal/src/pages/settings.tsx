@@ -244,6 +244,8 @@ function AboutPanel({ settings, isLoading, isError }: {
   isLoading: boolean;
   isError: boolean;
 }) {
+  const creditLine = settings?.credit_line;
+
   return (
     <div className="px-4 pb-5 pt-3 space-y-3 font-mono border-t border-white/[0.06]">
       {/* Gradient accent bar — blue-to-teal, matching PWA icon sparkline mark */}
@@ -276,7 +278,9 @@ function AboutPanel({ settings, isLoading, isError }: {
         </>
       )}
 
-      <p className="text-xs text-muted-foreground/50 pt-1">Built by Emeal</p>
+      {creditLine && (
+        <p className="text-xs text-muted-foreground/50 pt-1">{creditLine}</p>
+      )}
     </div>
   );
 }

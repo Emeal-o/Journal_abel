@@ -58035,6 +58035,7 @@ var appSettingsTable = pgTable("app_settings", {
   description: text("description").notNull(),
   honestyNote: text("honesty_note").notNull(),
   bugReportEmail: text("bug_report_email").notNull(),
+  creditLine: text("credit_line"),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 var insertAppSettingsSchema = createInsertSchema(appSettingsTable).omit({
@@ -64325,6 +64326,18 @@ function validateAppSettingsInput(body) {
     }
     data[key] = trimmed;
   }
+  const rawCreditLine = b2.credit_line;
+  if (rawCreditLine === null || rawCreditLine === void 0 || rawCreditLine === "") {
+    data.credit_line = null;
+  } else if (typeof rawCreditLine !== "string") {
+    return { success: false, error: 'Field "credit_line" must be a string or null.' };
+  } else {
+    const trimmedCreditLine = rawCreditLine.trim();
+    if (trimmedCreditLine.length > 200) {
+      return { success: false, error: 'Field "credit_line" must be at most 200 characters.' };
+    }
+    data.credit_line = trimmedCreditLine || null;
+  }
   return { success: true, data };
 }
 function serializeAppSettings(settings) {
@@ -64335,6 +64348,7 @@ function serializeAppSettings(settings) {
     description: settings.description,
     honesty_note: settings.honestyNote,
     bug_report_email: settings.bugReportEmail,
+    credit_line: settings.creditLine,
     updated_at: settings.updatedAt.toISOString()
   };
 }
@@ -64358,6 +64372,7 @@ router8.put("/app-settings", requireAdmin, async (req, res) => {
     description: parsed.data.description,
     honestyNote: parsed.data.honesty_note,
     bugReportEmail: parsed.data.bug_report_email,
+    creditLine: parsed.data.credit_line,
     updatedAt: /* @__PURE__ */ new Date()
   }).where(eq(appSettingsTable.id, 1)).returning();
   if (!settings) {

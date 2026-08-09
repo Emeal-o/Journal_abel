@@ -9,6 +9,7 @@ export interface AppSettings {
   description: string;
   honesty_note: string;
   bug_report_email: string;
+  credit_line?: string | null;
   updated_at: string;
 }
 
@@ -38,6 +39,7 @@ export interface AppSettingsInput {
   description: string;
   honesty_note: string;
   bug_report_email: string;
+  credit_line?: string | null;
 }
 
 export async function updateAppSettings(input: AppSettingsInput): Promise<AppSettings> {

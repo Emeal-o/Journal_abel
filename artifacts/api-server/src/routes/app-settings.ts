@@ -11,6 +11,7 @@ type AppSettingsInput = {
   description: string;
   honesty_note: string;
   bug_report_email: string;
+  credit_line: string | null;
 };
 
 function validateAppSettingsInput(body: unknown): { success: true; data: AppSettingsInput } | { success: false; error: string } {
@@ -40,6 +41,18 @@ function validateAppSettingsInput(body: unknown): { success: true; data: AppSett
     }
     data[key] = trimmed;
   }
+  const rawCreditLine = b.credit_line;
+  if (rawCreditLine === null || rawCreditLine === undefined || rawCreditLine === "") {
+    data.credit_line = null;
+  } else if (typeof rawCreditLine !== "string") {
+    return { success: false, error: 'Field "credit_line" must be a string or null.' };
+  } else {
+    const trimmedCreditLine = rawCreditLine.trim();
+    if (trimmedCreditLine.length > 200) {
+      return { success: false, error: 'Field "credit_line" must be at most 200 characters.' };
+    }
+    data.credit_line = trimmedCreditLine || null;
+  }
   return { success: true, data: data as AppSettingsInput };
 }
 
@@ -51,6 +64,7 @@ function serializeAppSettings(settings: typeof appSettingsTable.$inferSelect) {
     description: settings.description,
     honesty_note: settings.honestyNote,
     bug_report_email: settings.bugReportEmail,
+    credit_line: settings.creditLine,
     updated_at: settings.updatedAt.toISOString(),
   };
 }
@@ -86,6 +100,7 @@ router.put("/app-settings", requireAdmin, async (req, res) => {
       description: parsed.data.description,
       honestyNote: parsed.data.honesty_note,
       bugReportEmail: parsed.data.bug_report_email,
+      creditLine: parsed.data.credit_line,
       updatedAt: new Date(),
     })
     .where(eq(appSettingsTable.id, 1))

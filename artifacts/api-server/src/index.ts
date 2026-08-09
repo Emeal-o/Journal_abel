@@ -31,6 +31,7 @@ async function runStartupMigrations() {
       description  TEXT NOT NULL,
       honesty_note TEXT NOT NULL,
       bug_report_email TEXT NOT NULL,
+      credit_line TEXT,
       updated_at   TIMESTAMP DEFAULT NOW() NOT NULL
     )
   `);
@@ -44,6 +45,8 @@ async function runStartupMigrations() {
     SET bug_report_email = 'tradeops37@gmail.com'
     WHERE id = 1 AND bug_report_email IS NULL
   `);
+  // Optional admin-editable credit line; existing installs default to NULL.
+  await db.execute(sql`ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS credit_line TEXT`);
   await db.execute(sql`
     INSERT INTO app_settings (id, version, tagline, description, honesty_note, bug_report_email)
     VALUES (
