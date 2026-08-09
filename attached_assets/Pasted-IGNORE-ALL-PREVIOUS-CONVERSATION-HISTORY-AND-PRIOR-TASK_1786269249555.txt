@@ -1,0 +1,24 @@
+IGNORE ALL PREVIOUS CONVERSATION HISTORY AND PRIOR TASKS IN THIS CHAT. Only do the following task.
+
+CONTEXT: This workspace already has two uncommitted local edits in progress (do NOT revert or overwrite them, build on top of them):
+1. artifacts/trading-journal/src/lib/app-settings-api.ts — already has `credit_line?: string | null;` added to both the AppSettings and AppSettingsInput interfaces.
+2. artifacts/trading-journal/src/pages/settings.tsx — the hardcoded "Built by Emeal" line has already been replaced with a conditional block that renders `{settings.credit_line}` as plain text (same styling as before: text-xs text-muted-foreground/50 pt-1, no border/box) only if credit_line is truthy; renders nothing if it's null/empty.
+
+Please first run `git diff artifacts/trading-journal/src/lib/app-settings-api.ts artifacts/trading-journal/src/pages/settings.tsx` to see these existing changes before doing anything else.
+
+TASK: Complete the remaining backend + admin work needed to make credit_line fully functional, extending the EXISTING app_settings table — do not create a new table.
+
+1. DATABASE (Drizzle schema, lib/db/src/schema, EXISTING app_settings table):
+- Add a new NULLABLE column: credit_line (text, nullable, no default). Do NOT backfill it with any value — leave it null so the credit line is hidden by default until manually set via the admin form.
+
+2. BACKEND (artifacts/api-server/src/routes/app-settings.ts):
+- Add credit_line to the GET /api/app-settings serializer (return null if not set)
+- Add credit_line to the PUT /api/app-settings validation + update logic. Unlike version/tagline/description/honesty_note (which require non-empty), credit_line must be ALLOWED to be empty/null — an empty string in the request should be stored as null in the database.
+- CRITICAL REMINDER: after backend changes, run `node ./build.mjs` inside artifacts/api-server and commit the regenerated dist/app.mjs. This project has previously broken because a route imported a package (zod/v4) that wasn't actually installed — verify any import you use actually exists in this workspace's dependencies first; prefer plain TypeScript validation over adding a new dependency if there's any doubt.
+
+3. ADMIN DASHBOARD (artifacts/trading-journal, admin.tsx):
+- Add a "Credit Line (optional)" text input to the EXISTING "Edit About" form, alongside the other fields (version/tagline/description/honesty_note/bug_report_email). Pre-fill with current value (empty if null). Saving an empty value should clear it (store as null).
+
+DO NOT touch: Setup Types, Sign out, Font Size, Reduce Motion, Default Landing Page, Default Stat Display, Theme, FAQ, Report a Bug, the existing version/tagline/description/honesty_note/bug_report_email fields' behavior, the two already-edited frontend files beyond what's needed to wire them to this backend, or any other Settings/Admin functionality.
+
+After changes: confirm build passes for both frontend and api-server, confirm dist/app.mjs was rebuilt, and push to main (this should include the two already-modified files plus your new changes, all in one commit). Tell me explicitly when done so I can verify the production database column and the GitHub commit.

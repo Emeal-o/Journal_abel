@@ -1,0 +1,26 @@
+IGNORE ALL PREVIOUS CONVERSATION HISTORY AND PRIOR TASKS IN THIS CHAT. Only do the following task.
+
+TASK: Add a self-service Profile (display name / nickname) feature. Users can set their own nickname from Settings; admins can see each user's nickname in the Admin Dashboard's user list.
+
+SCOPE: artifacts/api-server (schema + routes) and artifacts/trading-journal (Settings page + Admin Dashboard).
+
+1. DATABASE (Drizzle schema, lib/db/src/schema, EXISTING users table):
+- Add a new nullable column to the existing users table: nickname (text, nullable, no default — null means "not set")
+- No new table needed.
+
+2. BACKEND ROUTES (artifacts/api-server/src/routes):
+- GET /api/profile — requires authentication (reuse the existing session/auth middleware pattern already used for regular authenticated routes, NOT the admin-only one), returns the CURRENT logged-in user's id and nickname only (not other users' data)
+- PUT /api/profile — same authenticated-user middleware, accepts { nickname: string } in the body. Validate: trim, allow empty string (which should store as null, i.e. clearing the nickname), max 40 characters if non-empty. Update only the current user's own row (never let a user update another user's row — derive the user id from the session/auth context, never from the request body).
+- Admin-facing: extend whatever existing route/query the Admin Dashboard already uses to list users (find it first, e.g. an existing GET /api/admin/users or similar) to also include each user's nickname in the response. Do not create a new admin route if an existing user-list route can just include this field.
+- CRITICAL REMINDER (has caused problems on this project before): after backend changes, run `node ./build.mjs` inside artifacts/api-server and commit the regenerated dist/app.mjs — Vercel deploys the committed bundle, not the raw TypeScript source. Also double check any new import (e.g. validation library) actually exists in this workspace's installed dependencies before using it; prefer plain TypeScript/JS validation over adding a new dependency if there's any doubt.
+
+3. SETTINGS PAGE (artifacts/trading-journal, settings.tsx):
+- Add a new "PROFILE" section (same grouped-card visual style as existing sections: rounded-2xl bg-white/[0.03] border-white/10, uppercase JetBrains Mono section label, icon per row — use the User icon from lucide-react) positioned at the TOP of the page, above "PREFERENCES"
+- One row: "Nickname", tapping it opens a simple inline text input (or small modal, match whichever pattern is simpler given the existing SelectRow/ToggleRow components) pre-filled with the current value from GET /api/profile, with a Save button that calls PUT /api/profile. Show the current nickname as the value preview when collapsed (or "Not set" if null/empty).
+
+4. ADMIN DASHBOARD (artifacts/trading-journal, admin.tsx):
+- In the existing user list/table, add the nickname as a small additional label next to each user's existing identifier (e.g. "user_id 1 (Emeal)" style — match whatever the existing display format is). Show nothing extra (or —) if nickname is null.
+
+DO NOT touch: Setup Types, About, Sign out, Font Size, Reduce Motion, Default Landing Page, Default Stat Display, Theme, FAQ, Report a Bug, or any other existing Settings/Admin functionality.
+
+After changes: confirm build passes for both frontend and api-server, confirm dist/app.mjs was rebuilt, and push to main. Tell me explicitly when done so I can verify the production database column and the GitHub commit.
