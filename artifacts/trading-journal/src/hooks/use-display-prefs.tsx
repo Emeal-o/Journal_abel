@@ -60,7 +60,7 @@ export function DisplayPrefsProvider({ children }: { children: React.ReactNode }
     return stored !== null ? stored === "true" : systemReduceMotion();
   });
   const [theme, _setTheme] = useState<ThemePref>(() =>
-    read<ThemePref>("tradeops_theme", "current"),
+    read<ThemePref>("tradeops_theme", "amoled"),
   );
 
   // Apply font scale to :root
