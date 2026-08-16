@@ -2,7 +2,7 @@
  * Thin fetch wrappers for the auth endpoints.
  * Respects VITE_API_URL for Vercel deployments; falls back to same-origin relative paths.
  */
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+const API_BASE = import.meta.env.PROD ? "" : ((import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "");
 
 async function authFetch(path: string, init?: RequestInit): Promise<Response> {
   return fetch(`${API_BASE}${path}`, {
