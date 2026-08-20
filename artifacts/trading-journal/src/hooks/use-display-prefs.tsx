@@ -12,11 +12,13 @@ export interface DisplayPrefs {
   defaultStatDisplay: StatDisplay;
   fontSize:           FontSizePref;
   reduceMotion:       boolean;
+  showRRCalculator:   boolean;
   theme:              ThemePref;
   setDefaultLanding:     (v: LandingPage) => void;
   setDefaultStatDisplay: (v: StatDisplay) => void;
   setFontSize:           (v: FontSizePref) => void;
   setReduceMotion:       (v: boolean) => void;
+  setShowRRCalculator:   (v: boolean) => void;
   setTheme:              (v: ThemePref) => void;
 }
 
@@ -59,6 +61,9 @@ export function DisplayPrefsProvider({ children }: { children: React.ReactNode }
     const stored = localStorage.getItem("tradeops_reduce_motion");
     return stored !== null ? stored === "true" : systemReduceMotion();
   });
+  const [showRRCalculator, _setShowRRCalculator] = useState<boolean>(() =>
+    read("tradeops_show_rr_calculator", true),
+  );
   const [theme, _setTheme] = useState<ThemePref>(() =>
     read<ThemePref>("tradeops_theme", "amoled"),
   );
@@ -97,6 +102,10 @@ export function DisplayPrefsProvider({ children }: { children: React.ReactNode }
     write("tradeops_reduce_motion", String(v));
     _setReduceMotion(v);
   }
+  function setShowRRCalculator(v: boolean) {
+    write("tradeops_show_rr_calculator", v);
+    _setShowRRCalculator(v);
+  }
   function setTheme(v: ThemePref) {
     write("tradeops_theme", v);
     _setTheme(v);
@@ -104,8 +113,8 @@ export function DisplayPrefsProvider({ children }: { children: React.ReactNode }
 
   return (
     <Ctx.Provider value={{
-      defaultLanding, defaultStatDisplay, fontSize, reduceMotion, theme,
-      setDefaultLanding, setDefaultStatDisplay, setFontSize, setReduceMotion, setTheme,
+      defaultLanding, defaultStatDisplay, fontSize, reduceMotion, showRRCalculator, theme,
+      setDefaultLanding, setDefaultStatDisplay, setFontSize, setReduceMotion, setShowRRCalculator, setTheme,
     }}>
       {children}
     </Ctx.Provider>

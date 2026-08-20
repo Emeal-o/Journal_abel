@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronRight, ChevronDown,
   SlidersHorizontal, Info, LogOut, HelpCircle, Bug,
-  Home, BarChart3, Type, Zap, Palette, Check, User,
+  Home, BarChart3, Type, Zap, Palette, Check, User, Calculator,
 } from "lucide-react";
 import { ManageSetupTypesModal } from "@/components/manage-setup-types-modal";
 import { useSetupTypes } from "@/lib/setup-types-api";
@@ -502,6 +502,12 @@ export function SettingsPage() {
             options={themeOptions}
             onSelect={prefs.setTheme}
             displayLabel={themeOptions.find((o) => o.value === prefs.theme)!.label}
+          />
+          <ToggleRow
+            icon={<Calculator className="w-5 h-5" />}
+            label="Show RR Calculator"
+            checked={prefs.showRRCalculator}
+            onCheckedChange={prefs.setShowRRCalculator}
           />
           <ToggleRow
             last

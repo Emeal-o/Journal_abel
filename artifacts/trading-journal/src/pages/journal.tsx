@@ -60,6 +60,8 @@ import type { SortMode } from "@/hooks/use-ordered-weeks";
 import { useToast } from "@/hooks/use-toast";
 import { listArchivedWeeks, archiveCurrentMonth, maxMonthIndex } from "@/lib/weeks-api";
 import { monthInYearFromMonthIndex } from "@/lib/label-utils";
+import { useDisplayPrefs } from "@/hooks/use-display-prefs";
+import { RRCalculator } from "@/components/rr-calculator";
 
 // ─── sort config ──────────────────────────────────────────────────────────────
 
@@ -180,6 +182,7 @@ function StreakIndicator() {
 export function JournalPage() {
   const { orderedWeeks, isLoading, error, setOrderedIds, sortMode, setSortMode } =
     useOrderedWeeks();
+  const { showRRCalculator } = useDisplayPrefs();
   const [isAddWeekOpen, setIsAddWeekOpen] = useState(false);
   const [isManageSetupTypesOpen, setIsManageSetupTypesOpen] = useState(false);
 
@@ -326,6 +329,8 @@ export function JournalPage() {
               <span className="hidden sm:inline">Start New Month</span>
             </Button>
           )}
+
+          {showRRCalculator && <RRCalculator activeWeeks={orderedWeeks} />}
 
           <Button
             variant="outline"
