@@ -23,6 +23,7 @@ import type { LedgerTheme } from "@/components/ledger-sheet";
 import { listArchivedWeeks, type ArchivedWeek } from "@/lib/weeks-api";
 import { yearIndexFromMonthIndex, monthInYearFromMonthIndex, toRoman, computeCardLabels } from "@/lib/label-utils";
 import { aggregateWeekStats } from "@/lib/stats-utils";
+import { useDisplayPrefs } from "@/hooks/use-display-prefs";
 
 // ─── all-time snapshot card ───────────────────────────────────────────────────
 
@@ -150,8 +151,12 @@ function netRRColorClass(v: number): string {
 
 // ─── month group ──────────────────────────────────────────────────────────────
 
-function MonthGroup({ label, weeks }: { label: string; weeks: ArchivedWeek[] }) {
+function MonthGroup({ label, weeks, weeklyStats }: { label: string; weeks: ArchivedWeek[]; weeklyStats: WeekStats[] }) {
   const [open, setOpen] = useState(false);
+  const { defaultStatDisplay } = useDisplayPrefs();
+  const monthStats = aggregateWeekStats(
+    weeklyStats.filter((stat) => weeks.some((week) => week.id === stat.weekId)),
+  );
   return (
     <div className="border border-white/10 rounded-xl overflow-hidden">
       <button
@@ -165,6 +170,10 @@ function MonthGroup({ label, weeks }: { label: string; weeks: ArchivedWeek[] }) 
           <span className="text-white font-semibold text-lg">{label}</span>
           <span className="text-xs text-muted-foreground/60 font-normal">
             {weeks.length} week{weeks.length !== 1 ? "s" : ""}
+            {" · "}
+            {defaultStatDisplay === "pips"
+              ? `Net Pips: ${monthStats.netPips > 0 ? "+" : ""}${monthStats.netPips}`
+              : `Net RR: ${monthStats.netRR > 0 ? "+" : ""}${monthStats.netRR.toFixed(2)}R`}
           </span>
         </div>
       </button>
@@ -177,6 +186,7 @@ function MonthGroup({ label, weeks }: { label: string; weeks: ArchivedWeek[] }) 
               // ArchivedWeek is a superset of the Week shape — safe to cast
               week={w as unknown as Week}
               readOnly
+              archiveStat={weeklyStats.find((stat) => stat.weekId === w.id)}
             />
           ))}
         </div>
@@ -389,6 +399,7 @@ function YearSection({
 }) {
   const [open, setOpen] = useState(false);
   const [, navigate] = useLocation();
+  const { defaultStatDisplay } = useDisplayPrefs();
   const label = yearIndex == null ? "Uncategorised" : `Year ${toRoman(yearIndex)}`;
   const allWeeks = months.flatMap((m) => m.weeks);
   const totalWeeks = allWeeks.length;
@@ -397,7 +408,7 @@ function YearSection({
   // that power the Stats page and each WeekCard's own totals, just summed
   // across every week whose month_index falls in this year.
   const weekIds = new Set(allWeeks.map((w) => w.id));
-  const yearNetRR = aggregateWeekStats(weeklyStats.filter((s) => weekIds.has(s.weekId))).netRR;
+  const yearSummary = aggregateWeekStats(weeklyStats.filter((s) => weekIds.has(s.weekId)));
 
   return (
     <div className="border border-white/10 rounded-xl overflow-hidden bg-white/[0.01]">
@@ -415,9 +426,11 @@ function YearSection({
             {totalWeeks > 0 && (
               <>
                 {" · "}
-                Net RR:{" "}
-                <span className={`font-mono font-semibold ${netRRColorClass(yearNetRR)}`}>
-                  {formatNetRR(yearNetRR)}
+                {defaultStatDisplay === "pips" ? "Net Pips" : "Net RR"}:{" "}
+                <span className={`font-mono font-semibold ${netRRColorClass(defaultStatDisplay === "pips" ? yearSummary.netPips : yearSummary.netRR)}`}>
+                  {defaultStatDisplay === "pips"
+                    ? `${yearSummary.netPips > 0 ? "+" : ""}${yearSummary.netPips}`
+                    : formatNetRR(yearSummary.netRR)}
                 </span>
               </>
             )}
@@ -441,7 +454,7 @@ function YearSection({
       {open && (
         <div className="p-4 space-y-4 border-t border-white/5">
           {months.map((m) => (
-            <MonthGroup key={m.monthIndex ?? "none"} label={m.label} weeks={m.weeks} />
+            <MonthGroup key={m.monthIndex ?? "none"} label={m.label} weeks={m.weeks} weeklyStats={weeklyStats} />
           ))}
         </div>
       )}

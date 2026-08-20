@@ -12,6 +12,7 @@ import {
   Minus 
 } from "lucide-react";
 import { Week, TradeResult } from "@workspace/api-client-react";
+import type { WeekStats } from "@workspace/api-client-react";
 import { useSetupTypes, type SetupType } from "@/lib/setup-types-api";
 import type { TradeWithSetupType } from "@/lib/trade-types";
 import { 
@@ -49,6 +50,8 @@ interface WeekCardProps {
   dragHandle?: React.ReactNode;
   /** When true, hides edit/delete/add-trade actions — used on the Archive page. */
   readOnly?: boolean;
+  /** Optional Archive-only summary shown beside the week date. */
+  archiveStat?: Pick<WeekStats, "netRR" | "netPips">;
 }
 
 // ─── setup type chip ──────────────────────────────────────────────────────────
@@ -95,7 +98,7 @@ function DirectionChip({ direction }: { direction?: "Long" | "Short" | null }) {
 
 // ─── week card ────────────────────────────────────────────────────────────────
 
-export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) {
+export function WeekCard({ week, dragHandle, readOnly = false, archiveStat }: WeekCardProps) {
   const { defaultStatDisplay } = useDisplayPrefs();
   const [isOpen, setIsOpen] = useState(false);
   const [isTradeFormOpen, setIsTradeFormOpen] = useState(false);
@@ -178,6 +181,15 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
             <h3 className="text-lg font-semibold text-white truncate">{week.label}</h3>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 min-w-0">
               <span className="flex-shrink-0">{format(parseISO(week.startDate), "MMM d, yyyy")}</span>
+              {archiveStat && (
+                <span className={`font-mono font-semibold ${defaultStatDisplay === "pips"
+                  ? (archiveStat.netPips > 0 ? "text-emerald-400" : archiveStat.netPips < 0 ? "text-rose-400" : "text-slate-400")
+                  : (archiveStat.netRR > 0 ? "text-emerald-400" : archiveStat.netRR < 0 ? "text-rose-400" : "text-slate-400")}`}>
+                  · {defaultStatDisplay === "pips"
+                    ? `Net Pips: ${archiveStat.netPips > 0 ? "+" : ""}${archiveStat.netPips}`
+                    : `Net RR: ${archiveStat.netRR > 0 ? "+" : ""}${archiveStat.netRR.toFixed(2)}R`}
+                </span>
+              )}
               {week.notes && (
                 <>
                   <span className="flex-shrink-0">•</span>
@@ -262,18 +274,12 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-0.5">
                       <div className="text-[11px] uppercase tracking-wide text-muted-foreground/60">
-                        {defaultStatDisplay === "pips" ? "Pips" : "RRR"}
+                        RRR
                       </div>
                       <div className="font-mono text-sm text-muted-foreground">
-                        {defaultStatDisplay === "pips" && trade.pips != null ? (
-                          <span className={Number(trade.pips) > 0 ? "text-emerald-400" : Number(trade.pips) < 0 ? "text-rose-400" : "text-muted-foreground"}>
-                            {Number(trade.pips) > 0 ? "+" : ""}{trade.pips} pips
-                          </span>
-                        ) : (
-                          <>1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
-                            {Math.abs(Number(trade.rrr)).toFixed(2)}
-                          </span></>
-                        )}
+                        1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
+                          {Math.abs(Number(trade.rrr)).toFixed(2)}
+                        </span>
                       </div>
                     </div>
                     <div className="space-y-0.5">
@@ -315,7 +321,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                   <tr>
                     <th className="px-6 py-3 font-medium">Trade #</th>
                     <th className="px-6 py-3 font-medium">Result</th>
-                    <th className="px-6 py-3 font-medium text-right">{defaultStatDisplay === "pips" ? "Pips" : "RRR"}</th>
+                    <th className="px-6 py-3 font-medium text-right">RRR</th>
                     <th className="px-6 py-3 font-medium text-right">Pips</th>
                     <th className="px-6 py-3 font-medium">Notes</th>
                     {!readOnly && (
@@ -352,15 +358,9 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right font-mono text-muted-foreground">
-                        {defaultStatDisplay === "pips" && trade.pips != null ? (
-                          <span className={Number(trade.pips) > 0 ? "text-emerald-400" : Number(trade.pips) < 0 ? "text-rose-400" : "text-muted-foreground"}>
-                            {Number(trade.pips) > 0 ? "+" : ""}{trade.pips} pips
-                          </span>
-                        ) : (
-                          <>1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
-                            {Math.abs(Number(trade.rrr)).toFixed(2)}
-                          </span></>
-                        )}
+                        1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
+                          {Math.abs(Number(trade.rrr)).toFixed(2)}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-right font-mono">
                         <span className={Number(trade.pips) > 0 ? "text-emerald-400" : Number(trade.pips) < 0 ? "text-rose-400" : "text-muted-foreground"}>
