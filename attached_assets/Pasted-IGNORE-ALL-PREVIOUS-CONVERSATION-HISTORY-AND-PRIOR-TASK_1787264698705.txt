@@ -1,0 +1,27 @@
+IGNORE ALL PREVIOUS CONVERSATION HISTORY AND PRIOR TASKS IN THIS CHAT. Only do the following task.
+
+CONTEXT: commit 911e906 wired a "Default Stat Display" setting (rrr/pips, from useDisplayPrefs) into individual trade rows in week-card.tsx, but introduced a bug: when set to "pips", the row shows two separate "PIPS" labeled values with the identical number, because a separate pre-existing Pips column already existed on the row before that commit.
+
+PART 1 — FIX THE DUPLICATE BUG:
+1. Locate the dynamic stat slot added in 911e906 and the pre-existing separate Pips column on the same trade row.
+2. When defaultStatDisplay is "rrr": dynamic slot shows RRR (unchanged, already correct), pre-existing Pips column shows pips (unchanged).
+3. When defaultStatDisplay is "pips": the dynamic slot should show RRR instead (i.e. show whichever stat isn't already covered by the pre-existing Pips column), so the row always shows RRR and Pips exactly once each, never duplicated.
+4. Keep existing fallback: if pips is null/undefined and setting is "pips", dynamic slot shows RRR (already implemented).
+
+PART 2 — EXTEND THE SETTING TO AGGREGATE TOTALS (Archive page):
+Investigate first — find the actual components/files, do not assume names.
+1. The Archive page's Year card currently shows a fixed "Net RR: +X.XXR" label. Make this respect defaultStatDisplay: show "Net RR" when set to rrr (unchanged), show "Net Pips" (with the correct pips total) when set to pips. Reuse the existing Net Pips calculation that already powers the All-Time Snapshot card — do not write a new calculation for this.
+2. Each Month row in the Archive (e.g. "Month 5 · 4 weeks") currently shows no total. Add a small total next to the week count, respecting the same setting — Net RR summed across that month's trades when set to rrr, Net Pips summed across that month's trades when set to pips. Check if a per-month aggregate already exists anywhere in the codebase (e.g. used by chart toggles) before writing new aggregation logic — reuse if it exists.
+3. Each individual Week row within an expanded month (e.g. "20 · Jun 29, 2025") currently shows no total. Add a small total next to the date, same rrr/pips logic as above, scoped to that week's trades. Check for an existing per-week aggregate before writing new logic.
+4. Do NOT change the All-Time Snapshot card, Analysis page (By Setup Type, Post-Loss Performance, Drawdown & Recovery, Consistency) — those must stay R-only/unchanged regardless of this setting, this is intentional and already correct. Do NOT modify the schema.
+
+VERIFY:
+1. Toggle Default Stat Display to "pips" in Settings: confirm trade rows show one RRR + one Pips value (no duplication), confirm Year card shows Net Pips, confirm Month and Week rows show pips totals.
+2. Toggle back to "rrr": confirm everything reverts to Net RR / RRR displays exactly as before this task, and Analysis page tables are untouched throughout.
+3. Run pnpm exec tsc --noEmit inside artifacts/trading-journal — flag only genuinely new errors in files you touched, ignore documented pre-existing ledger-sheet.tsx and week-card.tsx ringColor errors.
+4. Run the build and confirm it passes.
+5. Commit with a clear message listing every file changed and what each change does.
+
+Exclude Replit-generated paste artifacts from the commit: git add -A -- ':!attached_assets/Pasted-*'
+
+Report back: which files you edited, where you found (or how you computed) the per-month and per-week aggregates, and confirm both toggle states work correctly with no duplication anywhere.
