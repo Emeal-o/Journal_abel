@@ -24,6 +24,7 @@ import {
   getGetWeeklyStatsQueryKey
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useDisplayPrefs } from "@/hooks/use-display-prefs";
 
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -95,6 +96,7 @@ function DirectionChip({ direction }: { direction?: "Long" | "Short" | null }) {
 // ─── week card ────────────────────────────────────────────────────────────────
 
 export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) {
+  const { defaultStatDisplay } = useDisplayPrefs();
   const [isOpen, setIsOpen] = useState(false);
   const [isTradeFormOpen, setIsTradeFormOpen] = useState(false);
   const [isEditWeekOpen, setIsEditWeekOpen] = useState(false);
@@ -259,11 +261,19 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-0.5">
-                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground/60">RRR</div>
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground/60">
+                        {defaultStatDisplay === "pips" ? "Pips" : "RRR"}
+                      </div>
                       <div className="font-mono text-sm text-muted-foreground">
-                        1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
-                          {Math.abs(Number(trade.rrr)).toFixed(2)}
-                        </span>
+                        {defaultStatDisplay === "pips" && trade.pips != null ? (
+                          <span className={Number(trade.pips) > 0 ? "text-emerald-400" : Number(trade.pips) < 0 ? "text-rose-400" : "text-muted-foreground"}>
+                            {Number(trade.pips) > 0 ? "+" : ""}{trade.pips} pips
+                          </span>
+                        ) : (
+                          <>1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
+                            {Math.abs(Number(trade.rrr)).toFixed(2)}
+                          </span></>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-0.5">
@@ -305,7 +315,7 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                   <tr>
                     <th className="px-6 py-3 font-medium">Trade #</th>
                     <th className="px-6 py-3 font-medium">Result</th>
-                    <th className="px-6 py-3 font-medium text-right">RRR</th>
+                    <th className="px-6 py-3 font-medium text-right">{defaultStatDisplay === "pips" ? "Pips" : "RRR"}</th>
                     <th className="px-6 py-3 font-medium text-right">Pips</th>
                     <th className="px-6 py-3 font-medium">Notes</th>
                     {!readOnly && (
@@ -342,9 +352,15 @@ export function WeekCard({ week, dragHandle, readOnly = false }: WeekCardProps) 
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right font-mono text-muted-foreground">
-                        1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
-                          {Math.abs(Number(trade.rrr)).toFixed(2)}
-                        </span>
+                        {defaultStatDisplay === "pips" && trade.pips != null ? (
+                          <span className={Number(trade.pips) > 0 ? "text-emerald-400" : Number(trade.pips) < 0 ? "text-rose-400" : "text-muted-foreground"}>
+                            {Number(trade.pips) > 0 ? "+" : ""}{trade.pips} pips
+                          </span>
+                        ) : (
+                          <>1 / <span className={Number(trade.rrr) > 0 ? "text-emerald-400" : Number(trade.rrr) < 0 ? "text-rose-400" : "text-slate-400"}>
+                            {Math.abs(Number(trade.rrr)).toFixed(2)}
+                          </span></>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right font-mono">
                         <span className={Number(trade.pips) > 0 ? "text-emerald-400" : Number(trade.pips) < 0 ? "text-rose-400" : "text-muted-foreground"}>
