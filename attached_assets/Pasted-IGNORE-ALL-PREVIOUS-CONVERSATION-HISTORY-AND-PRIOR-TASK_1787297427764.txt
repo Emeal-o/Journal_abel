@@ -1,0 +1,38 @@
+IGNORE ALL PREVIOUS CONVERSATION HISTORY AND PRIOR TASKS IN THIS CHAT. Only do the following task.
+
+CONTEXT (already confirmed by manual investigation, do not re-derive from scratch — verify against these facts but trust them):
+1. lib/db/src/schema/login-events.ts: main has the base loginEventsTable (id, userId, ipAddress, success, createdAt). origin/backup-login-tracking adds 5 NEW columns cleanly with no overlap: ipLocation (text), browserTimezone (text), screenResolution (text), osAndBrowser (text), accessCodeUsed (text). This is a trivial, non-conflicting addition — just add these 5 columns to main's existing table definition.
+2. lib/db/src/schema/app-settings.ts: main has a creditLine field; origin/backup-login-tracking has a privacyPolicy field at the same position in the table definition. This IS a real conflict — BOTH fields must survive in the final schema (creditLine, nickname, and any other fields main already has, PLUS privacyPolicy from the backup branch). Do not let either field disappear.
+3. Other conflicted files needing the same "combine both sides" treatment: artifacts/api-server/src/index.ts, artifacts/api-server/src/routes/app-settings.ts, artifacts/trading-journal/src/lib/app-settings-api.ts, artifacts/trading-journal/src/pages/admin.tsx.
+4. artifacts/api-server/dist/app.mjs and app.mjs.map are generated build output — do NOT hand-merge these, regenerate via build.mjs (Step 3).
+
+TASK: Properly reapply the login-tracking feature from origin/backup-login-tracking onto current main, preserving BOTH main's existing functionality (creditLine, nickname, and anything else) AND the login-tracking feature (the 5 new login_events columns, ipapi.co geolocation lookup, Admin Dashboard display of login metadata, Privacy Policy placeholder in Settings).
+
+STEP 1 — CONFIRM THE REMAINING CONFLICTED FILES:
+1. Run git diff main origin/backup-login-tracking -- artifacts/api-server/src/index.ts, then the same for routes/app-settings.ts, app-settings-api.ts, and admin.tsx, to see exactly what each side changed before merging.
+
+STEP 2 — MERGE login-events.ts (should be straightforward per point 1 above):
+1. Add the 5 new columns (ipLocation, browserTimezone, screenResolution, osAndBrowser, accessCodeUsed) to main's existing loginEventsTable definition.
+
+STEP 3 — MERGE app-settings.ts (the real conflict, per point 2 above):
+1. Combine both sides: keep creditLine, nickname, and every other field main currently has, AND add privacyPolicy from the backup branch. Confirm the final table has both, verified by re-reading the merged file after editing.
+
+STEP 4 — MERGE THE REMAINING SOURCE FILES (index.ts, app-settings.ts route, app-settings-api.ts, admin.tsx):
+1. For each, combine main's existing logic with the backup branch's additions (login-tracking capture logic, geolocation lookup, Admin Dashboard display of new fields, Privacy Policy section) — do not let main's existing functionality (credit line editing, nickname, etc.) get overwritten or removed.
+
+STEP 5 — REBUILD THE API SERVER BUNDLE:
+1. Do NOT touch dist/app.mjs or app.mjs.map directly during Steps 2-4.
+2. After source files are merged, run node ./build.mjs inside artifacts/api-server to regenerate dist/app.mjs and app.mjs.map fresh.
+3. Confirm the regenerated dist/app.mjs contains the login-tracking logic (grep for "ip_location" or "login_events" in the output).
+
+STEP 6 — VERIFY:
+1. Confirm the Neon database schema (or local dev DB) has all 5 new login_events columns, with no duplicates.
+2. Confirm app_settings table/schema has both creditLine and privacyPolicy, and that Settings page still shows credit line editing correctly alongside the new Privacy Policy section.
+3. Confirm Admin Dashboard shows both nickname (existing) and the new login metadata (location, timezone, screen resolution, OS/browser, access code used) without anything missing.
+4. Run pnpm exec tsc --noEmit inside artifacts/trading-journal and the equivalent for artifacts/api-server — flag only genuinely new errors, ignore documented pre-existing errors (ledger-sheet.tsx:408, week-card.tsx ringColor).
+5. Run both builds and confirm they pass.
+6. Commit with a clear message listing every file touched and confirming both feature sets are present.
+
+Exclude Replit-generated paste artifacts from the commit: git add -A -- ':!attached_assets/Pasted-*'
+
+Report back: confirmation both creditLine AND privacyPolicy exist in the final app-settings schema, confirmation all 5 new login_events columns were added without duplicating existing ones, confirmation dist/app.mjs was regenerated via build.mjs (not hand-merged), and confirmation nothing from either side was lost.
