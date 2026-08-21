@@ -29,6 +29,11 @@ export interface LoginEvent {
   id: number;
   userId: number | null;
   ipAddress: string;
+  ipLocation: string | null;
+  browserTimezone: string | null;
+  screenResolution: string | null;
+  osAndBrowser: string | null;
+  accessCodeUsed: string | null;
   success: boolean;
   createdAt: string;
 }

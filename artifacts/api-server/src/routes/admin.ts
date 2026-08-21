@@ -184,6 +184,11 @@ router.get("/admin/login-events", requireAdmin, async (_req, res) => {
       id: loginEventsTable.id,
       userId: loginEventsTable.userId,
       ipAddress: loginEventsTable.ipAddress,
+      ipLocation: loginEventsTable.ipLocation,
+      browserTimezone: loginEventsTable.browserTimezone,
+      screenResolution: loginEventsTable.screenResolution,
+      osAndBrowser: loginEventsTable.osAndBrowser,
+      accessCodeUsed: loginEventsTable.accessCodeUsed,
       success: loginEventsTable.success,
       createdAt: loginEventsTable.createdAt,
     })

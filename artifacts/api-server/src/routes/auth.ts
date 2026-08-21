@@ -61,11 +61,52 @@ function getClientIp(req: import("express").Request): string {
   return req.ip ?? "unknown";
 }
 
+function parseOsAndBrowser(userAgent: string | undefined): string {
+  const ua = userAgent ?? "";
+  const os = /Windows NT/i.test(ua) ? "Windows"
+    : /Android/i.test(ua) ? "Android"
+    : /iPhone|iPad|iPod/i.test(ua) ? "iOS"
+    : /Mac OS X/i.test(ua) ? "macOS"
+    : /Linux/i.test(ua) ? "Linux"
+    : "Unknown OS";
+  const browser = /Edg\//i.test(ua) ? "Edge"
+    : /OPR\//i.test(ua) ? "Opera"
+    : /Chrome\//i.test(ua) && !/Chromium/i.test(ua) ? "Chrome"
+    : /Firefox\//i.test(ua) ? "Firefox"
+    : /Safari\//i.test(ua) && !/Chrome\//i.test(ua) ? "Safari"
+    : /MSIE|Trident\//i.test(ua) ? "Internet Explorer"
+    : "Unknown browser";
+  return `${os} · ${browser}`;
+}
+
+async function lookupIpLocation(ip: string): Promise<string> {
+  if (!ip || ip === "unknown" || /^(127\.|10\.|192\.168\.|::1$)/.test(ip)) return "Unavailable";
+  try {
+    const response = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
+      signal: AbortSignal.timeout(2000),
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) return "Unavailable";
+    const data = await response.json() as { city?: string; country_name?: string };
+    return [data.city, data.country_name].filter(Boolean).join(", ") || "Unavailable";
+  } catch {
+    return "Unavailable";
+  }
+}
+
+function maskAccessCode(code: string): string {
+  return code.length > 4 ? `••••••••${code.slice(-4)}` : "••••";
+}
+
 // POST /api/auth/login
 // Verifies the submitted access code against stored hashes.
 // On success, sets a session cookie with the user's ID.
 router.post("/auth/login", loginLimiter, async (req, res) => {
-  const { code } = req.body as { code?: string };
+  const { code, browserTimezone, screenResolution } = req.body as {
+    code?: string;
+    browserTimezone?: string;
+    screenResolution?: string;
+  };
 
   if (typeof code !== "string" || code.trim().length === 0) {
     res.status(400).json({ error: "Access code is required." });
@@ -90,9 +131,15 @@ router.post("/auth/login", loginLimiter, async (req, res) => {
   // Log the attempt (success or failure) regardless of outcome.
   // Fire-and-forget: a logging failure should not block the auth response.
   const ip = getClientIp(req);
+  const ipLocation = await lookupIpLocation(ip);
   db.insert(loginEventsTable).values({
     userId: matchedUser?.id ?? null,
     ipAddress: ip,
+    ipLocation,
+    browserTimezone: typeof browserTimezone === "string" ? browserTimezone.slice(0, 100) : null,
+    screenResolution: typeof screenResolution === "string" ? screenResolution.slice(0, 40) : null,
+    osAndBrowser: parseOsAndBrowser(req.get("user-agent")),
+    accessCodeUsed: maskAccessCode(trimmed),
     success: matchedUser !== null,
   }).catch(() => { /* non-critical */ });
 

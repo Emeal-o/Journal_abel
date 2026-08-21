@@ -31,6 +31,7 @@ async function runStartupMigrations() {
       description  TEXT NOT NULL,
       honesty_note TEXT NOT NULL,
       bug_report_email TEXT NOT NULL,
+      privacy_policy TEXT NOT NULL,
       updated_at   TIMESTAMP DEFAULT NOW() NOT NULL
     )
   `);
@@ -45,14 +46,23 @@ async function runStartupMigrations() {
     WHERE id = 1 AND bug_report_email IS NULL
   `);
   await db.execute(sql`
-    INSERT INTO app_settings (id, version, tagline, description, honesty_note, bug_report_email)
+    ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS privacy_policy TEXT
+  `);
+  await db.execute(sql`
+    UPDATE app_settings
+    SET privacy_policy = 'TradeOps logs basic login information (IP-based rough location, timezone, device/browser, timestamp) for account security. A full privacy policy is coming soon.'
+    WHERE id = 1 AND privacy_policy IS NULL
+  `);
+  await db.execute(sql`
+    INSERT INTO app_settings (id, version, tagline, description, honesty_note, bug_report_email, privacy_policy)
     VALUES (
       1,
       '1.4',
       'A private trading journal for logging, reviewing, and analyzing your trades over time.',
       'Track weekly performance, break down results by setup and direction, and see your long-term stats — win rate, R:R, drawdown, and more.',
       'This journal only works if it''s honest — every entry relies on you logging your real trades.',
-      'tradeops37@gmail.com'
+       'tradeops37@gmail.com',
+       'TradeOps logs basic login information (IP-based rough location, timezone, device/browser, timestamp) for account security. A full privacy policy is coming soon.'
     )
     ON CONFLICT (id) DO NOTHING
   `);
@@ -62,10 +72,20 @@ async function runStartupMigrations() {
       id         SERIAL  PRIMARY KEY,
       user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
       ip_address TEXT    NOT NULL,
+      ip_location TEXT,
+      browser_timezone TEXT,
+      screen_resolution TEXT,
+      os_and_browser TEXT,
+      access_code_used TEXT,
       success    BOOLEAN NOT NULL,
       created_at TIMESTAMP DEFAULT NOW() NOT NULL
     )
   `);
+  await db.execute(sql`ALTER TABLE login_events ADD COLUMN IF NOT EXISTS ip_location TEXT`);
+  await db.execute(sql`ALTER TABLE login_events ADD COLUMN IF NOT EXISTS browser_timezone TEXT`);
+  await db.execute(sql`ALTER TABLE login_events ADD COLUMN IF NOT EXISTS screen_resolution TEXT`);
+  await db.execute(sql`ALTER TABLE login_events ADD COLUMN IF NOT EXISTS os_and_browser TEXT`);
+  await db.execute(sql`ALTER TABLE login_events ADD COLUMN IF NOT EXISTS access_code_used TEXT`);
   await db.execute(sql`
     CREATE INDEX IF NOT EXISTS idx_login_events_created_at
       ON login_events(created_at DESC)

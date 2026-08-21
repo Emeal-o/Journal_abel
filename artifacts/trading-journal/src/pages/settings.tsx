@@ -198,6 +198,25 @@ function AboutPanel({ settings, isLoading, isError }: {
   );
 }
 
+function PrivacyPolicyPanel({ settings, isLoading, isError }: {
+  settings?: Awaited<ReturnType<typeof getAppSettings>>;
+  isLoading: boolean;
+  isError: boolean;
+}) {
+  return (
+    <div className="border-t border-white/[0.06] px-4 pb-5 pt-3 font-mono">
+      <div className="h-[2px] w-16 rounded-full bg-gradient-to-r from-blue-500 to-teal-400 mb-3" />
+      {isLoading && <p className="text-xs text-muted-foreground animate-pulse">Loading Privacy Policy…</p>}
+      {isError && <p className="text-xs text-destructive">Failed to load Privacy Policy.</p>}
+      {settings && (
+        <p className="text-xs text-muted-foreground/80 leading-relaxed whitespace-pre-line">
+          {settings.privacy_policy}
+        </p>
+      )}
+    </div>
+  );
+}
+
 const FAQ_ITEMS = [
   {
     question: "Why am I rate-limited?",
@@ -280,6 +299,7 @@ export function SettingsPage() {
   const [setupTypesOpen, setSetupTypesOpen] = useState(false);
   const [aboutOpen, setAboutOpen]           = useState(false);
   const [faqOpen, setFaqOpen]               = useState(false);
+  const [privacyOpen, setPrivacyOpen]       = useState(false);
 
   const { data: setupTypes = [] } = useSetupTypes();
   const aboutQuery = useQuery({
@@ -400,6 +420,20 @@ export function SettingsPage() {
           />
           {aboutOpen && (
             <AboutPanel
+              settings={aboutQuery.data}
+              isLoading={aboutQuery.isLoading}
+              isError={aboutQuery.isError}
+            />
+          )}
+          <ChevronRow
+            last={!privacyOpen}
+            icon={<Info className="w-5 h-5" />}
+            label="Privacy Policy"
+            onClick={() => setPrivacyOpen((v) => !v)}
+            isOpen={privacyOpen}
+          />
+          {privacyOpen && (
+            <PrivacyPolicyPanel
               settings={aboutQuery.data}
               isLoading={aboutQuery.isLoading}
               isError={aboutQuery.isError}
