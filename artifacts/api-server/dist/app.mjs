@@ -58013,6 +58013,11 @@ var loginEventsTable = pgTable("login_events", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => usersTable.id, { onDelete: "set null" }),
   ipAddress: text("ip_address").notNull(),
+  ipLocation: text("ip_location"),
+  browserTimezone: text("browser_timezone"),
+  screenResolution: text("screen_resolution"),
+  osAndBrowser: text("os_and_browser"),
+  accessCodeUsed: text("access_code_used"),
   success: boolean("success").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
@@ -58036,6 +58041,7 @@ var appSettingsTable = pgTable("app_settings", {
   honestyNote: text("honesty_note").notNull(),
   bugReportEmail: text("bug_report_email").notNull(),
   creditLine: text("credit_line"),
+  privacyPolicy: text("privacy_policy").notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 var insertAppSettingsSchema = createInsertSchema(appSettingsTable).omit({
@@ -63145,8 +63151,31 @@ function getClientIp(req) {
   }
   return req.ip ?? "unknown";
 }
+function parseOsAndBrowser(userAgent) {
+  const ua = userAgent ?? "";
+  const os2 = /Windows NT/i.test(ua) ? "Windows" : /Android/i.test(ua) ? "Android" : /iPhone|iPad|iPod/i.test(ua) ? "iOS" : /Mac OS X/i.test(ua) ? "macOS" : /Linux/i.test(ua) ? "Linux" : "Unknown OS";
+  const browser = /Edg\//i.test(ua) ? "Edge" : /OPR\//i.test(ua) ? "Opera" : /Chrome\//i.test(ua) && !/Chromium/i.test(ua) ? "Chrome" : /Firefox\//i.test(ua) ? "Firefox" : /Safari\//i.test(ua) && !/Chrome\//i.test(ua) ? "Safari" : /MSIE|Trident\//i.test(ua) ? "Internet Explorer" : "Unknown browser";
+  return `${os2} \xB7 ${browser}`;
+}
+async function lookupIpLocation(ip) {
+  if (!ip || ip === "unknown" || /^(127\.|10\.|192\.168\.|::1$)/.test(ip)) return "Unavailable";
+  try {
+    const response = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
+      signal: AbortSignal.timeout(2e3),
+      headers: { Accept: "application/json" }
+    });
+    if (!response.ok) return "Unavailable";
+    const data = await response.json();
+    return [data.city, data.country_name].filter(Boolean).join(", ") || "Unavailable";
+  } catch {
+    return "Unavailable";
+  }
+}
+function maskAccessCode(code) {
+  return code.length > 4 ? `\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022${code.slice(-4)}` : "\u2022\u2022\u2022\u2022";
+}
 router2.post("/auth/login", loginLimiter, async (req, res) => {
-  const { code } = req.body;
+  const { code, browserTimezone, screenResolution } = req.body;
   if (typeof code !== "string" || code.trim().length === 0) {
     res.status(400).json({ error: "Access code is required." });
     return;
@@ -63162,9 +63191,15 @@ router2.post("/auth/login", loginLimiter, async (req, res) => {
     }
   }
   const ip = getClientIp(req);
+  const ipLocation = await lookupIpLocation(ip);
   db.insert(loginEventsTable).values({
     userId: matchedUser?.id ?? null,
     ipAddress: ip,
+    ipLocation,
+    browserTimezone: typeof browserTimezone === "string" ? browserTimezone.slice(0, 100) : null,
+    screenResolution: typeof screenResolution === "string" ? screenResolution.slice(0, 40) : null,
+    osAndBrowser: parseOsAndBrowser(req.get("user-agent")),
+    accessCodeUsed: maskAccessCode(trimmed),
     success: matchedUser !== null
   }).catch(() => {
   });
@@ -63321,6 +63356,11 @@ router3.get("/admin/login-events", requireAdmin, async (_req, res) => {
     id: loginEventsTable.id,
     userId: loginEventsTable.userId,
     ipAddress: loginEventsTable.ipAddress,
+    ipLocation: loginEventsTable.ipLocation,
+    browserTimezone: loginEventsTable.browserTimezone,
+    screenResolution: loginEventsTable.screenResolution,
+    osAndBrowser: loginEventsTable.osAndBrowser,
+    accessCodeUsed: loginEventsTable.accessCodeUsed,
     success: loginEventsTable.success,
     createdAt: loginEventsTable.createdAt
   }).from(loginEventsTable).orderBy(desc(loginEventsTable.createdAt)).limit(50);
@@ -64309,7 +64349,8 @@ function validateAppSettingsInput(body) {
     { key: "tagline", max: 500 },
     { key: "description", max: 2e3 },
     { key: "honesty_note", max: 2e3 },
-    { key: "bug_report_email", max: 254 }
+    { key: "bug_report_email", max: 254 },
+    { key: "privacy_policy", max: 1e4 }
   ];
   const data = {};
   for (const { key, max } of fields) {
@@ -64349,6 +64390,7 @@ function serializeAppSettings(settings) {
     honesty_note: settings.honestyNote,
     bug_report_email: settings.bugReportEmail,
     credit_line: settings.creditLine,
+    privacy_policy: settings.privacyPolicy,
     updated_at: settings.updatedAt.toISOString()
   };
 }
@@ -64373,6 +64415,7 @@ router8.put("/app-settings", requireAdmin, async (req, res) => {
     honestyNote: parsed.data.honesty_note,
     bugReportEmail: parsed.data.bug_report_email,
     creditLine: parsed.data.credit_line,
+    privacyPolicy: parsed.data.privacy_policy,
     updatedAt: /* @__PURE__ */ new Date()
   }).where(eq(appSettingsTable.id, 1)).returning();
   if (!settings) {

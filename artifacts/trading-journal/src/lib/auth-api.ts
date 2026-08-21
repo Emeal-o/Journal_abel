@@ -2,7 +2,7 @@
  * Thin fetch wrappers for the auth endpoints.
  * Respects VITE_API_URL for Vercel deployments; falls back to same-origin relative paths.
  */
-const API_BASE = import.meta.env.PROD ? "" : ((import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "");
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
 
 async function authFetch(path: string, init?: RequestInit): Promise<Response> {
   return fetch(`${API_BASE}${path}`, {
@@ -30,7 +30,11 @@ export async function login(rawCode: string): Promise<MeResponse & { ok: true }>
   const res = await authFetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({
+      code,
+      browserTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      screenResolution: `${window.screen.width}×${window.screen.height}`,
+    }),
   });
   if (res.status === 429) {
     throw new Error("Too many attempts. Please wait 15 minutes before trying again.");
