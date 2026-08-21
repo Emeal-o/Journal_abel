@@ -3,6 +3,7 @@ import { rateLimit } from "express-rate-limit";
 import bcrypt from "bcrypt";
 import crypto from "node:crypto";
 import { db, usersTable, loginEventsTable } from "@workspace/db";
+import { logger } from "../lib/logger.js";
 
 const router = Router();
 
@@ -79,18 +80,45 @@ function parseOsAndBrowser(userAgent: string | undefined): string {
   return `${os} · ${browser}`;
 }
 
-async function lookupIpLocation(ip: string): Promise<string> {
-  if (!ip || ip === "unknown" || /^(127\.|10\.|192\.168\.|::1$)/.test(ip)) return "Unavailable";
+async function lookupIpLocation(ip: string): Promise<string | null> {
+  if (!ip || ip === "unknown" || /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|::1$)/.test(ip)) return null;
+
+  // ipapi.co is the preferred provider, but its free endpoint can return
+  // 429s from shared/serverless IPs. Keep a no-key fallback so login
+  // telemetry remains useful without making authentication depend on either
+  // provider being available.
   try {
     const response = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(2500),
       headers: { Accept: "application/json" },
     });
-    if (!response.ok) return "Unavailable";
-    const data = await response.json() as { city?: string; country_name?: string };
-    return [data.city, data.country_name].filter(Boolean).join(", ") || "Unavailable";
-  } catch {
-    return "Unavailable";
+    if (response.ok) {
+      const data = await response.json() as { city?: string; country_name?: string };
+      const location = [data.city, data.country_name].filter(Boolean).join(", ");
+      if (location) return location;
+    } else {
+      logger.warn({ status: response.status, ip }, "Primary IP geolocation lookup failed");
+    }
+  } catch (error) {
+    logger.warn({ error, ip }, "Primary IP geolocation lookup timed out or failed");
+  }
+
+  try {
+    const response = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
+      signal: AbortSignal.timeout(2500),
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) {
+      logger.warn({ status: response.status, ip }, "Fallback IP geolocation lookup failed");
+      return null;
+    }
+    const data = await response.json() as { success?: boolean; city?: string; country?: string };
+    if (!data.success) return null;
+    const location = [data.city, data.country].filter(Boolean).join(", ");
+    return location || null;
+  } catch (error) {
+    logger.warn({ error, ip }, "Fallback IP geolocation lookup timed out or failed");
+    return null;
   }
 }
 

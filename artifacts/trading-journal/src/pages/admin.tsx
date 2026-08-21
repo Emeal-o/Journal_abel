@@ -620,6 +620,7 @@ function AdminPanel() {
   const queryClient = useQueryClient();
   const [revealed, setRevealed] = useState<RevealedCode | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"users" | "about" | "login" | "setup">("users");
 
   const usersQuery = useQuery({ queryKey: ADMIN_USERS_KEY, queryFn: listAdminUsers });
 
@@ -666,86 +667,113 @@ function AdminPanel() {
           </button>
         </div>
 
-        {revealed && <CodeReveal revealed={revealed} onDismiss={() => setRevealed(null)} />}
-
-        {error && (
-          <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive mb-4">
-            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl p-6 shadow-2xl">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-semibold tracking-tight">Users</h2>
+        <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto border-b border-border/50 mb-5">
+          {([
+            ["users", "Users"],
+            ["about", "About & Settings"],
+            ["login", "Login Activity"],
+            ["setup", "Setup Types"],
+          ] as const).map(([tab, label]) => (
             <button
-              onClick={() => createMutation.mutate()}
-              disabled={createMutation.isPending}
-              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className={[
+                "shrink-0 px-3 sm:px-4 py-2 rounded-t-md text-sm font-medium transition-all duration-200",
+                activeTab === tab
+                  ? "bg-white/10 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-white hover:bg-white/5",
+              ].join(" ")}
             >
-              {createMutation.isPending ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Plus className="w-3.5 h-3.5" />
-              )}
-              New user
+              {label}
             </button>
-          </div>
-
-          {usersQuery.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-          {usersQuery.isError && <p className="text-sm text-destructive">Failed to load users.</p>}
-
-          {usersQuery.data && usersQuery.data.length === 0 && (
-            <p className="text-sm text-muted-foreground">No users yet.</p>
-          )}
-
-          <div className="space-y-2">
-            {usersQuery.data?.map((user) => (
-              <div
-                key={user.id}
-                className="flex items-center justify-between rounded-lg border border-border/50 bg-background/40 px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium">
-                    User {user.id}{user.nickname ? ` (${user.nickname})` : ""}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Created {new Date(user.createdAt).toLocaleDateString()}
-                  </p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      {user.weekCount} {user.weekCount === 1 ? "week" : "weeks"}
-                    </span>
-                    <span className="text-xs text-muted-foreground">·</span>
-                    <span className="text-xs text-muted-foreground">
-                      {user.tradeCount} {user.tradeCount === 1 ? "trade" : "trades"}
-                    </span>
-                    {user.lastActivity && (
-                      <>
-                        <span className="text-xs text-muted-foreground">·</span>
-                        <span className="text-xs text-muted-foreground">
-                          active {formatRelativeTime(user.lastActivity)}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={() => revokeMutation.mutate(user.id)}
-                  disabled={revokeMutation.isPending}
-                  className="text-sm rounded-lg border border-border/60 px-3 py-1.5 hover:bg-accent transition disabled:opacity-50"
-                >
-                  Revoke &amp; reissue
-                </button>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
 
-        <EditAboutPanel />
-        <LoginEventsPanel />
-        <SetupTypeChangeLogPanel />
-        <SetupTypeReassignPanel users={usersQuery.data ?? []} />
+        {activeTab === "users" && (
+          <>
+            {revealed && <CodeReveal revealed={revealed} onDismiss={() => setRevealed(null)} />}
+            {error && (
+              <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive mb-4">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+            <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl p-6 shadow-2xl">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-base font-semibold tracking-tight">Users</h2>
+                <button
+                  onClick={() => createMutation.mutate()}
+                  disabled={createMutation.isPending}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
+                >
+                  {createMutation.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="w-3.5 h-3.5" />
+                  )}
+                  New user
+                </button>
+              </div>
+
+              {usersQuery.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+              {usersQuery.isError && <p className="text-sm text-destructive">Failed to load users.</p>}
+              {usersQuery.data && usersQuery.data.length === 0 && (
+                <p className="text-sm text-muted-foreground">No users yet.</p>
+              )}
+
+              <div className="space-y-2">
+                {usersQuery.data?.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between rounded-lg border border-border/50 bg-background/40 px-4 py-3"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">
+                        User {user.id}{user.nickname ? ` (${user.nickname})` : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Created {new Date(user.createdAt).toLocaleDateString()}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-muted-foreground">
+                          {user.weekCount} {user.weekCount === 1 ? "week" : "weeks"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">·</span>
+                        <span className="text-xs text-muted-foreground">
+                          {user.tradeCount} {user.tradeCount === 1 ? "trade" : "trades"}
+                        </span>
+                        {user.lastActivity && (
+                          <>
+                            <span className="text-xs text-muted-foreground">·</span>
+                            <span className="text-xs text-muted-foreground">
+                              active {formatRelativeTime(user.lastActivity)}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => revokeMutation.mutate(user.id)}
+                      disabled={revokeMutation.isPending}
+                      className="text-sm rounded-lg border border-border/60 px-3 py-1.5 hover:bg-accent transition disabled:opacity-50"
+                    >
+                      Revoke &amp; reissue
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+        {activeTab === "about" && <EditAboutPanel />}
+        {activeTab === "login" && <LoginEventsPanel />}
+        {activeTab === "setup" && (
+          <>
+            <SetupTypeChangeLogPanel />
+            <SetupTypeReassignPanel users={usersQuery.data ?? []} />
+          </>
+        )}
       </div>
     </div>
   );

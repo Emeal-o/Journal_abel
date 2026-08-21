@@ -63116,6 +63116,26 @@ var rate_limit_default = rateLimit;
 // src/routes/auth.ts
 import bcrypt from "bcrypt";
 import crypto3 from "node:crypto";
+
+// src/lib/logger.ts
+var import_pino = __toESM(require_pino(), 1);
+var isProduction = process.env.NODE_ENV === "production";
+var logger = (0, import_pino.default)({
+  level: process.env.LOG_LEVEL ?? "info",
+  redact: [
+    "req.headers.authorization",
+    "req.headers.cookie",
+    "res.headers['set-cookie']"
+  ],
+  ...isProduction ? {} : {
+    transport: {
+      target: "pino-pretty",
+      options: { colorize: true }
+    }
+  }
+});
+
+// src/routes/auth.ts
 var router2 = (0, import_express2.Router)();
 var loginLimiter = rate_limit_default({
   windowMs: 15 * 60 * 1e3,
@@ -63158,17 +63178,38 @@ function parseOsAndBrowser(userAgent) {
   return `${os2} \xB7 ${browser}`;
 }
 async function lookupIpLocation(ip) {
-  if (!ip || ip === "unknown" || /^(127\.|10\.|192\.168\.|::1$)/.test(ip)) return "Unavailable";
+  if (!ip || ip === "unknown" || /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|::1$)/.test(ip)) return null;
   try {
     const response = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
-      signal: AbortSignal.timeout(2e3),
+      signal: AbortSignal.timeout(2500),
       headers: { Accept: "application/json" }
     });
-    if (!response.ok) return "Unavailable";
+    if (response.ok) {
+      const data = await response.json();
+      const location = [data.city, data.country_name].filter(Boolean).join(", ");
+      if (location) return location;
+    } else {
+      logger.warn({ status: response.status, ip }, "Primary IP geolocation lookup failed");
+    }
+  } catch (error40) {
+    logger.warn({ error: error40, ip }, "Primary IP geolocation lookup timed out or failed");
+  }
+  try {
+    const response = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
+      signal: AbortSignal.timeout(2500),
+      headers: { Accept: "application/json" }
+    });
+    if (!response.ok) {
+      logger.warn({ status: response.status, ip }, "Fallback IP geolocation lookup failed");
+      return null;
+    }
     const data = await response.json();
-    return [data.city, data.country_name].filter(Boolean).join(", ") || "Unavailable";
-  } catch {
-    return "Unavailable";
+    if (!data.success) return null;
+    const location = [data.city, data.country].filter(Boolean).join(", ");
+    return location || null;
+  } catch (error40) {
+    logger.warn({ error: error40, ip }, "Fallback IP geolocation lookup timed out or failed");
+    return null;
   }
 }
 function maskAccessCode(code) {
@@ -64478,24 +64519,6 @@ router10.use(setup_types_default);
 router10.use(app_settings_default);
 router10.use(profile_default);
 var routes_default = router10;
-
-// src/lib/logger.ts
-var import_pino = __toESM(require_pino(), 1);
-var isProduction = process.env.NODE_ENV === "production";
-var logger = (0, import_pino.default)({
-  level: process.env.LOG_LEVEL ?? "info",
-  redact: [
-    "req.headers.authorization",
-    "req.headers.cookie",
-    "res.headers['set-cookie']"
-  ],
-  ...isProduction ? {} : {
-    transport: {
-      target: "pino-pretty",
-      options: { colorize: true }
-    }
-  }
-});
 
 // src/app.ts
 var app = (0, import_express11.default)();

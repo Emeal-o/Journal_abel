@@ -52,7 +52,7 @@ async function runStartupMigrations() {
   await db.execute(sql`
     UPDATE app_settings
     SET privacy_policy = 'TradeOps logs basic login information (IP-based rough location, timezone, device/browser, timestamp) for account security. A full privacy policy is coming soon.'
-    WHERE id = 1 AND privacy_policy IS NULL
+    WHERE id = 1 AND NULLIF(BTRIM(privacy_policy), '') IS NULL
   `);
   await db.execute(sql`
     INSERT INTO app_settings (id, version, tagline, description, honesty_note, bug_report_email, privacy_policy)
