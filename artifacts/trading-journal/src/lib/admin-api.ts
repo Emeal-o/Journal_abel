@@ -24,6 +24,7 @@ export interface AdminUser {
   tradeCount: number;
   weekCount: number;
   lastActivity: string | null;
+  activeSetupTypeCount: number;
 }
 
 export interface LoginEvent {
@@ -107,7 +108,7 @@ export async function listAdminUsers(): Promise<AdminUser[]> {
 }
 
 /** Creates a new user and returns their plaintext access code (shown once). */
-export async function createAdminUser(): Promise<AdminUser & { code: string }> {
+export async function createAdminUser(): Promise<{ id: number; createdAt: string; code: string }> {
   const res = await adminFetch("/api/admin/users", { method: "POST" });
   if (!res.ok) {
     throw new Error(await parseErrorMessage(res, "Failed to create user."));

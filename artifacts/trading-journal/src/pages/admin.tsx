@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { ShieldCheck, Loader2, AlertCircle, Copy, Check, KeyRound, Plus, LogOut, Activity, History, Tag, Info } from "lucide-react";
+import { ShieldCheck, Loader2, AlertCircle, Copy, Check, KeyRound, Plus, LogOut, Activity, History, Tag, Info, Users, Settings2, ArrowLeft, ChevronRight } from "lucide-react";
 import {
   getAdminSession,
   adminLogin,
@@ -616,13 +616,52 @@ function SetupTypeReassignPanel({ users }: { users: AdminUser[] }) {
   );
 }
 
+type AdminSection = "users" | "about" | "login" | "setup";
+
+const DEFAULT_PRIVACY_POLICY =
+  "TradeOps logs basic login information (IP-based rough location, timezone, device/browser, timestamp) for account security. A full privacy policy is coming soon.";
+
+function AdminLandingCard({
+  icon: Icon,
+  label,
+  summary,
+  attention,
+  onClick,
+}: {
+  icon: typeof Users;
+  label: string;
+  summary: string;
+  attention?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group w-full flex items-center gap-4 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl px-5 py-5 sm:px-6 sm:py-6 text-left shadow-2xl transition hover:bg-card/80 hover:border-border active:scale-[0.995]"
+    >
+      <Icon className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2 text-base sm:text-lg font-semibold tracking-tight">
+          {label}
+          {attention && <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title="Unknown access-code attempt" />}
+        </span>
+        <span className="block mt-1 text-sm text-muted-foreground truncate">{summary}</span>
+      </span>
+      <ChevronRight className="w-5 h-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+    </button>
+  );
+}
+
 function AdminPanel() {
   const queryClient = useQueryClient();
   const [revealed, setRevealed] = useState<RevealedCode | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"users" | "about" | "login" | "setup">("users");
+  const [activeSection, setActiveSection] = useState<AdminSection | null>(null);
 
   const usersQuery = useQuery({ queryKey: ADMIN_USERS_KEY, queryFn: listAdminUsers });
+  const eventsQuery = useQuery({ queryKey: ADMIN_LOGIN_EVENTS_KEY, queryFn: listAdminLoginEvents });
+  const settingsQuery = useQuery({ queryKey: APP_SETTINGS_QUERY_KEY, queryFn: getAppSettings });
 
   const createMutation = useMutation({
     mutationFn: createAdminUser,
@@ -648,6 +687,115 @@ function AdminPanel() {
     queryClient.setQueryData(ADMIN_SESSION_KEY, false);
   }
 
+  const users = usersQuery.data ?? [];
+  const activeRecently = users.filter((user) => {
+    if (!user.lastActivity) return false;
+    return Date.now() - new Date(user.lastActivity).getTime() <= 7 * 24 * 60 * 60 * 1000;
+  }).length;
+  const recentEvents = eventsQuery.data ?? [];
+  const hasUnknownCodeAttempt = recentEvents.some((event) => event.userId == null);
+  const latestLogin = recentEvents[0];
+  const settings = settingsQuery.data;
+  const privacyUnset = !settings?.privacy_policy?.trim() || settings.privacy_policy.trim() === DEFAULT_PRIVACY_POLICY;
+  const creditLineUnset = !settings?.credit_line?.trim();
+  const activeSetupTypeCount = users.reduce((total, user) => total + (user.activeSetupTypeCount ?? 0), 0);
+
+  const aboutSummary = settingsQuery.isLoading
+    ? "Loading…"
+    : privacyUnset && creditLineUnset
+      ? "Privacy Policy & Credit Line not set"
+      : privacyUnset
+        ? "Privacy Policy not set"
+        : creditLineUnset
+          ? "Credit Line not set"
+          : `Version ${settings?.version ?? "current"}`;
+
+  const summaries: Record<AdminSection, string> = {
+    users: usersQuery.isLoading ? "Loading…" : `${users.length} users · ${activeRecently} active this week`,
+    about: aboutSummary,
+    login: eventsQuery.isLoading ? "Loading…" : latestLogin ? `Last login ${formatRelativeTime(latestLogin.createdAt)}` : "No login attempts yet",
+    setup: usersQuery.isLoading ? "Loading…" : `${activeSetupTypeCount} active`,
+  };
+
+  const sectionLabels: Record<AdminSection, string> = {
+    users: "Users",
+    about: "About & Settings",
+    login: "Login Activity",
+    setup: "Setup Types",
+  };
+
+  function renderUsers() {
+    return (
+      <>
+        {revealed && <CodeReveal revealed={revealed} onDismiss={() => setRevealed(null)} />}
+        {error && (
+          <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive mb-4">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+        <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl p-6 shadow-2xl">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-base font-semibold tracking-tight">Users</h2>
+            <button
+              onClick={() => createMutation.mutate()}
+              disabled={createMutation.isPending}
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
+            >
+              {createMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              New user
+            </button>
+          </div>
+
+          {usersQuery.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {usersQuery.isError && <p className="text-sm text-destructive">Failed to load users.</p>}
+          {usersQuery.data && usersQuery.data.length === 0 && <p className="text-sm text-muted-foreground">No users yet.</p>}
+
+          <div className="space-y-2">
+            {usersQuery.data?.map((user) => (
+              <div key={user.id} className="flex items-center justify-between rounded-lg border border-border/50 bg-background/40 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium">User {user.id}{user.nickname ? ` (${user.nickname})` : ""}</p>
+                  <p className="text-xs text-muted-foreground">Created {new Date(user.createdAt).toLocaleDateString()}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-xs text-muted-foreground">{user.weekCount} {user.weekCount === 1 ? "week" : "weeks"}</span>
+                    <span className="text-xs text-muted-foreground">·</span>
+                    <span className="text-xs text-muted-foreground">{user.tradeCount} {user.tradeCount === 1 ? "trade" : "trades"}</span>
+                    {user.lastActivity && (
+                      <>
+                        <span className="text-xs text-muted-foreground">·</span>
+                        <span className="text-xs text-muted-foreground">active {formatRelativeTime(user.lastActivity)}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => revokeMutation.mutate(user.id)}
+                  disabled={revokeMutation.isPending}
+                  className="text-sm rounded-lg border border-border/60 px-3 py-1.5 hover:bg-accent transition disabled:opacity-50"
+                >
+                  Revoke &amp; reissue
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  function renderSection() {
+    if (activeSection === "users") return renderUsers();
+    if (activeSection === "about") return <EditAboutPanel />;
+    if (activeSection === "login") return <LoginEventsPanel />;
+    return (
+      <>
+        <SetupTypeChangeLogPanel />
+        <SetupTypeReassignPanel users={users} />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-sans px-4 py-10">
       <div className="max-w-2xl mx-auto">
@@ -667,111 +815,25 @@ function AdminPanel() {
           </button>
         </div>
 
-        <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto border-b border-border/50 mb-5">
-          {([
-            ["users", "Users"],
-            ["about", "About & Settings"],
-            ["login", "Login Activity"],
-            ["setup", "Setup Types"],
-          ] as const).map(([tab, label]) => (
+        {activeSection === null ? (
+          <div className="space-y-3">
+            <AdminLandingCard icon={Users} label={sectionLabels.users} summary={summaries.users} onClick={() => setActiveSection("users")} />
+            <AdminLandingCard icon={Settings2} label={sectionLabels.about} summary={summaries.about} onClick={() => setActiveSection("about")} />
+            <AdminLandingCard icon={Activity} label={sectionLabels.login} summary={summaries.login} attention={hasUnknownCodeAttempt} onClick={() => setActiveSection("login")} />
+            <AdminLandingCard icon={Tag} label={sectionLabels.setup} summary={summaries.setup} onClick={() => setActiveSection("setup")} />
+          </div>
+        ) : (
+          <>
             <button
-              key={tab}
               type="button"
-              onClick={() => setActiveTab(tab)}
-              className={[
-                "shrink-0 px-3 sm:px-4 py-2 rounded-t-md text-sm font-medium transition-all duration-200",
-                activeTab === tab
-                  ? "bg-white/10 text-white shadow-sm"
-                  : "text-muted-foreground hover:text-white hover:bg-white/5",
-              ].join(" ")}
+              onClick={() => setActiveSection(null)}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition mb-5"
             >
-              {label}
+              <ArrowLeft className="w-4 h-4" />
+              Back to Admin
             </button>
-          ))}
-        </div>
-
-        {activeTab === "users" && (
-          <>
-            {revealed && <CodeReveal revealed={revealed} onDismiss={() => setRevealed(null)} />}
-            {error && (
-              <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive mb-4">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-            <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl p-6 shadow-2xl">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-base font-semibold tracking-tight">Users</h2>
-                <button
-                  onClick={() => createMutation.mutate()}
-                  disabled={createMutation.isPending}
-                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
-                >
-                  {createMutation.isPending ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Plus className="w-3.5 h-3.5" />
-                  )}
-                  New user
-                </button>
-              </div>
-
-              {usersQuery.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-              {usersQuery.isError && <p className="text-sm text-destructive">Failed to load users.</p>}
-              {usersQuery.data && usersQuery.data.length === 0 && (
-                <p className="text-sm text-muted-foreground">No users yet.</p>
-              )}
-
-              <div className="space-y-2">
-                {usersQuery.data?.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between rounded-lg border border-border/50 bg-background/40 px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">
-                        User {user.id}{user.nickname ? ` (${user.nickname})` : ""}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Created {new Date(user.createdAt).toLocaleDateString()}
-                      </p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-muted-foreground">
-                          {user.weekCount} {user.weekCount === 1 ? "week" : "weeks"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">·</span>
-                        <span className="text-xs text-muted-foreground">
-                          {user.tradeCount} {user.tradeCount === 1 ? "trade" : "trades"}
-                        </span>
-                        {user.lastActivity && (
-                          <>
-                            <span className="text-xs text-muted-foreground">·</span>
-                            <span className="text-xs text-muted-foreground">
-                              active {formatRelativeTime(user.lastActivity)}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => revokeMutation.mutate(user.id)}
-                      disabled={revokeMutation.isPending}
-                      className="text-sm rounded-lg border border-border/60 px-3 py-1.5 hover:bg-accent transition disabled:opacity-50"
-                    >
-                      Revoke &amp; reissue
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-        {activeTab === "about" && <EditAboutPanel />}
-        {activeTab === "login" && <LoginEventsPanel />}
-        {activeTab === "setup" && (
-          <>
-            <SetupTypeChangeLogPanel />
-            <SetupTypeReassignPanel users={usersQuery.data ?? []} />
+            <h1 className="text-xl font-semibold tracking-tight mb-4">{sectionLabels[activeSection]}</h1>
+            {renderSection()}
           </>
         )}
       </div>

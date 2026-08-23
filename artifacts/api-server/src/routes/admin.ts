@@ -101,7 +101,7 @@ router.get("/admin/me", (req, res) => {
 
 // GET /api/admin/users
 // Lists every user's id, creation date, and per-user activity counts
-// (trade count, week count, most recent activity timestamp).
+// (trade count, week count, most recent activity timestamp, active setup types).
 // All counts are computed in a single query to avoid N+1 queries.
 router.get("/admin/users", requireAdmin, async (_req, res) => {
   const users = await db
@@ -112,6 +112,12 @@ router.get("/admin/users", requireAdmin, async (_req, res) => {
       tradeCount: sql<number>`cast(count(distinct ${tradesTable.id}) as int)`,
       weekCount: sql<number>`cast(count(distinct ${weeksTable.id}) as int)`,
       lastActivity: sql<string | null>`GREATEST(MAX(${tradesTable.createdAt}), MAX(${weeksTable.createdAt}))`,
+      activeSetupTypeCount: sql<number>`(
+        SELECT cast(count(*) as int)
+        FROM ${setupTypesTable}
+        WHERE ${setupTypesTable.userId} = ${usersTable.id}
+          AND ${setupTypesTable.active} = true
+      )`,
     })
     .from(usersTable)
     .leftJoin(tradesTable, eq(tradesTable.userId, usersTable.id))

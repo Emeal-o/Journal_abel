@@ -63352,7 +63352,13 @@ router3.get("/admin/users", requireAdmin, async (_req, res) => {
     createdAt: usersTable.createdAt,
     tradeCount: sql`cast(count(distinct ${tradesTable.id}) as int)`,
     weekCount: sql`cast(count(distinct ${weeksTable.id}) as int)`,
-    lastActivity: sql`GREATEST(MAX(${tradesTable.createdAt}), MAX(${weeksTable.createdAt}))`
+    lastActivity: sql`GREATEST(MAX(${tradesTable.createdAt}), MAX(${weeksTable.createdAt}))`,
+    activeSetupTypeCount: sql`(
+        SELECT cast(count(*) as int)
+        FROM ${setupTypesTable}
+        WHERE ${setupTypesTable.userId} = ${usersTable.id}
+          AND ${setupTypesTable.active} = true
+      )`
   }).from(usersTable).leftJoin(tradesTable, eq(tradesTable.userId, usersTable.id)).leftJoin(weeksTable, eq(weeksTable.userId, usersTable.id)).groupBy(usersTable.id, usersTable.nickname, usersTable.createdAt).orderBy(usersTable.id);
   res.json(users);
 });
