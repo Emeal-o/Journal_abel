@@ -544,11 +544,11 @@ export function SettingsPage() {
     { value: "large",   label: "Large"   },
   ];
   const themeOptions: { value: ThemePref; label: string }[] = [
+    { value: "light",    label: "Light"    },
     { value: "dark",     label: "Dark"     },
+    { value: "blue",     label: "Blue"     },
     { value: "amber",    label: "Amber"    },
     { value: "burgundy", label: "Burgundy" },
-    { value: "blue",     label: "Blue"     },
-    { value: "light",    label: "Light"    },
   ];
 
   return (
