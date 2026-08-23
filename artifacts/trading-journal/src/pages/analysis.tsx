@@ -23,6 +23,8 @@ import { useAnalysis } from "@/lib/analysis-api";
 import type { AnalysisCumulativePoint, AnalysisRRRPoint, AnalysisRRRBucket, AnalysisRRRBucketTrade, AnalysisSetupTypeRow, AnalysisPostLossRow } from "@/lib/analysis-api";
 import { toRoman } from "@/lib/label-utils";
 import { getWinRateColor } from "@/lib/utils";
+import { useDisplayPrefs } from "@/hooks/use-display-prefs";
+import type { AnalysisSectionId } from "@/lib/analysis-display-prefs";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -51,9 +53,24 @@ function StatTile({ label, value, sub, accent }: { label: string; value: string;
 
 // ─── section wrapper ─────────────────────────────────────────────────────────
 
-function Section({ title, icon: Icon, children, action }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; action?: React.ReactNode }) {
+function Section({
+  title,
+  icon: Icon,
+  children,
+  action,
+  visible = true,
+  order,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+  visible?: boolean;
+  order?: number;
+}) {
+  if (!visible) return null;
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" style={order == null ? undefined : { order }}>
       <div className="flex items-center gap-2">
         <Icon className="w-4 h-4 text-muted-foreground" />
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{title}</h2>
@@ -390,6 +407,9 @@ export function AnalysisPage() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { analysisSectionOrder, hiddenAnalysisSections } = useDisplayPrefs();
+  const sectionVisible = (id: AnalysisSectionId) => !hiddenAnalysisSections.includes(id);
+  const sectionOrder = (id: AnalysisSectionId) => analysisSectionOrder.indexOf(id) + 1;
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
@@ -488,7 +508,7 @@ export function AnalysisPage() {
 
   // ── render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header */}
       <div>
         <button
@@ -561,6 +581,7 @@ export function AnalysisPage() {
       <Section
         title="All-Time Summary"
         icon={Activity}
+        order={0}
         action={
           <button
             onClick={() => setExportModalOpen(true)}
@@ -580,7 +601,7 @@ export function AnalysisPage() {
       </Section>
 
       {/* 2. Cumulative growth chart */}
-      <Section title="Cumulative Growth" icon={TrendingUp}>
+      <Section title="Cumulative Growth" icon={TrendingUp} visible={sectionVisible("cumulativeGrowth")} order={sectionOrder("cumulativeGrowth")}>
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
           <div className="flex items-center justify-between mb-5">
             <span className="text-sm text-muted-foreground">Net RR over time</span>
@@ -638,7 +659,7 @@ export function AnalysisPage() {
 
       {/* 3. Year-over-year */}
       {data.byYear.length > 0 && (
-        <Section title="Year by Year" icon={BarChart2}>
+        <Section title="Year by Year" icon={BarChart2} visible={sectionVisible("yearByYear")} order={sectionOrder("yearByYear")}>
           <div className="rounded-xl border border-white/10 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
@@ -666,7 +687,7 @@ export function AnalysisPage() {
 
       {/* 4. Best & worst */}
       {(data.bestWeek || data.bestMonth) && (
-        <Section title="Best & Worst Performance" icon={Target}>
+        <Section title="Best & Worst Performance" icon={Target} visible={sectionVisible("bestWorstPerformance")} order={sectionOrder("bestWorstPerformance")}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {data.bestWeek && (
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4">
@@ -714,7 +735,7 @@ export function AnalysisPage() {
 
       {/* 5. Avg RRR trend */}
       {rrrData.length > 0 && (
-        <Section title="Average RRR per Trade" icon={BarChart2}>
+        <Section title="Average RRR per Trade" icon={BarChart2} visible={sectionVisible("averageRRR")} order={sectionOrder("averageRRR")}>
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex items-center justify-between mb-5">
               <span className="text-sm text-muted-foreground">Avg risk-reward ratio per period</span>
@@ -768,7 +789,7 @@ export function AnalysisPage() {
 
       {/* 6. RRR Distribution histogram */}
       {data.rrrDistribution.some(b => b.count > 0) && (
-        <Section title="RRR Distribution" icon={BarChart2}>
+        <Section title="RRR Distribution" icon={BarChart2} visible={sectionVisible("rrrDistribution")} order={sectionOrder("rrrDistribution")}>
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
             <span className="text-sm text-muted-foreground">Trade count per RRR bucket</span>
             <ResponsiveContainer width="100%" height={180} className="mt-5">
@@ -810,7 +831,7 @@ export function AnalysisPage() {
 
       {/* 7. By Setup Type */}
       {data.bySetupType.length > 0 && (
-        <Section title="By Setup Type" icon={Tag}>
+        <Section title="By Setup Type" icon={Tag} visible={sectionVisible("bySetupType")} order={sectionOrder("bySetupType")}>
           <div className="rounded-xl border border-white/10 overflow-hidden">
             <table className="w-full text-sm table-fixed">
               <colgroup>
@@ -874,7 +895,7 @@ export function AnalysisPage() {
 
       {/* Post-Loss Performance ("Tilt Report") */}
       {(data.postLossPerformance ?? []).some((r: AnalysisPostLossRow) => r.totalTrades > 0) && (
-        <Section title="Post-Loss Performance" icon={Flame}>
+        <Section title="Post-Loss Performance" icon={Flame} visible={sectionVisible("postLossPerformance")} order={sectionOrder("postLossPerformance")}>
           <div className="rounded-xl border border-white/10 overflow-hidden">
             <table className="w-full text-sm table-fixed">
               <colgroup>
@@ -932,7 +953,7 @@ export function AnalysisPage() {
       />
 
       {/* 8. Drawdown & Recovery */}
-      <Section title="Drawdown & Recovery" icon={TrendingDown}>
+      <Section title="Drawdown & Recovery" icon={TrendingDown} visible={sectionVisible("drawdownRecovery")} order={sectionOrder("drawdownRecovery")}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 space-y-1">
             <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Max Drawdown</span>
@@ -984,7 +1005,7 @@ export function AnalysisPage() {
       </Section>
 
       {/* 7. Consistency */}
-      <Section title="Consistency" icon={Zap}>
+      <Section title="Consistency" icon={Zap} visible={sectionVisible("consistency")} order={sectionOrder("consistency")}>
         <div className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -1012,7 +1033,7 @@ export function AnalysisPage() {
 
       {/* By Direction — radial ring grid */}
       {data.bySetupType.length > 0 && (
-        <Section title="By Direction" icon={ArrowLeftRight}>
+        <Section title="By Direction" icon={ArrowLeftRight} visible={sectionVisible("byDirection")} order={sectionOrder("byDirection")}>
           <div className="grid grid-cols-2 gap-3">
             {data.bySetupType.map((row) => {
               const longTrades = row.trades.filter(t => t.direction === "Long");

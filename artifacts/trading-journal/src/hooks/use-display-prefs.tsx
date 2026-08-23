@@ -1,4 +1,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import {
+  ANALYSIS_SECTION_ORDER,
+  type AnalysisSectionId,
+} from "@/lib/analysis-display-prefs";
 
 // — Types —————————————————————————————————————
 
@@ -14,12 +18,16 @@ export interface DisplayPrefs {
   reduceMotion:       boolean;
   showRRCalculator:   boolean;
   theme:              ThemePref;
+  analysisSectionOrder: AnalysisSectionId[];
+  hiddenAnalysisSections: AnalysisSectionId[];
   setDefaultLanding:     (v: LandingPage) => void;
   setDefaultStatDisplay: (v: StatDisplay) => void;
   setFontSize:           (v: FontSizePref) => void;
   setReduceMotion:       (v: boolean) => void;
   setShowRRCalculator:   (v: boolean) => void;
   setTheme:              (v: ThemePref) => void;
+  setAnalysisSectionOrder: (v: AnalysisSectionId[]) => void;
+  setHiddenAnalysisSections: (v: AnalysisSectionId[]) => void;
 }
 
 function read<T>(key: string, fallback: T): T {
@@ -39,6 +47,21 @@ function write<T>(key: string, value: T) {
 function systemReduceMotion() {
   return typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function readAnalysisOrder(): AnalysisSectionId[] {
+  const stored = read<AnalysisSectionId[]>("tradeops_analysis_section_order", [...ANALYSIS_SECTION_ORDER]);
+  const valid = stored.filter((id): id is AnalysisSectionId =>
+    (ANALYSIS_SECTION_ORDER as readonly string[]).includes(id),
+  );
+  return [...valid, ...ANALYSIS_SECTION_ORDER.filter((id) => !valid.includes(id))];
+}
+
+function readHiddenAnalysisSections(): AnalysisSectionId[] {
+  const stored = read<AnalysisSectionId[]>("tradeops_analysis_hidden_sections", []);
+  return stored.filter((id): id is AnalysisSectionId =>
+    (ANALYSIS_SECTION_ORDER as readonly string[]).includes(id),
+  );
 }
 
 // — Context —————————————————————————————————————
@@ -67,6 +90,8 @@ export function DisplayPrefsProvider({ children }: { children: React.ReactNode }
   const [theme, _setTheme] = useState<ThemePref>(() =>
     read<ThemePref>("tradeops_theme", "amoled"),
   );
+  const [analysisSectionOrder, _setAnalysisSectionOrder] = useState<AnalysisSectionId[]>(readAnalysisOrder);
+  const [hiddenAnalysisSections, _setHiddenAnalysisSections] = useState<AnalysisSectionId[]>(readHiddenAnalysisSections);
 
   // Apply font scale to :root
   useEffect(() => {
@@ -110,11 +135,21 @@ export function DisplayPrefsProvider({ children }: { children: React.ReactNode }
     write("tradeops_theme", v);
     _setTheme(v);
   }
+  function setAnalysisSectionOrder(v: AnalysisSectionId[]) {
+    write("tradeops_analysis_section_order", v);
+    _setAnalysisSectionOrder(v);
+  }
+  function setHiddenAnalysisSections(v: AnalysisSectionId[]) {
+    write("tradeops_analysis_hidden_sections", v);
+    _setHiddenAnalysisSections(v);
+  }
 
   return (
     <Ctx.Provider value={{
       defaultLanding, defaultStatDisplay, fontSize, reduceMotion, showRRCalculator, theme,
+      analysisSectionOrder, hiddenAnalysisSections,
       setDefaultLanding, setDefaultStatDisplay, setFontSize, setReduceMotion, setShowRRCalculator, setTheme,
+      setAnalysisSectionOrder, setHiddenAnalysisSections,
     }}>
       {children}
     </Ctx.Provider>

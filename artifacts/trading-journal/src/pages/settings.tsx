@@ -2,9 +2,24 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronRight, ChevronDown,
-  SlidersHorizontal, Info, LogOut, HelpCircle, Bug,
+  SlidersHorizontal, Info, LogOut, HelpCircle, Bug, ArrowLeft, GripVertical,
   Home, BarChart3, Type, Zap, Palette, Check, User, Calculator,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { ManageSetupTypesModal } from "@/components/manage-setup-types-modal";
 import { useSetupTypes } from "@/lib/setup-types-api";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,6 +28,10 @@ import {
   useDisplayPrefs,
   type LandingPage, type StatDisplay, type FontSizePref, type ThemePref,
 } from "@/hooks/use-display-prefs";
+import {
+  ANALYSIS_SECTION_LABELS,
+  type AnalysisSectionId,
+} from "@/lib/analysis-display-prefs";
 import { APP_SETTINGS_QUERY_KEY, getAppSettings } from "@/lib/app-settings-api";
 import {
   PROFILE_QUERY_KEY,
@@ -380,6 +399,103 @@ function ReportBugRow({ email, isLoading }: { email?: string; isLoading: boolean
   );
 }
 
+function SortableAnalysisSectionRow({
+  id,
+  hidden,
+  onToggle,
+}: {
+  id: AnalysisSectionId;
+  hidden: boolean;
+  onToggle: (id: AnalysisSectionId, hidden: boolean) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: hidden ? 0.45 : isDragging ? 0.6 : 1,
+        zIndex: isDragging ? 10 : undefined,
+      }}
+      className="flex items-center gap-3 min-h-[52px] px-4 py-3 border-b border-white/[0.06] last:border-b-0"
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label={`Drag ${ANALYSIS_SECTION_LABELS[id]}`}
+        className="flex-shrink-0 text-muted-foreground/40 hover:text-muted-foreground/70 cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical className="w-5 h-5" />
+      </button>
+      <span className="flex-1 min-w-0 font-mono text-sm text-foreground/80">{ANALYSIS_SECTION_LABELS[id]}</span>
+      <Switch
+        checked={!hidden}
+        onCheckedChange={(checked) => onToggle(id, !checked)}
+        aria-label={`${hidden ? "Show" : "Hide"} ${ANALYSIS_SECTION_LABELS[id]}`}
+      />
+    </div>
+  );
+}
+
+function CustomizeAnalysisScreen({ onBack }: { onBack: () => void }) {
+  const {
+    analysisSectionOrder,
+    hiddenAnalysisSections,
+    setAnalysisSectionOrder,
+    setHiddenAnalysisSections,
+  } = useDisplayPrefs();
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return;
+    const oldIndex = analysisSectionOrder.indexOf(active.id as AnalysisSectionId);
+    const newIndex = analysisSectionOrder.indexOf(over.id as AnalysisSectionId);
+    if (oldIndex >= 0 && newIndex >= 0) {
+      setAnalysisSectionOrder(arrayMove(analysisSectionOrder, oldIndex, newIndex));
+    }
+  }
+
+  function handleToggle(id: AnalysisSectionId, hidden: boolean) {
+    const next = hidden
+      ? [...hiddenAnalysisSections, id]
+      : hiddenAnalysisSections.filter((sectionId) => sectionId !== id);
+    setHiddenAnalysisSections(next);
+  }
+
+  return (
+    <div className="max-w-lg mx-auto">
+      <button
+        type="button"
+        onClick={onBack}
+        className="flex items-center gap-2 text-sm font-mono text-muted-foreground hover:text-white transition-colors mb-5"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Settings
+      </button>
+      <h1 className="text-2xl font-semibold tracking-tight mb-2">Customize Analysis</h1>
+      <p className="text-sm text-muted-foreground mb-6">
+        Drag sections to reorder them. All-Time Summary is always shown first.
+      </p>
+      <SettingsCard>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={analysisSectionOrder} strategy={verticalListSortingStrategy}>
+            {analysisSectionOrder.map((id) => (
+              <SortableAnalysisSectionRow
+                key={id}
+                id={id}
+                hidden={hiddenAnalysisSections.includes(id)}
+                onToggle={handleToggle}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+      </SettingsCard>
+    </div>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export function SettingsPage() {
@@ -387,6 +503,7 @@ export function SettingsPage() {
   const [aboutOpen, setAboutOpen]           = useState(false);
   const [faqOpen, setFaqOpen]               = useState(false);
   const [privacyOpen, setPrivacyOpen]       = useState(false);
+  const [customizeAnalysisOpen, setCustomizeAnalysisOpen] = useState(false);
 
   const { data: setupTypes = [] } = useSetupTypes();
   const aboutQuery = useQuery({
@@ -400,6 +517,10 @@ export function SettingsPage() {
     queryKey: PROFILE_QUERY_KEY,
     queryFn: getProfile,
   });
+
+  if (customizeAnalysisOpen) {
+    return <CustomizeAnalysisScreen onBack={() => setCustomizeAnalysisOpen(false)} />;
+  }
 
   async function handleLogout() {
     await logout();
@@ -491,6 +612,11 @@ export function SettingsPage() {
       <div className="mb-6">
         <SectionHeader>Display</SectionHeader>
         <SettingsCard>
+          <ChevronRow
+            icon={<BarChart3 className="w-5 h-5" />}
+            label="Customize Analysis"
+            onClick={() => setCustomizeAnalysisOpen(true)}
+          />
           <SelectRow
             icon={<Home className="w-5 h-5" />}
             label="Default Landing Page"
