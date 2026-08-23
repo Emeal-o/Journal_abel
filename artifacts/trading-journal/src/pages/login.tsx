@@ -73,7 +73,7 @@ function CandleField({ reduceMotion }: { reduceMotion: boolean }) {
       const line = document.createElementNS(NS, "line");
       line.setAttribute("x1", "0"); line.setAttribute("x2", String(W));
       line.setAttribute("y1", String(y)); line.setAttribute("y2", String(y));
-      line.setAttribute("stroke", "rgba(255,255,255,0.04)");
+      line.setAttribute("stroke", "var(--surface-border-faint)");
       svg.appendChild(line);
     }
 

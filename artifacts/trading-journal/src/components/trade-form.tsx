@@ -340,7 +340,7 @@ export function TradeForm({ weekId, trade, open, onOpenChange }: TradeFormProps)
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="bg-transparent border-white/10 hover:bg-white/5">
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending} className="shadow-[0_0_10px_rgba(var(--primary),0.3)]">
+              <Button type="submit" disabled={isPending} className="shadow-[0_0_10px_var(--primary-glow)]">
                 {isPending ? "Saving..." : "Save Trade"}
               </Button>
             </div>

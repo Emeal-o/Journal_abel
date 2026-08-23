@@ -344,7 +344,7 @@ export function JournalPage() {
 
           <Button
             onClick={() => setIsAddWeekOpen(true)}
-            className="gap-2 shadow-[0_0_15px_rgba(var(--primary),0.2)]"
+            className="gap-2 shadow-[0_0_15px_var(--primary-glow)]"
           >
             <Plus className="w-4 h-4" />
             Add Week

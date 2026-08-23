@@ -9,7 +9,7 @@ import {
 export type LandingPage    = "journal" | "analysis";
 export type StatDisplay    = "rrr" | "pips";
 export type FontSizePref   = "small" | "default" | "large";
-export type ThemePref      = "current" | "amoled" | "dim";
+export type ThemePref      = "dark" | "amber" | "burgundy" | "blue" | "light";
 
 export interface DisplayPrefs {
   defaultLanding:     LandingPage;
@@ -88,7 +88,17 @@ export function DisplayPrefsProvider({ children }: { children: React.ReactNode }
     read("tradeops_show_rr_calculator", true),
   );
   const [theme, _setTheme] = useState<ThemePref>(() =>
-    read<ThemePref>("tradeops_theme", "amoled"),
+    (() => {
+      const stored = read<string>("tradeops_theme", "dark");
+      const migrated: Record<string, ThemePref> = {
+        current: "dark",
+        amoled: "amber",
+        dim: "burgundy",
+      };
+      return migrated[stored] ?? (["dark", "amber", "burgundy", "blue", "light"].includes(stored)
+        ? stored as ThemePref
+        : "dark");
+    })(),
   );
   const [analysisSectionOrder, _setAnalysisSectionOrder] = useState<AnalysisSectionId[]>(readAnalysisOrder);
   const [hiddenAnalysisSections, _setHiddenAnalysisSections] = useState<AnalysisSectionId[]>(readHiddenAnalysisSections);
@@ -106,9 +116,10 @@ export function DisplayPrefsProvider({ children }: { children: React.ReactNode }
 
   // Apply theme class to :root
   useEffect(() => {
-    document.documentElement.classList.remove("theme-amoled", "theme-dim");
-    if (theme === "amoled") document.documentElement.classList.add("theme-amoled");
-    if (theme === "dim") document.documentElement.classList.add("theme-dim");
+    document.documentElement.classList.remove(
+      "theme-dark", "theme-amber", "theme-burgundy", "theme-blue", "theme-light",
+    );
+    document.documentElement.classList.add(`theme-${theme}`);
   }, [theme]);
 
   function setDefaultLanding(v: LandingPage) {

@@ -544,9 +544,11 @@ export function SettingsPage() {
     { value: "large",   label: "Large"   },
   ];
   const themeOptions: { value: ThemePref; label: string }[] = [
-    { value: "current", label: "Current" },
-    { value: "amoled",  label: "AMOLED"  },
-    { value: "dim",     label: "Dim"     },
+    { value: "dark",     label: "Dark"     },
+    { value: "amber",    label: "Amber"    },
+    { value: "burgundy", label: "Burgundy" },
+    { value: "blue",     label: "Blue"     },
+    { value: "light",    label: "Light"    },
   ];
 
   return (

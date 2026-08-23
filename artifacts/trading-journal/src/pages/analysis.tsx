@@ -86,7 +86,7 @@ function Section({
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-xs shadow-xl">
+    <div className="rounded-lg border border-white/10 bg-popover px-3 py-2 text-xs shadow-xl">
       <p className="text-muted-foreground mb-1">{label}</p>
       {payload.map((p, i) => (
         <p key={i} style={{ color: rrColor(p.value) }} className="font-mono font-semibold">
@@ -100,7 +100,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 function RRRTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-xs shadow-xl">
+    <div className="rounded-lg border border-white/10 bg-popover px-3 py-2 text-xs shadow-xl">
       <p className="text-muted-foreground mb-1">{label}</p>
       <p className="font-mono font-semibold text-sky-400">{payload[0]!.value.toFixed(2)}R avg RRR</p>
     </div>
@@ -121,7 +121,7 @@ function RRRHistogramTooltip({
   const rangeLabel = b.max != null ? `${b.min}–${b.max}R` : `${b.min}R+`;
   const tradeWord = b.count === 1 ? "trade" : "trades";
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-xs shadow-xl">
+    <div className="rounded-lg border border-white/10 bg-popover px-3 py-2 text-xs shadow-xl">
       <p className="text-muted-foreground mb-1">{rangeLabel}</p>
       {b.count > 0 && onCountClick ? (
         <button
@@ -613,7 +613,7 @@ export function AnalysisPage() {
                   className="px-3 py-1 rounded-md text-xs font-medium transition-colors"
                   style={{
                     background: chartGranularity === g ? "rgba(255,255,255,0.10)" : "transparent",
-                    color: chartGranularity === g ? "#fff" : "#64748b",
+                    color: chartGranularity === g ? "var(--foreground)" : "var(--muted-foreground)",
                   }}
                 >
                   {g.charAt(0).toUpperCase() + g.slice(1)}
@@ -628,21 +628,21 @@ export function AnalysisPage() {
               <LineChart data={cumulativeData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <XAxis
                   dataKey="label"
-                  tick={{ fill: "#64748b", fontSize: 10 }}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                   tickFormatter={(v: string) => v.length > 12 ? v.slice(0, 11) + "…" : v}
                 />
                 <YAxis
-                  tick={{ fill: "#64748b", fontSize: 10 }}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}R`}
                   width={54}
                 />
                 <Tooltip content={<ChartTooltip />} />
-                <ReferenceLine y={0} stroke="rgba(255,255,255,0.08)" />
+                <ReferenceLine y={0} stroke="var(--surface-border-faint)" />
                 <Line
                   type="monotone"
                   dataKey="cumulativeRR"
@@ -747,7 +747,7 @@ export function AnalysisPage() {
                     className="px-3 py-1 rounded-md text-xs font-medium transition-colors"
                     style={{
                       background: rrrGranularity === g ? "rgba(255,255,255,0.10)" : "transparent",
-                      color: rrrGranularity === g ? "#fff" : "#64748b",
+                      color: rrrGranularity === g ? "var(--foreground)" : "var(--muted-foreground)",
                     }}
                   >
                     {g.charAt(0).toUpperCase() + g.slice(1)}
@@ -762,13 +762,13 @@ export function AnalysisPage() {
                 <BarChart data={rrrData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: "#64748b", fontSize: 10 }}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(v: string) => v.length > 10 ? v.slice(0, 9) + "…" : v}
                   />
                   <YAxis
-                    tick={{ fill: "#64748b", fontSize: 10 }}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(v: number) => `${v.toFixed(1)}R`}
@@ -816,7 +816,7 @@ export function AnalysisPage() {
                   {data.rrrDistribution.map((bucket, i) => (
                     <Cell
                       key={i}
-                      fill={bucket.count > 0 ? "#a78bfa" : "rgba(255,255,255,0.06)"}
+                      fill={bucket.count > 0 ? "#a78bfa" : "var(--surface-border-faint)"}
                     />
                   ))}
                 </Bar>
