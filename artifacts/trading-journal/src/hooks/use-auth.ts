@@ -22,6 +22,7 @@ export function useAuth() {
 
   return {
     userId: query.data?.userId ?? null,
+    hideCreditLine: query.data?.hideCreditLine ?? false,
     isAuthenticated: query.data != null,
     isLoading: query.isLoading,
     logout,

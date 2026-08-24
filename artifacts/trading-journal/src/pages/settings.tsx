@@ -258,10 +258,11 @@ function ProfileRow({ nickname, onSaved }: { nickname: string | null; onSaved: (
 
 // ── About expanded panel ───────────────────────────────────────────────────────
 
-function AboutPanel({ settings, isLoading, isError }: {
+function AboutPanel({ settings, isLoading, isError, hideCreditLine }: {
   settings?: Awaited<ReturnType<typeof getAppSettings>>;
   isLoading: boolean;
   isError: boolean;
+  hideCreditLine: boolean;
 }) {
   const creditLine = settings?.credit_line;
 
@@ -297,7 +298,7 @@ function AboutPanel({ settings, isLoading, isError }: {
         </>
       )}
 
-      {creditLine && settings?.credit_line_visible !== false && (
+      {creditLine && !hideCreditLine && (
         <p className="text-xs text-muted-foreground/50 pt-1">{creditLine}</p>
       )}
     </div>
@@ -510,7 +511,7 @@ export function SettingsPage() {
     queryKey: APP_SETTINGS_QUERY_KEY,
     queryFn: getAppSettings,
   });
-  const { logout } = useAuth();
+  const { logout, hideCreditLine } = useAuth();
   const queryClient = useQueryClient();
   const prefs = useDisplayPrefs();
   const profileQuery = useQuery({
@@ -683,6 +684,7 @@ export function SettingsPage() {
               settings={aboutQuery.data}
               isLoading={aboutQuery.isLoading}
               isError={aboutQuery.isError}
+              hideCreditLine={hideCreditLine}
             />
           )}
           <ChevronRow

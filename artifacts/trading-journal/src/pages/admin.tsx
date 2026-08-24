@@ -14,6 +14,7 @@ import {
   listAdminUserTrades,
   listAdminUserSetupTypes,
   adminUpdateTradeSetupType,
+  updateAdminUserCreditLine,
   type AdminUser,
   type LoginEvent,
   type SetupTypeChangeLogEntry,
@@ -38,7 +39,6 @@ interface AboutForm {
   honesty_note: string;
   bug_report_email: string;
   credit_line: string;
-  credit_line_visible: boolean;
   privacy_policy: string;
 }
 
@@ -290,7 +290,6 @@ function EditAboutPanel() {
     honesty_note: "",
     bug_report_email: "",
     credit_line: "",
-    credit_line_visible: true,
     privacy_policy: "",
   });
   const [success, setSuccess] = useState(false);
@@ -306,7 +305,6 @@ function EditAboutPanel() {
       honesty_note: settings.honesty_note,
       bug_report_email: settings.bug_report_email,
       credit_line: settings.credit_line ?? "",
-      credit_line_visible: settings.credit_line_visible ?? true,
       privacy_policy: settings.privacy_policy,
     });
   }, [aboutQuery.data]);
@@ -417,22 +415,6 @@ function EditAboutPanel() {
             disabled={aboutQuery.isLoading || saveMutation.isPending}
             placeholder="Shown at the bottom of About"
           />
-          <div className="mt-3 flex items-center justify-between rounded-lg border border-border/50 bg-background/40 px-3 py-2.5">
-            <label className="text-sm text-muted-foreground" htmlFor="about-credit-line-visible">
-              Visible to users
-            </label>
-            <Switch
-              id="about-credit-line-visible"
-              checked={form.credit_line_visible}
-              onCheckedChange={(checked) => {
-                setForm((current) => ({ ...current, credit_line_visible: checked }));
-                setSuccess(false);
-                setError(null);
-              }}
-              disabled={aboutQuery.isLoading || saveMutation.isPending}
-              aria-label="Visible to users"
-            />
-          </div>
         </div>
         <div>
           <label className={labelClass} htmlFor="about-privacy-policy">Privacy Policy</label>
@@ -701,6 +683,12 @@ function AdminPanel() {
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Failed to revoke access code."),
   });
+  const creditLineMutation = useMutation({
+    mutationFn: ({ id, hideCreditLine }: { id: number; hideCreditLine: boolean }) =>
+      updateAdminUserCreditLine(id, hideCreditLine),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ADMIN_USERS_KEY }),
+    onError: (err) => setError(err instanceof Error ? err.message : "Failed to update credit-line visibility."),
+  });
 
   async function handleLogout() {
     await adminLogout();
@@ -789,13 +777,20 @@ function AdminPanel() {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() => revokeMutation.mutate(user.id)}
-                  disabled={revokeMutation.isPending}
-                  className="text-sm rounded-lg border border-border/60 px-3 py-1.5 hover:bg-accent transition disabled:opacity-50"
-                >
-                  Revoke &amp; reissue
-                </button>
+                 <div className="flex items-center gap-3">
+                   <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                     <Switch
+                       checked={user.hideCreditLine}
+                       onCheckedChange={(checked) => creditLineMutation.mutate({ id: user.id, hideCreditLine: checked })}
+                       disabled={creditLineMutation.isPending}
+                       aria-label={`Hide credit line for user ${user.id}`}
+                     />
+                     Hide credit line for this user
+                   </label>
+                   <button onClick={() => revokeMutation.mutate(user.id)} disabled={revokeMutation.isPending} className="text-sm rounded-lg border border-border/60 px-3 py-1.5 hover:bg-accent transition disabled:opacity-50">
+                     Revoke &amp; reissue
+                   </button>
+                 </div>
               </div>
             ))}
           </div>

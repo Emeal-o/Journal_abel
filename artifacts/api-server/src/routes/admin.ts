@@ -108,6 +108,7 @@ router.get("/admin/users", requireAdmin, async (_req, res) => {
     .select({
       id: usersTable.id,
       nickname: usersTable.nickname,
+      hideCreditLine: usersTable.hideCreditLine,
       createdAt: usersTable.createdAt,
       tradeCount: sql<number>`cast(count(distinct ${tradesTable.id}) as int)`,
       weekCount: sql<number>`cast(count(distinct ${weeksTable.id}) as int)`,
@@ -139,6 +140,23 @@ router.post("/admin/users", requireAdmin, async (_req, res) => {
     createdAt: usersTable.createdAt,
   });
   res.status(201).json({ id: user!.id, createdAt: user!.createdAt, code });
+});
+
+router.patch("/admin/users/:id/credit-line", requireAdmin, async (req, res) => {
+  const userId = Number(req.params.id);
+  if (!Number.isInteger(userId) || userId < 1 || typeof req.body?.hideCreditLine !== "boolean") {
+    res.status(400).json({ error: "Invalid user id or hideCreditLine." });
+    return;
+  }
+  const [user] = await db.update(usersTable)
+    .set({ hideCreditLine: req.body.hideCreditLine })
+    .where(eq(usersTable.id, userId))
+    .returning({ id: usersTable.id, hideCreditLine: usersTable.hideCreditLine });
+  if (!user) {
+    res.status(404).json({ error: "User not found." });
+    return;
+  }
+  res.json(user);
 });
 
 // POST /api/admin/users/:id/revoke

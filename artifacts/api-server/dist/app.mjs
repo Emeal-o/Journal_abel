@@ -46557,6 +46557,7 @@ var usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
   codeHash: text("code_hash").notNull().unique(),
   nickname: text("nickname"),
+  hideCreditLine: boolean("hide_credit_line").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
@@ -58041,7 +58042,6 @@ var appSettingsTable = pgTable("app_settings", {
   honestyNote: text("honesty_note").notNull(),
   bugReportEmail: text("bug_report_email").notNull(),
   creditLine: text("credit_line"),
-  creditLineVisible: boolean("credit_line_visible").notNull().default(true),
   privacyPolicy: text("privacy_policy").notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -63264,12 +63264,17 @@ router2.post("/auth/logout", (req, res) => {
     res.json({ ok: true });
   });
 });
-router2.get("/auth/me", (req, res) => {
+router2.get("/auth/me", async (req, res) => {
   if (!req.session.userId) {
     res.status(401).json({ error: "Not authenticated." });
     return;
   }
-  res.json({ userId: req.session.userId });
+  const [user] = await db.select({ hideCreditLine: usersTable.hideCreditLine }).from(usersTable).where(eq(usersTable.id, req.session.userId));
+  if (!user) {
+    res.status(401).json({ error: "Not authenticated." });
+    return;
+  }
+  res.json({ userId: req.session.userId, hideCreditLine: user.hideCreditLine });
 });
 var auth_default = router2;
 
@@ -63350,6 +63355,7 @@ router3.get("/admin/users", requireAdmin, async (_req, res) => {
   const users = await db.select({
     id: usersTable.id,
     nickname: usersTable.nickname,
+    hideCreditLine: usersTable.hideCreditLine,
     createdAt: usersTable.createdAt,
     tradeCount: sql`cast(count(distinct ${tradesTable.id}) as int)`,
     weekCount: sql`cast(count(distinct ${weeksTable.id}) as int)`,
@@ -63371,6 +63377,19 @@ router3.post("/admin/users", requireAdmin, async (_req, res) => {
     createdAt: usersTable.createdAt
   });
   res.status(201).json({ id: user.id, createdAt: user.createdAt, code });
+});
+router3.patch("/admin/users/:id/credit-line", requireAdmin, async (req, res) => {
+  const userId = Number(req.params.id);
+  if (!Number.isInteger(userId) || userId < 1 || typeof req.body?.hideCreditLine !== "boolean") {
+    res.status(400).json({ error: "Invalid user id or hideCreditLine." });
+    return;
+  }
+  const [user] = await db.update(usersTable).set({ hideCreditLine: req.body.hideCreditLine }).where(eq(usersTable.id, userId)).returning({ id: usersTable.id, hideCreditLine: usersTable.hideCreditLine });
+  if (!user) {
+    res.status(404).json({ error: "User not found." });
+    return;
+  }
+  res.json(user);
 });
 router3.post("/admin/users/:id/revoke", requireAdmin, async (req, res) => {
   const userId = Number(req.params.id);
@@ -64427,14 +64446,6 @@ function validateAppSettingsInput(body) {
     }
     data.credit_line = trimmedCreditLine || null;
   }
-  const rawCreditLineVisible = b2.credit_line_visible;
-  if (rawCreditLineVisible === void 0) {
-    data.credit_line_visible = true;
-  } else if (typeof rawCreditLineVisible !== "boolean") {
-    return { success: false, error: 'Field "credit_line_visible" must be a boolean.' };
-  } else {
-    data.credit_line_visible = rawCreditLineVisible;
-  }
   return { success: true, data };
 }
 function serializeAppSettings(settings) {
@@ -64446,7 +64457,6 @@ function serializeAppSettings(settings) {
     honesty_note: settings.honestyNote,
     bug_report_email: settings.bugReportEmail,
     credit_line: settings.creditLine,
-    credit_line_visible: settings.creditLineVisible,
     privacy_policy: settings.privacyPolicy,
     updated_at: settings.updatedAt.toISOString()
   };
@@ -64472,7 +64482,6 @@ router8.put("/app-settings", requireAdmin, async (req, res) => {
     honestyNote: parsed.data.honesty_note,
     bugReportEmail: parsed.data.bug_report_email,
     creditLine: parsed.data.credit_line,
-    creditLineVisible: parsed.data.credit_line_visible,
     privacyPolicy: parsed.data.privacy_policy,
     updatedAt: /* @__PURE__ */ new Date()
   }).where(eq(appSettingsTable.id, 1)).returning();

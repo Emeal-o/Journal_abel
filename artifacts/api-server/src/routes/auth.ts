@@ -3,6 +3,7 @@ import { rateLimit } from "express-rate-limit";
 import bcrypt from "bcrypt";
 import crypto from "node:crypto";
 import { db, usersTable, loginEventsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 
 const router = Router();
@@ -196,12 +197,18 @@ router.post("/auth/logout", (req, res) => {
 });
 
 // GET /api/auth/me — check current session
-router.get("/auth/me", (req, res) => {
+router.get("/auth/me", async (req, res) => {
   if (!req.session.userId) {
     res.status(401).json({ error: "Not authenticated." });
     return;
   }
-  res.json({ userId: req.session.userId });
+  const [user] = await db.select({ hideCreditLine: usersTable.hideCreditLine })
+    .from(usersTable).where(eq(usersTable.id, req.session.userId));
+  if (!user) {
+    res.status(401).json({ error: "Not authenticated." });
+    return;
+  }
+  res.json({ userId: req.session.userId, hideCreditLine: user.hideCreditLine });
 });
 
 export default router;

@@ -12,7 +12,6 @@ type AppSettingsInput = {
   honesty_note: string;
   bug_report_email: string;
   credit_line: string | null;
-  credit_line_visible: boolean;
   privacy_policy: string;
 };
 
@@ -56,14 +55,6 @@ function validateAppSettingsInput(body: unknown): { success: true; data: AppSett
     }
     data.credit_line = trimmedCreditLine || null;
   }
-  const rawCreditLineVisible = b.credit_line_visible;
-  if (rawCreditLineVisible === undefined) {
-    data.credit_line_visible = true;
-  } else if (typeof rawCreditLineVisible !== "boolean") {
-    return { success: false, error: 'Field "credit_line_visible" must be a boolean.' };
-  } else {
-    data.credit_line_visible = rawCreditLineVisible;
-  }
   return { success: true, data: data as AppSettingsInput };
 }
 
@@ -76,7 +67,6 @@ function serializeAppSettings(settings: typeof appSettingsTable.$inferSelect) {
     honesty_note: settings.honestyNote,
     bug_report_email: settings.bugReportEmail,
     credit_line: settings.creditLine,
-    credit_line_visible: settings.creditLineVisible,
     privacy_policy: settings.privacyPolicy,
     updated_at: settings.updatedAt.toISOString(),
   };
@@ -114,7 +104,6 @@ router.put("/app-settings", requireAdmin, async (req, res) => {
       honestyNote: parsed.data.honesty_note,
       bugReportEmail: parsed.data.bug_report_email,
       creditLine: parsed.data.credit_line,
-      creditLineVisible: parsed.data.credit_line_visible,
       privacyPolicy: parsed.data.privacy_policy,
       updatedAt: new Date(),
     })

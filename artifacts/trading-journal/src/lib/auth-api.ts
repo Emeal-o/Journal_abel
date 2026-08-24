@@ -13,6 +13,7 @@ async function authFetch(path: string, init?: RequestInit): Promise<Response> {
 
 export interface MeResponse {
   userId: number;
+  hideCreditLine: boolean;
 }
 
 /** Returns the current user, or null if not authenticated. */

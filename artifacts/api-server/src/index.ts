@@ -32,7 +32,6 @@ async function runStartupMigrations() {
       honesty_note TEXT NOT NULL,
       bug_report_email TEXT NOT NULL,
       credit_line TEXT,
-      credit_line_visible BOOLEAN NOT NULL DEFAULT TRUE,
       privacy_policy TEXT NOT NULL,
       updated_at   TIMESTAMP DEFAULT NOW() NOT NULL
     )
@@ -49,10 +48,7 @@ async function runStartupMigrations() {
   `);
   // Optional admin-editable credit line; existing installs default to NULL.
   await db.execute(sql`ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS credit_line TEXT`);
-  await db.execute(sql`
-    ALTER TABLE app_settings
-      ADD COLUMN IF NOT EXISTS credit_line_visible BOOLEAN NOT NULL DEFAULT TRUE
-  `);
+  await db.execute(sql`ALTER TABLE app_settings DROP COLUMN IF EXISTS credit_line_visible`);
   await db.execute(sql`ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS privacy_policy TEXT`);
   await db.execute(sql`
     UPDATE app_settings
@@ -71,6 +67,10 @@ async function runStartupMigrations() {
       'TradeOps logs basic login information (IP-based rough location, timezone, device/browser, timestamp) for account security. A full privacy policy is coming soon.'
     )
     ON CONFLICT (id) DO NOTHING
+  `);
+  await db.execute(sql`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS hide_credit_line BOOLEAN NOT NULL DEFAULT FALSE
   `);
   // login_events table — for auth attempt logging.
   await db.execute(sql`

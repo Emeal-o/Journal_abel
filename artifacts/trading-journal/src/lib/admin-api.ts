@@ -25,6 +25,7 @@ export interface AdminUser {
   weekCount: number;
   lastActivity: string | null;
   activeSetupTypeCount: number;
+  hideCreditLine: boolean;
 }
 
 export interface LoginEvent {
@@ -123,6 +124,16 @@ export async function revokeAdminUser(id: number): Promise<{ id: number; code: s
     throw new Error(await parseErrorMessage(res, "Failed to revoke access code."));
   }
   return res.json() as Promise<{ id: number; code: string }>;
+}
+
+export async function updateAdminUserCreditLine(id: number, hideCreditLine: boolean): Promise<{ id: number; hideCreditLine: boolean }> {
+  const res = await adminFetch(`/api/admin/users/${id}/credit-line`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ hideCreditLine }),
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res, "Failed to update credit-line visibility."));
+  return res.json();
 }
 
 /** Returns the 50 most recent login attempts, newest first. */
