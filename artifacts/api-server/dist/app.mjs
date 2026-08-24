@@ -58041,6 +58041,7 @@ var appSettingsTable = pgTable("app_settings", {
   honestyNote: text("honesty_note").notNull(),
   bugReportEmail: text("bug_report_email").notNull(),
   creditLine: text("credit_line"),
+  creditLineVisible: boolean("credit_line_visible").notNull().default(true),
   privacyPolicy: text("privacy_policy").notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -64426,6 +64427,14 @@ function validateAppSettingsInput(body) {
     }
     data.credit_line = trimmedCreditLine || null;
   }
+  const rawCreditLineVisible = b2.credit_line_visible;
+  if (rawCreditLineVisible === void 0) {
+    data.credit_line_visible = true;
+  } else if (typeof rawCreditLineVisible !== "boolean") {
+    return { success: false, error: 'Field "credit_line_visible" must be a boolean.' };
+  } else {
+    data.credit_line_visible = rawCreditLineVisible;
+  }
   return { success: true, data };
 }
 function serializeAppSettings(settings) {
@@ -64437,6 +64446,7 @@ function serializeAppSettings(settings) {
     honesty_note: settings.honestyNote,
     bug_report_email: settings.bugReportEmail,
     credit_line: settings.creditLine,
+    credit_line_visible: settings.creditLineVisible,
     privacy_policy: settings.privacyPolicy,
     updated_at: settings.updatedAt.toISOString()
   };
@@ -64462,6 +64472,7 @@ router8.put("/app-settings", requireAdmin, async (req, res) => {
     honestyNote: parsed.data.honesty_note,
     bugReportEmail: parsed.data.bug_report_email,
     creditLine: parsed.data.credit_line,
+    creditLineVisible: parsed.data.credit_line_visible,
     privacyPolicy: parsed.data.privacy_policy,
     updatedAt: /* @__PURE__ */ new Date()
   }).where(eq(appSettingsTable.id, 1)).returning();

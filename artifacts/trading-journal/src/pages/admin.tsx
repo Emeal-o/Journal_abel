@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { ShieldCheck, Loader2, AlertCircle, Copy, Check, KeyRound, Plus, LogOut, Activity, History, Tag, Info, Users, Settings2, ArrowLeft, ChevronRight } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import {
   getAdminSession,
   adminLogin,
@@ -37,6 +38,7 @@ interface AboutForm {
   honesty_note: string;
   bug_report_email: string;
   credit_line: string;
+  credit_line_visible: boolean;
   privacy_policy: string;
 }
 
@@ -288,6 +290,7 @@ function EditAboutPanel() {
     honesty_note: "",
     bug_report_email: "",
     credit_line: "",
+    credit_line_visible: true,
     privacy_policy: "",
   });
   const [success, setSuccess] = useState(false);
@@ -303,6 +306,7 @@ function EditAboutPanel() {
       honesty_note: settings.honesty_note,
       bug_report_email: settings.bug_report_email,
       credit_line: settings.credit_line ?? "",
+      credit_line_visible: settings.credit_line_visible ?? true,
       privacy_policy: settings.privacy_policy,
     });
   }, [aboutQuery.data]);
@@ -413,6 +417,22 @@ function EditAboutPanel() {
             disabled={aboutQuery.isLoading || saveMutation.isPending}
             placeholder="Shown at the bottom of About"
           />
+          <div className="mt-3 flex items-center justify-between rounded-lg border border-border/50 bg-background/40 px-3 py-2.5">
+            <label className="text-sm text-muted-foreground" htmlFor="about-credit-line-visible">
+              Visible to users
+            </label>
+            <Switch
+              id="about-credit-line-visible"
+              checked={form.credit_line_visible}
+              onCheckedChange={(checked) => {
+                setForm((current) => ({ ...current, credit_line_visible: checked }));
+                setSuccess(false);
+                setError(null);
+              }}
+              disabled={aboutQuery.isLoading || saveMutation.isPending}
+              aria-label="Visible to users"
+            />
+          </div>
         </div>
         <div>
           <label className={labelClass} htmlFor="about-privacy-policy">Privacy Policy</label>

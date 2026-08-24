@@ -297,7 +297,7 @@ function AboutPanel({ settings, isLoading, isError }: {
         </>
       )}
 
-      {creditLine && (
+      {creditLine && settings?.credit_line_visible !== false && (
         <p className="text-xs text-muted-foreground/50 pt-1">{creditLine}</p>
       )}
     </div>

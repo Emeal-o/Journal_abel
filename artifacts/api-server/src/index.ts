@@ -32,6 +32,7 @@ async function runStartupMigrations() {
       honesty_note TEXT NOT NULL,
       bug_report_email TEXT NOT NULL,
       credit_line TEXT,
+      credit_line_visible BOOLEAN NOT NULL DEFAULT TRUE,
       privacy_policy TEXT NOT NULL,
       updated_at   TIMESTAMP DEFAULT NOW() NOT NULL
     )
@@ -48,6 +49,10 @@ async function runStartupMigrations() {
   `);
   // Optional admin-editable credit line; existing installs default to NULL.
   await db.execute(sql`ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS credit_line TEXT`);
+  await db.execute(sql`
+    ALTER TABLE app_settings
+      ADD COLUMN IF NOT EXISTS credit_line_visible BOOLEAN NOT NULL DEFAULT TRUE
+  `);
   await db.execute(sql`ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS privacy_policy TEXT`);
   await db.execute(sql`
     UPDATE app_settings

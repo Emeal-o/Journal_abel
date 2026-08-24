@@ -10,6 +10,7 @@ export interface AppSettings {
   honesty_note: string;
   bug_report_email: string;
   credit_line?: string | null;
+  credit_line_visible?: boolean;
   privacy_policy: string;
   updated_at: string;
 }
@@ -41,6 +42,7 @@ export interface AppSettingsInput {
   honesty_note: string;
   bug_report_email: string;
   credit_line?: string | null;
+  credit_line_visible: boolean;
   privacy_policy: string;
 }
 
