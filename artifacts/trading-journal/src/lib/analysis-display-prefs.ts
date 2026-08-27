@@ -1,4 +1,5 @@
 export const ANALYSIS_SECTION_ORDER = [
+  "calendar",
   "cumulativeGrowth",
   "yearByYear",
   "bestWorstPerformance",
@@ -14,6 +15,7 @@ export const ANALYSIS_SECTION_ORDER = [
 export type AnalysisSectionId = (typeof ANALYSIS_SECTION_ORDER)[number];
 
 export const ANALYSIS_SECTION_LABELS: Record<AnalysisSectionId, string> = {
+  calendar: "Trading Calendar",
   cumulativeGrowth: "Cumulative Growth",
   yearByYear: "Year by Year",
   bestWorstPerformance: "Best & Worst Performance",

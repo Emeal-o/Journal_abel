@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronRight, ChevronDown,
   SlidersHorizontal, Info, LogOut, HelpCircle, Bug, ArrowLeft, GripVertical,
-  Home, BarChart3, Type, Zap, Palette, Check, User, Calculator,
+  Home, BarChart3, Type, Zap, Palette, Check, User, Calculator, CalendarDays,
 } from "lucide-react";
 import {
   DndContext,
@@ -21,6 +21,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ManageSetupTypesModal } from "@/components/manage-setup-types-modal";
+import { CalendarMetricsSettings } from "@/components/calendar-metrics-settings";
 import { useSetupTypes } from "@/lib/setup-types-api";
 import { useAuth } from "@/hooks/use-auth";
 import { Switch } from "@/components/ui/switch";
@@ -38,6 +39,7 @@ import {
   getProfile,
   updateProfile,
 } from "@/lib/profile-api";
+import { useCalendarPrefs, type CalendarPeriodMode } from "@/hooks/use-calendar-prefs";
 
 // ── Section label ──────────────────────────────────────────────────────────────
 
@@ -505,6 +507,7 @@ export function SettingsPage() {
   const [faqOpen, setFaqOpen]               = useState(false);
   const [privacyOpen, setPrivacyOpen]       = useState(false);
   const [customizeAnalysisOpen, setCustomizeAnalysisOpen] = useState(false);
+  const [customizeCalendarMetricsOpen, setCustomizeCalendarMetricsOpen] = useState(false);
 
   const { data: setupTypes = [] } = useSetupTypes();
   const aboutQuery = useQuery({
@@ -514,6 +517,7 @@ export function SettingsPage() {
   const { logout, hideCreditLine } = useAuth();
   const queryClient = useQueryClient();
   const prefs = useDisplayPrefs();
+  const calendarPrefs = useCalendarPrefs();
   const profileQuery = useQuery({
     queryKey: PROFILE_QUERY_KEY,
     queryFn: getProfile,
@@ -521,6 +525,9 @@ export function SettingsPage() {
 
   if (customizeAnalysisOpen) {
     return <CustomizeAnalysisScreen onBack={() => setCustomizeAnalysisOpen(false)} />;
+  }
+  if (customizeCalendarMetricsOpen) {
+    return <CalendarMetricsSettings onBack={() => setCustomizeCalendarMetricsOpen(false)} />;
   }
 
   async function handleLogout() {
@@ -550,6 +557,10 @@ export function SettingsPage() {
     { value: "blue",     label: "Blue"     },
     { value: "amber",    label: "Amber"    },
     { value: "burgundy", label: "Burgundy" },
+  ];
+  const calendarPeriodOptions: { value: CalendarPeriodMode; label: string }[] = [
+    { value: "calendar_month", label: "Calendar Months" },
+    { value: "4week", label: "4-Week Blocks" },
   ];
 
   return (
@@ -664,6 +675,32 @@ export function SettingsPage() {
             label="Reduce Motion"
             checked={prefs.reduceMotion}
             onCheckedChange={prefs.setReduceMotion}
+          />
+        </SettingsCard>
+      </div>
+
+      {/* ── Trading Calendar ────────────────────────────────────────────────── */}
+      <div className="mb-6">
+        <SectionHeader>Trading Calendar</SectionHeader>
+        <SettingsCard>
+          <SelectRow
+            icon={<CalendarDays className="w-5 h-5" />}
+            label="Period Mode"
+            value={calendarPrefs.calendarPeriodMode}
+            options={calendarPeriodOptions}
+            onSelect={calendarPrefs.setCalendarPeriodMode}
+            displayLabel={calendarPeriodOptions.find((option) => option.value === calendarPrefs.calendarPeriodMode)!.label}
+          />
+          <ChevronRow
+            last
+            icon={<BarChart3 className="w-5 h-5" />}
+            label="Calendar Metrics"
+            valueParts={
+              <span className="text-xs text-muted-foreground/50 font-mono">
+                {4 - calendarPrefs.hiddenCalendarMetrics.length} active
+              </span>
+            }
+            onClick={() => setCustomizeCalendarMetricsOpen(true)}
           />
         </SettingsCard>
       </div>

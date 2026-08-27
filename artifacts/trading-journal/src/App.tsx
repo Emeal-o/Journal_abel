@@ -14,6 +14,7 @@ import { SettingsPage } from "@/pages/settings";
 import { Layout } from "@/components/layout";
 import { useAuth } from "@/hooks/use-auth";
 import { DisplayPrefsProvider, useDisplayPrefs } from "@/hooks/use-display-prefs";
+import { CalendarPrefsProvider } from "@/hooks/use-calendar-prefs";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,21 +79,23 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <DisplayPrefsProvider>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <InitialLandingRedirect />
-            {/* /admin has its own independent auth (admin password), so it must
-                sit outside AuthGate — otherwise a signed-out browser would be
-                redirected to the regular journal login page instead. */}
-            <Switch>
-              <Route path="/admin" component={AdminPage} />
-              <Route>
-                <AuthGate />
-              </Route>
-            </Switch>
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
+        <CalendarPrefsProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <InitialLandingRedirect />
+              {/* /admin has its own independent auth (admin password), so it must
+                  sit outside AuthGate — otherwise a signed-out browser would be
+                  redirected to the regular journal login page instead. */}
+              <Switch>
+                <Route path="/admin" component={AdminPage} />
+                <Route>
+                  <AuthGate />
+                </Route>
+              </Switch>
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </CalendarPrefsProvider>
       </DisplayPrefsProvider>
     </QueryClientProvider>
   );

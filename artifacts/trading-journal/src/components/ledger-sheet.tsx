@@ -5,7 +5,7 @@ import {
   useGetStatsSummary,
   useGetWeeklyStats,
 } from "@workspace/api-client-react";
-import type { Week, StatsSummary, WeekStats } from "@workspace/api-client-react";
+import type { Trade, Week, StatsSummary, WeekStats } from "@workspace/api-client-react";
 import { useOrderedWeeks } from "@/hooks/use-ordered-weeks";
 
 // NOTE: this sheet is only ever rendered inside StatsCard at a fixed 680px

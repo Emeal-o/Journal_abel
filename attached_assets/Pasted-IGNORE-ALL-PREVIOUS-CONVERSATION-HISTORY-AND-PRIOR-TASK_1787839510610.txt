@@ -1,0 +1,46 @@
+IGNORE ALL PREVIOUS CONVERSATION HISTORY AND PRIOR TASKS IN THIS CHAT.
+
+Build a new "Trading Calendar" section for the Analysis page in TradeOps (artifacts/trading-journal). This is a read-only visualization feature — it does NOT touch the trades table schema, does NOT add edit/delete capability, and must respect existing archived-data immutability.
+
+## 1. Settings additions (Settings page, new subsection "Trading Calendar")
+
+A) Period Mode — single-select, 2 options:
+   - "4-Week Blocks": continuous rolling blocks of 4 weeks each, anchored to the user's first-ever trade date. Paging is continuous (not tied to calendar years).
+   - "Calendar Months": real calendar months, anchored to the calendar month of the user's first trade. Paginate by full calendar year. If the user's first trade is mid-year, render empty/greyed leading blocks for the months before their first trade in that year's page.
+   Store as a per-user setting (localStorage key: tradeops_calendar_period_mode, values: "4week" | "calendar_month"). Default: "calendar_month".
+
+B) Metrics — multi-select + drag-reorder, using the EXACT same UI pattern/component as the existing "Customize Analysis" section (dnd-kit). Options:
+   - RR Sum
+   - Pips Sum
+   - Win Rate %
+   - Trade Count
+   All start enabled, default order as listed above. Store as localStorage keys: tradeops_calendar_metrics_order (array) and tradeops_calendar_metrics_hidden (array), mirroring the existing tradeops_analysis_section_order / tradeops_analysis_hidden_sections pattern exactly.
+
+## 2. Analysis page integration
+
+Add "Trading Calendar" as a new entry in the existing Customize Analysis reorderable section list. It is NOT pinned like All-Time Summary — it can be dragged/hidden like the other 10 sections — but its DEFAULT position in the order array should be immediately after "All-Time Summary" and before "cumulativeGrowth". Update tradeops_analysis_section_order default accordingly for new/reset users; existing users' saved orders are untouched (new section just appends if their saved order predates this feature — handle gracefully, don't crash on missing key).
+
+## 3. Calendar grid component
+
+- Grid of blocks (either 4-week blocks or calendar months per the Period Mode setting), one page at a time, with Back/Forward pagination controls.
+- Each block is SOLID FILLED with a color per the logic in section 4 below. All enabled metrics (per Settings, in their configured order) render as text INSIDE the filled block, equal visual weight — no metric is bigger/bolder than another.
+- Empty blocks (before the user's first trade, in Calendar Months mode) render as a neutral/greyed placeholder with no data, non-interactive.
+- Blocks with zero trades in a period that IS within the user's trading history render as neutral/uncolored (not green or red) — distinct visually from "no data yet" empty blocks. Use a clearly different subtle styling (e.g. slightly different border/pattern) so the two "neutral" states aren't confused with real 0 performance.
+
+## 4. Color logic (proportional gradient, NOT two-tier)
+
+- For RR Sum and Pips Sum: continuous gradient scale, NOT a flat best/worst binary.
+  - Green ramp for positive-sum blocks, Red ramp for negative-sum blocks.
+  - Reference points for scaling intensity are the user's ALL-TIME best (most positive) and ALL-TIME worst (most negative) RR sum and Pips sum across their full trading history — NOT scoped to the currently visible page. Fetch/compute these once (e.g. via a stats endpoint or client-side aggregation over all weeks/trades) and reuse across pagination.
+  - Intensity scales proportionally by how close a given block's value is to the all-time best or worst in its respective direction (e.g. a block at 90% of the way to all-time-best positive RR should look nearly as saturated as the best month itself).
+- Win Rate %: use the EXISTING 6-tier getWinRateColor() function from lib/utils.ts — do not create a new color scale for this metric. Apply it to determine the block's Win Rate–specific color indicator (if Win Rate is the metric driving the fill, or as a secondary indicator if RR/Pips is primary — confirm with existing 6-tier tier boundaries, do not modify them).
+- Trade Count: always neutral/uncolored, regardless of value. Never let this metric influence the block's fill color.
+- If multiple metrics are enabled for a block, the PRIMARY fill color driver should be RR Sum if enabled, otherwise Pips Sum if enabled, otherwise Win Rate. Trade Count never drives fill color. (If you foresee ambiguity here, flag it back to me rather than guessing silently.)
+
+## Guardrails
+- Do NOT modify the trades table schema. Do NOT add any new database columns for this feature — it's a pure read/aggregation feature over existing trade/week data.
+- Do NOT add edit or delete interactivity to calendar blocks, including archived periods — read-only display only, consistent with the app's data-immutability principle.
+- Do NOT introduce any new green/red semantic outside of P&L direction — Trade Count and any UI chrome must stay neutral.
+- After implementation: run node ./build.mjs inside artifacts/api-server ONLY if you touched backend/stats aggregation endpoints. If this feature is purely client-side (aggregating from already-fetched trade/week data), you likely don't need to touch the backend at all — prefer that if feasible.
+- Commit and push via the Replit Git panel UI (not Shell git push).
+- Before finishing, tell me explicitly: (1) whether this was implemented as pure frontend aggregation or required backend/stats endpoint changes, (2) the exact localStorage keys used, (3) any place you deviated from this spec and why.

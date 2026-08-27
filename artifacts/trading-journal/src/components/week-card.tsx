@@ -66,7 +66,7 @@ function SetupTypeChip({ setupTypeId, setupTypes }: { setupTypeId?: number | nul
       style={{
         backgroundColor: `${st.color}22`,
         color: st.color,
-        ringColor: `${st.color}44`,
+        ["--tw-ring-color" as string]: `${st.color}44`,
       }}
       title={`Setup: ${st.name}`}
     >

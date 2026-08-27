@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useLocation, useSearch } from "wouter";
-import { ArrowLeft, TrendingUp, TrendingDown, BarChart2, Activity, Target, Zap, X, Download, Tag, Flame, ArrowLeftRight } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, BarChart2, Activity, Target, Zap, X, Download, Tag, Flame, ArrowLeftRight, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { THEMES } from "@/components/ledger-sheet";
 import type { LedgerTheme } from "@/components/ledger-sheet";
@@ -25,6 +25,7 @@ import { toRoman } from "@/lib/label-utils";
 import { getWinRateColor } from "@/lib/utils";
 import { useDisplayPrefs } from "@/hooks/use-display-prefs";
 import type { AnalysisSectionId } from "@/lib/analysis-display-prefs";
+import { TradingCalendar } from "@/components/trading-calendar";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -600,7 +601,17 @@ export function AnalysisPage() {
         </div>
       </Section>
 
-      {/* 2. Cumulative growth chart */}
+      {/* 2. Trading calendar */}
+      <Section
+        title="Trading Calendar"
+        icon={CalendarDays}
+        visible={sectionVisible("calendar")}
+        order={sectionOrder("calendar")}
+      >
+        <TradingCalendar />
+      </Section>
+
+      {/* 3. Cumulative growth chart */}
       <Section title="Cumulative Growth" icon={TrendingUp} visible={sectionVisible("cumulativeGrowth")} order={sectionOrder("cumulativeGrowth")}>
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
           <div className="flex items-center justify-between mb-5">
