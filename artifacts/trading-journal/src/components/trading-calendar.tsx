@@ -309,7 +309,7 @@ export function TradingCalendar() {
   const calendarTrades = useMemo<CalendarTrade[]>(() => {
     return trades
       .map((trade) => {
-        const eventDate = validDate(trade.createdAt) ?? validDate(allWeeks.get(trade.weekId)?.startDate);
+        const eventDate = validDate(allWeeks.get(trade.weekId)?.startDate) ?? validDate(trade.createdAt);
         return eventDate ? { ...trade, eventDate } : null;
       })
       .filter((trade): trade is CalendarTrade => trade !== null);
