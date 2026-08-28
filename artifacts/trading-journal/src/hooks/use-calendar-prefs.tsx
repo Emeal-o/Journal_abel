@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from "react";
 
 export type CalendarPeriodMode = "4week" | "calendar_month";
+export type CalendarViewMode = "list" | "grid";
 export type CalendarMetricId = "rrSum" | "pipsSum" | "winRate" | "tradeCount";
 
 export const CALENDAR_METRIC_ORDER: readonly CalendarMetricId[] = [
@@ -20,12 +21,15 @@ export const CALENDAR_METRIC_LABELS: Record<CalendarMetricId, string> = {
 export const CALENDAR_PERIOD_KEY = "tradeops_calendar_period_mode";
 export const CALENDAR_METRICS_ORDER_KEY = "tradeops_calendar_metrics_order";
 export const CALENDAR_METRICS_HIDDEN_KEY = "tradeops_calendar_metrics_hidden";
+export const CALENDAR_VIEW_MODE_KEY = "tradeops_calendar_view_mode";
 
 interface CalendarPrefs {
   calendarPeriodMode: CalendarPeriodMode;
+  calendarViewMode: CalendarViewMode;
   calendarMetricsOrder: CalendarMetricId[];
   hiddenCalendarMetrics: CalendarMetricId[];
   setCalendarPeriodMode: (value: CalendarPeriodMode) => void;
+  setCalendarViewMode: (value: CalendarViewMode) => void;
   setCalendarMetricsOrder: (value: CalendarMetricId[]) => void;
   setHiddenCalendarMetrics: (value: CalendarMetricId[]) => void;
 }
@@ -44,6 +48,17 @@ function persist(key: string, value: unknown) {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // Preferences are best-effort; the visual surface remains usable.
+  }
+}
+
+function readViewMode(): CalendarViewMode {
+  try {
+    const raw = localStorage.getItem(CALENDAR_VIEW_MODE_KEY);
+    if (raw === "list" || raw === "grid") return raw;
+    const parsed = raw === null ? null : JSON.parse(raw);
+    return parsed === "list" || parsed === "grid" ? parsed : "list";
+  } catch {
+    return "list";
   }
 }
 
@@ -69,12 +84,24 @@ export function CalendarPrefsProvider({ children }: { children: React.ReactNode 
     const stored = readJson<unknown>(CALENDAR_PERIOD_KEY, "calendar_month");
     return stored === "4week" || stored === "calendar_month" ? stored : "calendar_month";
   });
+  const [calendarViewMode, setViewState] = useState<CalendarViewMode>(() => {
+    return readViewMode();
+  });
   const [calendarMetricsOrder, setOrderState] = useState<CalendarMetricId[]>(readMetricOrder);
   const [hiddenCalendarMetrics, setHiddenState] = useState<CalendarMetricId[]>(readHiddenMetrics);
 
   function setCalendarPeriodMode(value: CalendarPeriodMode) {
     persist(CALENDAR_PERIOD_KEY, value);
     setPeriodState(value);
+  }
+
+  function setCalendarViewMode(value: CalendarViewMode) {
+    try {
+      localStorage.setItem(CALENDAR_VIEW_MODE_KEY, value);
+    } catch {
+      // Preferences are best-effort; the visual surface remains usable.
+    }
+    setViewState(value);
   }
 
   function setCalendarMetricsOrder(value: CalendarMetricId[]) {
@@ -93,9 +120,11 @@ export function CalendarPrefsProvider({ children }: { children: React.ReactNode 
     <CalendarPrefsContext.Provider
       value={{
         calendarPeriodMode,
+        calendarViewMode,
         calendarMetricsOrder,
         hiddenCalendarMetrics,
         setCalendarPeriodMode,
+        setCalendarViewMode,
         setCalendarMetricsOrder,
         setHiddenCalendarMetrics,
       }}

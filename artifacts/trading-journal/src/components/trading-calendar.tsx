@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { addMonths, differenceInCalendarDays, format, isValid, parseISO, startOfMonth } from "date-fns";
-import { ArrowLeft, ArrowRight, CalendarDays, Info } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Grid2X2, Info, List } from "lucide-react";
 import { useListTrades, useListWeeks } from "@workspace/api-client-react";
 import type { Trade, Week } from "@workspace/api-client-react";
 import { useArchivedWeeks, type ArchivedWeek } from "@/lib/weeks-api";
@@ -9,6 +9,7 @@ import {
   CALENDAR_METRIC_LABELS,
   type CalendarMetricId,
   type CalendarPeriodMode,
+  type CalendarViewMode,
   useCalendarPrefs,
 } from "@/hooks/use-calendar-prefs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,6 +47,19 @@ function metricValue(metric: CalendarMetricId, period: PeriodStats): string {
       return `${signed(period.rrSum, 2)}R`;
     case "pipsSum":
       return signed(period.pipsSum);
+    case "winRate":
+      return period.tradeCount ? `${Math.round(period.winRate)}%` : "—";
+    case "tradeCount":
+      return `${period.tradeCount}`;
+  }
+}
+
+function compactMetricValue(metric: CalendarMetricId, period: PeriodStats): string {
+  switch (metric) {
+    case "rrSum":
+      return `${signed(period.rrSum)}R`;
+    case "pipsSum":
+      return `${signed(period.pipsSum, 0)}p`;
     case "winRate":
       return period.tradeCount ? `${Math.round(period.winRate)}%` : "—";
     case "tradeCount":
@@ -179,6 +193,7 @@ function pageLabel(periods: PeriodStats[], mode: CalendarPeriodMode, page: numbe
 function TradingBlock({
   period,
   metrics,
+  viewMode,
   bestRR,
   worstRR,
   bestPips,
@@ -186,6 +201,7 @@ function TradingBlock({
 }: {
   period: PeriodStats;
   metrics: CalendarMetricId[];
+  viewMode: CalendarViewMode;
   bestRR: number;
   worstRR: number;
   bestPips: number;
@@ -203,7 +219,8 @@ function TradingBlock({
   return (
     <div
       className={[
-        "relative min-h-[150px] rounded-2xl border p-4 flex flex-col justify-between",
+        "relative rounded-2xl border flex flex-col justify-between",
+        viewMode === "grid" ? "min-h-[108px] p-2.5 sm:min-h-[118px] sm:p-3" : "min-h-[150px] p-4",
         "transition-transform duration-200 hover:-translate-y-0.5",
         period.isEmptyBeforeHistory
           ? "border-white/[0.06] bg-white/[0.025] opacity-45"
@@ -217,7 +234,10 @@ function TradingBlock({
       data-testid={`calendar-block-${period.key}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-mono font-semibold uppercase tracking-[0.14em] text-white/70">
+        <span className={viewMode === "grid"
+          ? "truncate text-[9px] font-mono font-semibold uppercase tracking-[0.08em] text-white/70 sm:text-[10px]"
+          : "text-[11px] font-mono font-semibold uppercase tracking-[0.14em] text-white/70"}
+        >
           {period.label}
         </span>
         {period.tradeCount > 0 && driver !== "winRate" && (
@@ -229,17 +249,41 @@ function TradingBlock({
         )}
       </div>
       {!period.isEmptyBeforeHistory && (
-        <div className="space-y-1.5">
+        <div className={viewMode === "grid"
+          ? "flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono font-semibold leading-tight text-white/90 sm:text-xs"
+          : "space-y-1.5"}
+        >
           {metrics.map((metric) => (
-            <div key={metric} className="flex items-center justify-between gap-3 text-[12px] font-mono font-medium leading-none text-white/90">
-              <span className="text-white/55">{CALENDAR_METRIC_LABELS[metric]}</span>
-              <span data-testid={`calendar-${metric}-${period.key}`}>{metricValue(metric, period)}</span>
+            <div
+              key={metric}
+              className={viewMode === "grid"
+                ? "whitespace-nowrap"
+                : "flex items-center justify-between gap-3 text-[12px] font-mono font-medium leading-none text-white/90"}
+            >
+              {viewMode === "list" && <span className="text-white/55">{CALENDAR_METRIC_LABELS[metric]}</span>}
+              <span data-testid={`calendar-${metric}-${period.key}`}>
+                {viewMode === "grid" ? compactMetricValue(metric, period) : metricValue(metric, period)}
+              </span>
             </div>
           ))}
         </div>
       )}
-      {period.isEmptyBeforeHistory && <span className="text-[10px] font-mono text-white/35">not started</span>}
-      {period.tradeCount === 0 && !period.isEmptyBeforeHistory && <span className="text-[10px] font-mono text-white/35">no trades</span>}
+      {period.isEmptyBeforeHistory && (
+        <span className={viewMode === "grid"
+          ? "text-[9px] font-mono uppercase tracking-[0.08em] text-white/35"
+          : "text-[10px] font-mono text-white/35"}
+        >
+          not started
+        </span>
+      )}
+      {period.tradeCount === 0 && !period.isEmptyBeforeHistory && (
+        <span className={viewMode === "grid"
+          ? "text-[9px] font-mono uppercase tracking-[0.08em] text-white/35"
+          : "text-[10px] font-mono text-white/35"}
+        >
+          no trades
+        </span>
+      )}
     </div>
   );
 }
@@ -250,6 +294,8 @@ export function TradingCalendar() {
   const { data: trades = [], isLoading: tradesLoading, error: tradesError } = useListTrades();
   const {
     calendarPeriodMode,
+    calendarViewMode,
+    setCalendarViewMode,
     calendarMetricsOrder,
     hiddenCalendarMetrics,
   } = useCalendarPrefs();
@@ -353,6 +399,42 @@ export function TradingCalendar() {
           </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div
+            className="flex items-center rounded-lg border border-white/10 bg-white/[0.025] p-0.5"
+            aria-label="Calendar view mode"
+            data-testid="calendar-view-toggle"
+          >
+            <button
+              type="button"
+              onClick={() => setCalendarViewMode("list")}
+              aria-label="List view"
+              aria-pressed={calendarViewMode === "list"}
+              data-testid="button-calendar-list-view"
+              className={[
+                "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+                calendarViewMode === "list"
+                  ? "bg-primary/20 text-primary"
+                  : "text-muted-foreground hover:bg-white/10 hover:text-white",
+              ].join(" ")}
+            >
+              <List className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setCalendarViewMode("grid")}
+              aria-label="Grid view"
+              aria-pressed={calendarViewMode === "grid"}
+              data-testid="button-calendar-grid-view"
+              className={[
+                "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+                calendarViewMode === "grid"
+                  ? "bg-primary/20 text-primary"
+                  : "text-muted-foreground hover:bg-white/10 hover:text-white",
+              ].join(" ")}
+            >
+              <Grid2X2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => setPage((current) => Math.max(0, current - 1))}
@@ -385,12 +467,16 @@ export function TradingCalendar() {
           <span>All calendar metrics are hidden. Re-enable one in Settings to populate the blocks.</span>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className={calendarViewMode === "grid"
+          ? "grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-4"
+          : "grid grid-cols-1 gap-3"}
+        >
           {visiblePeriods.map((period) => (
             <TradingBlock
               key={period.key}
               period={period}
               metrics={configuredMetrics}
+              viewMode={calendarViewMode}
               bestRR={allTime.bestRR}
               worstRR={allTime.worstRR}
               bestPips={allTime.bestPips}
