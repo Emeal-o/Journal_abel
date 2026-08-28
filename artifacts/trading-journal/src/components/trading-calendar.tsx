@@ -144,9 +144,6 @@ function buildCalendarPeriods(
 
   const firstTradeMonth = startOfMonth(firstTradeDate);
   const firstMonth = new Date(firstTradeDate.getFullYear(), 0, 1);
-  // Month pages are complete calendar years. Months after the final trade stay
-  // neutral, while months before the first trade get the distinct pre-history
-  // treatment on the first year page.
   const lastMonth = new Date(lastTradeDate.getFullYear(), 11, 1);
   const months = (lastMonth.getFullYear() - firstMonth.getFullYear()) * 12
     + lastMonth.getMonth() - firstMonth.getMonth() + 1;
@@ -220,7 +217,9 @@ function TradingBlock({
     <div
       className={[
         "relative rounded-2xl border flex flex-col justify-between",
-        viewMode === "grid" ? "min-h-[108px] p-2.5 sm:min-h-[118px] sm:p-3" : "min-h-[150px] p-4",
+        viewMode === "grid"
+          ? "min-h-[108px] w-full max-w-[180px] justify-self-start p-2.5 sm:min-h-[118px] sm:p-3"
+          : "min-h-[150px] p-4",
         "transition-transform duration-200 hover:-translate-y-0.5",
         period.isEmptyBeforeHistory
           ? "border-white/[0.06] bg-white/[0.025] opacity-45"
@@ -391,14 +390,14 @@ export function TradingCalendar() {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:p-5" data-testid="trading-calendar">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-5">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm text-foreground/85">A quiet read of the work behind the numbers.</p>
           <p className="mt-1 text-xs font-mono text-muted-foreground/60">
             {calendarPeriodMode === "calendar_month" ? "Calendar months" : "Continuous 4-week blocks"} · {trades.length} total trades
           </p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex w-fit items-center gap-3 self-start sm:self-auto">
           <div
             className="flex items-center rounded-lg border border-white/10 bg-white/[0.025] p-0.5"
             aria-label="Calendar view mode"
@@ -435,29 +434,31 @@ export function TradingCalendar() {
               <Grid2X2 className="h-3.5 w-3.5" />
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setPage((current) => Math.max(0, current - 1))}
-            disabled={page === 0}
-            aria-label="Previous calendar period"
-            data-testid="button-calendar-previous"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-muted-foreground transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-30"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <span className="min-w-[112px] text-center text-xs font-mono font-semibold text-foreground/80" data-testid="text-calendar-page">
-            {pageLabel(periods, calendarPeriodMode, page)}
-          </span>
-          <button
-            type="button"
-            onClick={() => setPage((current) => Math.min(pages - 1, current + 1))}
-            disabled={page >= pages - 1}
-            aria-label="Next calendar period"
-            data-testid="button-calendar-next"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-muted-foreground transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-30"
-          >
-            <ArrowRight className="h-4 w-4" />
-          </button>
+          <div className="flex w-fit items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(0, current - 1))}
+              disabled={page === 0}
+              aria-label="Previous calendar period"
+              data-testid="button-calendar-previous"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-muted-foreground transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-30"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+            </button>
+            <span className="min-w-[96px] text-center text-xs font-mono font-semibold text-foreground/80" data-testid="text-calendar-page">
+              {pageLabel(periods, calendarPeriodMode, page)}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(pages - 1, current + 1))}
+              disabled={page >= pages - 1}
+              aria-label="Next calendar period"
+              data-testid="button-calendar-next"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-muted-foreground transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-30"
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -468,7 +469,7 @@ export function TradingCalendar() {
         </div>
       ) : (
         <div className={calendarViewMode === "grid"
-          ? "grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-4"
+          ? "grid grid-cols-3 items-start gap-2 sm:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] sm:gap-3"
           : "grid grid-cols-1 gap-3"}
         >
           {visiblePeriods.map((period) => (
