@@ -1,0 +1,49 @@
+IGNORE ALL PREVIOUS CONVERSATION HISTORY AND PRIOR TASKS IN THIS CHAT. Only do the following task.
+
+Working directory for all frontend changes: artifacts/trading-journal (do NOT touch artifacts/api-server or anything backend-related in this task).
+
+GOAL: Add Capacitor to wrap the existing React/Vite frontend as a native Android app, with the built UI bundled locally inside the app (not loaded live from a URL). API calls continue going to the live production backend at https://tradeops-web.vercel.app over HTTPS — only the UI assets are local.
+
+STEP 1 — Install Capacitor
+Inside artifacts/trading-journal, install:
+- @capacitor/core
+- @capacitor/cli (dev dependency)
+- @capacitor/android
+- @capacitor/splash-screen
+- @capacitor/status-bar
+- @capacitor/haptics
+
+STEP 2 — Initialize Capacitor
+Run capacitor init with:
+- appId: com.tradeops.app
+- appName: TradeOps
+- webDir: whatever the existing Vite build output directory is (check vite.config.ts — likely "dist")
+
+Do NOT set a server.url in capacitor.config.ts/json — leave it unset so Capacitor loads the local bundled build, not a remote URL.
+
+STEP 3 — Add Android platform
+Run the Capacitor command to add the Android platform (this creates an android/ folder inside artifacts/trading-journal).
+
+STEP 4 — Native-feel touches
+Make these changes so the app feels less like a wrapped website:
+
+1. Splash screen: configure @capacitor/splash-screen to show a branded splash matching the app's existing PWA icon/theme (reuse the existing 512px icon asset if one exists in the project), background color matching the app's Dark theme background, auto-hide once the app is ready (do not use an indefinite splash).
+
+2. Status bar: configure @capacitor/status-bar to match the app's Dark theme colors (dark background, light icons/text) on launch.
+
+3. Haptics: add light haptic feedback (@capacitor/haptics impact style "Light") to primary button taps and toggle switches across the app — use your judgment on which interactive elements benefit most, but do not go overboard; this should feel subtle, not gimmicky.
+
+4. Disable browser-like behaviors in the webview CSS (add to the global stylesheet, scoped so it does NOT affect the existing PWA/browser experience — gate these rules behind a class or media query that only applies when running inside Capacitor, e.g. check for the Capacitor platform at runtime and add a class to the body):
+   - Disable overscroll/bounce scrolling
+   - Disable pull-to-refresh
+   - Disable text-selection long-press callouts
+   - Disable tap-highlight flash on buttons/links
+
+5. Safe-area insets: verify existing safe-area CSS (from the PWA work) still applies correctly inside the Capacitor webview — do not remove or duplicate it, just confirm it's compatible.
+
+STEP 5 — Build and verify
+Run the frontend build (npm run build or pnpm run build, whichever this project uses) to confirm it still succeeds, then run npx cap sync android to sync the build output into the Android project. Confirm no errors.
+
+Do NOT attempt to build the actual APK (no Android SDK available here) — that happens in a separate CI step. Just get the Capacitor project structure, config, and native-feel code changes done and committed.
+
+Commit all changes including the new android/ folder (do not gitignore it — it needs to be in the repo for CI to build from) and report back exactly what was changed, file by file.
