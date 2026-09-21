@@ -2,3 +2,4 @@
 - [Mobile right-edge dead space](mobile-right-edge-deadspace.md) — nav-bar horizontal overflow, not a container bug; check for overflowing elements before blaming content width.
 - [Drizzle push TTY prompt](drizzle-push-tty.md) — drizzle-kit push can't be answered non-interactively on a fresh DB; create tables via raw SQL DDL instead.
 - [Partial development database](partial-development-db.md) — startup migrations can expose partially provisioned dev tables; verify prerequisite schemas before debugging feature code.
+- [Capacitor native packaging](capacitor-native-packaging.md) — keep the Trading Journal on Capacitor v7 runtime packages with a manual config; generate native projects in CI.
