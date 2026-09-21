@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { setBaseUrl } from "@workspace/api-client-react";
 import App from "./App";
+import { initializeNativeShell } from "./lib/capacitor";
 import "./index.css";
 
 // When VITE_API_URL is set (e.g. on Vercel), point all API calls at the
@@ -11,3 +12,4 @@ if (apiUrl) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+void initializeNativeShell();
