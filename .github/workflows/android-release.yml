@@ -36,8 +36,8 @@ jobs:
           distribution: zulu
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile=false
