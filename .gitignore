@@ -49,3 +49,5 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+*.keystore
+*.keystore.b64
