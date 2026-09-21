@@ -1,0 +1,28 @@
+IGNORE ALL PREVIOUS CONVERSATION HISTORY AND PRIOR TASKS IN THIS CHAT. Only do the following task.
+
+Create a new file at .github/workflows/android-release.yml in the repo root. This is a GitHub Actions workflow that builds, signs, and releases a signed Android APK for the artifacts/trading-journal frontend using Capacitor. This workflow runs entirely on GitHub's servers (not Replit), triggered by pushing a git tag matching v*.*.* (e.g. v1.0.0).
+
+Before writing the workflow, inspect artifacts/trading-journal/package.json to confirm the exact build script name and the Vite output directory (check vite.config.ts for build.outDir, likely "dist"), and confirm the pnpm workspace structure at the repo root (pnpm-workspace.yaml) so the install/build commands are accurate for this specific repo. Also confirm capacitor.config.ts's webDir value matches.
+
+The workflow must do the following, in order:
+
+1. Trigger: on push of tags matching 'v*.*.*'
+2. Checkout the repo (actions/checkout@v4)
+3. Set up Node.js 20 (actions/setup-node@v4) — match whatever Node version this project's package.json engines field specifies, or default to 20 if unspecified
+4. Set up pnpm (pnpm/action-setup@v4) at whatever version matches the repo's packageManager field in the root package.json
+5. Set up Java 17 (actions/setup-java@v4, distribution 'zulu') — required for Android/Capacitor tooling
+6. Set up Android SDK (android-actions/setup-android@v3)
+7. Install dependencies with pnpm install --frozen-lockfile=false at the workspace root (frozen-lockfile is disabled per this project's existing .npmrc convention — check .npmrc to confirm this matches)
+8. Build the frontend: run the build script inside artifacts/trading-journal (cd artifacts/trading-journal && pnpm run build, or the correct equivalent for this pnpm workspace — use pnpm --filter if that's how this workspace invokes package-specific scripts, check other scripts/CI config in the repo for the existing pattern if any)
+9. Add the Android platform and sync: inside artifacts/trading-journal, run npx cap add android (only if the android/ directory doesn't already exist — use a conditional check so this is idempotent) then npx cap sync android
+10. Decode the keystore: write the KEYSTORE_BASE64 secret to a file at artifacts/trading-journal/android/app/release.keystore using base64 -d (use printf or echo piped to base64 --decode, NOT a hardcoded path assumption — verify the actual android/app/ path exists after cap add android)
+11. Build the signed release APK: run ./gradlew assembleRelease from inside the android/ directory, passing the signing config via environment variables or gradle properties (KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD secrets, plus the keystore file path from step 10). If the project's android/app/build.gradle does not yet have a signingConfigs block for release, you'll need to ALSO create/modify artifacts/trading-journal/android/app/build.gradle to add one that reads these values from environment variables (do not hardcode secrets in the gradle file itself) — but only do this if cap add android didn't already scaffold a usable release signing config; check what's actually generated first.
+12. Locate the generated signed APK (typically android/app/build/outputs/apk/release/app-release.apk) and rename/copy it to something clear like TradeOps-${{ github.ref_name }}.apk
+13. Create a GitHub Release using the tag that triggered the workflow (use softprops/action-gh-release@v2 or the official gh CLI) and attach the renamed APK as a release asset. Release title: "TradeOps ${{ github.ref_name }}". Release body: "Automated build from tag ${{ github.ref_name }}."
+14. Use secrets.GITHUB_TOKEN (already available by default, no need to create a new secret) for the release-creation permission — make sure the workflow's permissions block grants contents: write.
+
+Use these existing repository secrets (already configured, do not create new ones): KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD.
+
+Do NOT modify any files outside of: the new .github/workflows/android-release.yml file, and (only if genuinely necessary per step 11) artifacts/trading-journal/android/app/build.gradle. Do NOT touch artifacts/api-server or any backend files. Do NOT attempt to run this workflow locally in Replit — it only runs on GitHub's servers after being pushed and a tag is created; your job is only to write the file(s) correctly.
+
+After creating the file(s), show me the full contents of android-release.yml and explain in plain language, step by step, exactly what will happen when I push a tag like v1.0.0 — don't just say "it builds the APK," walk through what each job step does. Commit the changes with a clear commit message.
