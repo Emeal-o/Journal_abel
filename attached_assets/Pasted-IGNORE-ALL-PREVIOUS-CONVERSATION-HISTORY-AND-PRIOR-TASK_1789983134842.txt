@@ -1,0 +1,55 @@
+IGNORE ALL PREVIOUS CONVERSATION HISTORY AND PRIOR TASKS IN THIS CHAT. Only do the following task.
+
+Stop trying to install @capacitor/cli — it is permanently blocked by the package firewall (the tar dependency is blocked across all versions tried). Do not attempt any more tar overrides or version fallbacks. Do not switch models/plans.
+
+Working directory: artifacts/trading-journal. Do not touch artifacts/api-server.
+
+STEP 1 — Clean up
+Remove any tar override you added to package.json's "pnpm" field (revert that specific change only — keep any other existing overrides if present). Remove @capacitor/cli from package.json if it was partially added as a dependency. Run pnpm install to confirm the workspace installs cleanly now that the CLI isn't being requested.
+
+Confirm these packages ARE still installed correctly (they installed fine earlier, before the CLI attempt):
+- @capacitor/core
+- @capacitor/android
+- @capacitor/splash-screen
+- @capacitor/status-bar
+- @capacitor/haptics
+
+If any of those are missing or broken, reinstall just those five (NOT @capacitor/cli).
+
+STEP 2 — Hand-write capacitor.config.ts
+Create capacitor.config.ts manually (no CLI needed for this — it's just a config object). Use:
+
+import type { CapacitorConfig } from '@capacitor/core';
+
+const config: CapacitorConfig = {
+  appId: 'com.tradeops.app',
+  appName: 'TradeOps',
+  webDir: 'dist', // confirm this matches the actual Vite build output dir from vite.config.ts — adjust if different
+};
+
+export default config;
+
+Do NOT set a server.url — leave it unset so the build stays local/bundled.
+
+STEP 3 — Native-feel touches
+Do NOT attempt to create or touch an android/ folder — that will be generated later in CI, not here. Everything in this step is plain TS/CSS/React code that doesn't require the Android project to exist:
+
+1. Splash screen: write the config/code to use @capacitor/splash-screen's API (e.g. in main.tsx or App's entry point, call SplashScreen.hide() once the app is ready, and configure launch options if needed via capacitor.config.ts's plugins.SplashScreen block) — background color matching the app's Dark theme, using the existing 512px PWA icon asset if one exists in the project.
+
+2. Status bar: use @capacitor/status-bar's API to set dark background + light content/icons on native platforms only (guard with Capacitor.isNativePlatform() so this doesn't affect the web/PWA build).
+
+3. Haptics: add light haptic feedback (@capacitor/haptics, ImpactStyle.Light) to primary button taps and toggle switches — guard with Capacitor.isNativePlatform() so nothing changes on web. Use your judgment on which elements benefit most; keep it subtle.
+
+4. Global CSS: add rules (scoped behind a body class that's only added when Capacitor.isNativePlatform() is true, set via a small runtime check in the app's entry point) to:
+   - Disable overscroll/bounce scrolling
+   - Disable pull-to-refresh
+   - Disable text-selection long-press callouts
+   - Disable tap-highlight flash on buttons/links
+   These rules must NOT apply to the existing web/PWA experience — verify by checking the body class logic only activates natively.
+
+5. Confirm existing safe-area CSS is compatible and untouched.
+
+STEP 4 — Build and verify
+Run the frontend build (pnpm run build) and confirm it succeeds with no errors. Run tsc --noEmit and confirm no new errors (two pre-existing unrelated errors — ledger-sheet.tsx:408 and week-card.tsx:65 — are expected and fine to ignore).
+
+Commit all changes. Do NOT attempt cap init, cap add android, or cap sync — none of that runs in Replit. Report back file-by-file what was changed, and confirm the build passes.
