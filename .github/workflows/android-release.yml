@@ -1,0 +1,159 @@
+name: Android release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build and release signed APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # package.json does not declare packageManager; 10.26.1 matches the
+      # pnpm version used to produce the repository lockfile.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+          run_install: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Build frontend
+        working-directory: artifacts/trading-journal
+        run: pnpm run build
+
+      - name: Add Android platform and sync Capacitor
+        working-directory: artifacts/trading-journal
+        run: |
+          npm install --global @capacitor/cli@7.4.4
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+
+      - name: Decode release keystore
+        working-directory: artifacts/trading-journal
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE_BASE64"
+          test -f android/app/build.gradle
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          test -s android/app/release.keystore
+
+      - name: Configure generated Gradle signing
+        working-directory: artifacts/trading-journal
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          build_gradle = Path("android/app/build.gradle")
+          text = build_gradle.read_text()
+          signing_entry = """        tradeOpsRelease {
+                      storeFile file(System.getenv("KEYSTORE_FILE"))
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+          """
+
+          if "tradeOpsRelease {" not in text:
+              signing_configs_marker = "    signingConfigs {\n"
+              if signing_configs_marker in text:
+                  text = text.replace(
+                      signing_configs_marker,
+                      signing_configs_marker + signing_entry,
+                      1,
+                  )
+              else:
+                  build_types_marker = "    buildTypes {\n"
+                  if build_types_marker not in text:
+                      raise SystemExit(
+                          "Generated android/app/build.gradle has no buildTypes block"
+                      )
+                  signing_configs = (
+                      "    signingConfigs {\n"
+                      + signing_entry
+                      + "    }\n\n"
+                  )
+                  text = text.replace(
+                      build_types_marker,
+                      signing_configs + build_types_marker,
+                      1,
+                  )
+
+          build_types_start = text.find("    buildTypes {\n")
+          if build_types_start == -1:
+              raise SystemExit("Generated android/app/build.gradle has no buildTypes block")
+
+          release_start = text.find("        release {\n", build_types_start)
+          if release_start == -1:
+              raise SystemExit(
+                  "Generated android/app/build.gradle has no release build type"
+              )
+
+          release_body_start = release_start + len("        release {\n")
+          release_body = text[release_body_start:]
+          if "signingConfig signingConfigs.tradeOpsRelease" not in release_body.split(
+              "\n        }", 1
+          )[0]:
+              text = (
+                  text[:release_body_start]
+                  + "            signingConfig signingConfigs.tradeOpsRelease\n"
+                  + text[release_body_start:]
+              )
+
+          build_gradle.write_text(text)
+          PY
+
+      - name: Build signed release APK
+        working-directory: artifacts/trading-journal/android
+        env:
+          KEYSTORE_FILE: ${{ github.workspace }}/artifacts/trading-journal/android/app/release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
+
+      - name: Prepare release APK
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          apk_path="$(find artifacts/trading-journal/android/app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -n "$apk_path"
+          cp "$apk_path" "artifacts/trading-journal/TradeOps-${RELEASE_TAG}.apk"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.ref_name }}
+          name: TradeOps ${{ github.ref_name }}
+          body: Automated build from tag ${{ github.ref_name }}.
+          files: artifacts/trading-journal/TradeOps-${{ github.ref_name }}.apk
