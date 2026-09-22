@@ -64562,12 +64562,13 @@ app.use(
     }
   })
 );
-var corsOrigins = (process.env.CORS_ORIGIN ?? "").split(",").map((o) => o.trim()).filter(Boolean);
-if (process.env.NODE_ENV === "production" && corsOrigins.length === 0) {
+var configuredCorsOrigins = (process.env.CORS_ORIGIN ?? "").split(",").map((o) => o.trim()).filter(Boolean);
+if (process.env.NODE_ENV === "production" && configuredCorsOrigins.length === 0) {
   throw new Error(
     "CORS_ORIGIN environment variable is required in production but was not provided. Set it to the exact frontend origin(s), comma-separated, e.g. https://tradeops.vercel.app"
   );
 }
+var corsOrigins = configuredCorsOrigins.concat("https://localhost");
 app.use(
   (0, import_cors.default)({
     origin(origin, callback) {
