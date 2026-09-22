@@ -77,7 +77,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          main_activity = Path("android/app/src/main/java/com/tradeops/app/MainActivity.java")
+          main_activity = Path("android/app/src/main/java/com/tradeops/journal/MainActivity.java")
           text = main_activity.read_text()
           old = "public class MainActivity extends BridgeActivity {}"
           new = """public class MainActivity extends BridgeActivity {
