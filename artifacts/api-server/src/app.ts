@@ -32,17 +32,19 @@ app.use(
 // Required in production because cookies cannot be sent cross-origin with a
 // wildcard ("*") origin — the browser only attaches credentials when the
 // server echoes back the exact requesting origin.
-const corsOrigins = (process.env.CORS_ORIGIN ?? "")
+const configuredCorsOrigins = (process.env.CORS_ORIGIN ?? "")
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
 
-if (process.env.NODE_ENV === "production" && corsOrigins.length === 0) {
+if (process.env.NODE_ENV === "production" && configuredCorsOrigins.length === 0) {
   throw new Error(
     "CORS_ORIGIN environment variable is required in production but was not provided. " +
       "Set it to the exact frontend origin(s), comma-separated, e.g. https://tradeops.vercel.app",
   );
 }
+
+const corsOrigins = configuredCorsOrigins.concat("https://localhost");
 
 app.use(
   cors({
