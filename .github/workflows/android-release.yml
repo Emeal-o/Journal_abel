@@ -72,6 +72,28 @@ jobs:
             android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml \
             android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
+      - name: Disable native WebView scrollbar
+        working-directory: artifacts/trading-journal
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          main_activity = Path("android/app/src/main/java/com/tradeops/app/MainActivity.java")
+          text = main_activity.read_text()
+          old = "public class MainActivity extends BridgeActivity {}"
+          new = """public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(android.os.Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  this.getBridge().getWebView().setVerticalScrollBarEnabled(false);
+                  this.getBridge().getWebView().setHorizontalScrollBarEnabled(false);
+              }
+          }"""
+          if old not in text:
+              raise SystemExit("MainActivity.java did not match expected template — manual patch needed")
+          text = text.replace(old, new)
+          main_activity.write_text(text)
+          PY
+        
       - name: Decode release keystore
         working-directory: artifacts/trading-journal
         env:
