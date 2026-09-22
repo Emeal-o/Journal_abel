@@ -101,12 +101,7 @@ app.use((req, res, next) => {
   if (corsOrigins.includes(origin)) return next();
 
   logger.warn({ origin, method: req.method, url: req.url }, "Blocked state-changing request: origin not in CORS_ORIGIN allowlist (possible CSRF)");
-  res.status(403).json({
-    error: "Origin not allowed.",
-    debug_receivedOrigin: origin,
-    debug_allowedOrigins: corsOrigins,
-    debug_nodeEnv: process.env.NODE_ENV,
-  });
+  res.status(403).json({ error: "Origin not allowed." });
 });
 
 if (!process.env.SESSION_SECRET) {
