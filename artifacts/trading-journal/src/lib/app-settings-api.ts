@@ -1,4 +1,6 @@
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+import { getApiBaseUrl } from "./api-base-url";
+
+const API_BASE = getApiBaseUrl();
 
 export const APP_SETTINGS_QUERY_KEY = ["app-settings"] as const;
 

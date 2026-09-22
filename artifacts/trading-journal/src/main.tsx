@@ -1,14 +1,13 @@
 import { createRoot } from "react-dom/client";
 import { setBaseUrl } from "@workspace/api-client-react";
 import App from "./App";
+import { getApiBaseUrl } from "./lib/api-base-url";
 import { initializeNativeShell } from "./lib/capacitor";
 import "./index.css";
 
-// When VITE_API_URL is set (e.g. on Vercel), point all API calls at the
-// deployed API server. Falls back to relative URLs for local dev (proxied).
-const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
-if (apiUrl) {
-  setBaseUrl(apiUrl);
+const apiBaseUrl = getApiBaseUrl();
+if (apiBaseUrl) {
+  setBaseUrl(apiBaseUrl);
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

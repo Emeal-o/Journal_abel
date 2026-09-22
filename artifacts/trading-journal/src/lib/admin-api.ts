@@ -3,7 +3,9 @@
  * Admin auth is a separate session flag from regular user auth — a browser
  * can be logged in as a user, an admin, both, or neither at once.
  */
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+import { getApiBaseUrl } from "./api-base-url";
+
+const API_BASE = getApiBaseUrl();
 
 async function adminFetch(path: string, init?: RequestInit): Promise<Response> {
   return fetch(`${API_BASE}${path}`, {

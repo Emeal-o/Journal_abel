@@ -4,8 +4,9 @@
  * hand-written API wrappers (analysis-api.ts, weeks-api.ts).
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getApiBaseUrl } from "./api-base-url";
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+const API_BASE = getApiBaseUrl();
 
 async function setupTypesFetch(path: string, init?: RequestInit): Promise<Response> {
   return fetch(`${API_BASE}${path}`, { credentials: "include", ...init });

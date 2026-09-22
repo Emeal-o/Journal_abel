@@ -1,7 +1,9 @@
 /**
  * Thin fetch wrappers for the authenticated user's profile endpoints.
  */
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+import { getApiBaseUrl } from "./api-base-url";
+
+const API_BASE = getApiBaseUrl();
 
 async function profileFetch(path: string, init?: RequestInit): Promise<Response> {
   return fetch(`${API_BASE}${path}`, {

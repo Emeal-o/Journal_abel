@@ -5,8 +5,9 @@
  * until the spec is regenerated.
  */
 import { useQuery } from "@tanstack/react-query";
+import { getApiBaseUrl } from "./api-base-url";
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+const API_BASE = getApiBaseUrl();
 
 async function weeksFetch(path: string, init?: RequestInit): Promise<Response> {
   return fetch(`${API_BASE}${path}`, { credentials: "include", ...init });

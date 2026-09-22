@@ -55,6 +55,23 @@ jobs:
           fi
           npx cap sync android
 
+      - name: Apply TradeOps Android icons
+        working-directory: artifacts/trading-journal
+        run: |
+          source_icon="public/icons/icon-512.png"
+          test -f "$source_icon"
+
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            target_dir="android/app/src/main/res/mipmap-${density}"
+            mkdir -p "$target_dir"
+            cp "$source_icon" "$target_dir/ic_launcher.png"
+            cp "$source_icon" "$target_dir/ic_launcher_round.png"
+          done
+
+          rm -f \
+            android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml \
+            android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+
       - name: Decode release keystore
         working-directory: artifacts/trading-journal
         env:
