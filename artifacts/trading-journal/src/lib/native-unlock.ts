@@ -30,6 +30,15 @@ async function getOrCreateSalt(): Promise<string> {
   return salt;
 }
 
+async function clearNativeUnlockCredential(): Promise<void> {
+  await Promise.all([
+    Preferences.remove({ key: NATIVE_UNLOCK_KEYS.pinHash }),
+    Preferences.remove({ key: NATIVE_UNLOCK_KEYS.passwordHash }),
+    Preferences.remove({ key: NATIVE_UNLOCK_KEYS.salt }),
+    Preferences.remove({ key: NATIVE_UNLOCK_KEYS.method }),
+  ]);
+}
+
 export async function hasSeenNativeUnlockOffer(): Promise<boolean> {
   const { value } = await Preferences.get({ key: NATIVE_UNLOCK_KEYS.hasSeenOffer });
   return value === "true";
@@ -40,6 +49,7 @@ export async function markNativeUnlockOfferSeen(): Promise<void> {
 }
 
 export async function saveNativePin(pin: string): Promise<void> {
+  await clearNativeUnlockCredential();
   const salt = await getOrCreateSalt();
   await Preferences.set({
     key: NATIVE_UNLOCK_KEYS.pinHash,
@@ -52,6 +62,7 @@ export async function saveNativePin(pin: string): Promise<void> {
 }
 
 export async function saveNativePassword(password: string): Promise<void> {
+  await clearNativeUnlockCredential();
   const salt = await getOrCreateSalt();
   await Preferences.set({
     key: NATIVE_UNLOCK_KEYS.passwordHash,
