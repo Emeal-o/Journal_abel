@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { App } from "@capacitor/app";
 import { ArrowLeft, Delete, Fingerprint } from "lucide-react";
 import type { MeResponse } from "@/lib/auth-api";
 import { login } from "@/lib/auth-api";
 import {
+  getNativeUnlockMethod,
   hasSeenNativeUnlockOffer,
   markNativeUnlockOfferSeen,
   saveNativePassword,
@@ -10,6 +12,10 @@ import {
   verifyNativePassword,
   verifyNativePin,
 } from "@/lib/native-unlock";
+import {
+  isNativeBiometricAvailable,
+  requestNativeBiometricUnlock,
+} from "@/lib/native-biometric";
 
 const LEDGER = {
   background: "#EDE7D8",
@@ -352,17 +358,37 @@ export function NativePasswordSetupScreen({ onBack, onSaved }: { onBack: () => v
   );
 }
 
+function useNativeBiometricAvailability() {
+  const [available, setAvailable] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    void isNativeBiometricAvailable().then((value) => {
+      if (mounted) setAvailable(value);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return available;
+}
+
 export function DailyUnlockPin({
   onUnlocked,
   onForgot,
-  biometricsAvailable = false,
 }: {
   onUnlocked: () => void;
   onForgot: () => void;
-  biometricsAvailable?: boolean;
 }) {
   const [digits, setDigits] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const biometricsAvailable = useNativeBiometricAvailability();
+
+  async function handleBiometricUnlock() {
+    setMessage(null);
+    if (await requestNativeBiometricUnlock()) onUnlocked();
+  }
 
   function pressDigit(digit: string) {
     if (digits.length >= 6) return;
@@ -390,7 +416,13 @@ export function DailyUnlockPin({
             key === "" ? <span key={index} aria-hidden="true" /> :
             key === "fingerprint" ? (
               biometricsAvailable ? (
-                <button key={key} type="button" className="native-keypad-key" aria-label="Use fingerprint">
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => void handleBiometricUnlock()}
+                  className="native-keypad-key"
+                  aria-label="Use fingerprint"
+                >
                   <Fingerprint className="h-5 w-5" strokeWidth={1.5} />
                 </button>
               ) : <span key={key} aria-hidden="true" /> 
@@ -414,15 +446,19 @@ export function DailyUnlockPin({
 export function DailyUnlockPassword({
   onUnlocked,
   onForgot,
-  biometricsAvailable = false,
 }: {
   onUnlocked: () => void;
   onForgot: () => void;
-  biometricsAvailable?: boolean;
 }) {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const biometricsAvailable = useNativeBiometricAvailability();
+
+  async function handleBiometricUnlock() {
+    setMessage(null);
+    if (await requestNativeBiometricUnlock()) onUnlocked();
+  }
 
   async function handleUnlock() {
     if (!password || pending) return;
@@ -452,7 +488,11 @@ export function DailyUnlockPassword({
           />
         </div>
         {biometricsAvailable && (
-          <button type="button" className="native-biometric-link">
+          <button
+            type="button"
+            className="native-biometric-link"
+            onClick={() => void handleBiometricUnlock()}
+          >
             <Fingerprint className="h-4 w-4" strokeWidth={1.5} />
             Use fingerprint instead
           </button>
@@ -525,5 +565,112 @@ export function NativeEntryFlow({ onAuthenticated }: { onAuthenticated: (me: MeR
         });
       }}
     />
+  );
+}
+
+export const UNLOCK_GRACE_MS = 3 * 60 * 1000;
+
+function NativeGateSurface() {
+  return (
+    <main
+      className="native-entry-shell min-h-[100dvh] w-full"
+      aria-busy="true"
+      style={{ backgroundColor: LEDGER.background }}
+    />
+  );
+}
+
+export function NativeSessionGate({
+  children,
+  onReauthenticated,
+}: {
+  children: React.ReactNode;
+  onReauthenticated: (me: MeResponse) => void;
+}) {
+  const [checking, setChecking] = useState(true);
+  const [locked, setLocked] = useState(false);
+  const [unlockMethod, setUnlockMethod] = useState<"pin" | "password" | null>(null);
+  const [recovering, setRecovering] = useState(false);
+  const backgroundedAt = useRef<number | null>(null);
+  const lockedRef = useRef(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const applyLockIfConfigured = async () => {
+      let method: "pin" | "password" | null = null;
+      try {
+        method = await getNativeUnlockMethod();
+      } catch {
+        // If local preferences cannot be read, do not interrupt the existing
+        // server session with a screen that cannot be completed.
+      }
+      if (!mounted) return;
+      setUnlockMethod(method);
+      lockedRef.current = Boolean(method);
+      setLocked(Boolean(method));
+      setChecking(false);
+    };
+
+    void applyLockIfConfigured();
+
+    const listenerPromise = App.addListener("appStateChange", ({ isActive }) => {
+      if (!isActive) {
+        backgroundedAt.current = Date.now();
+        return;
+      }
+
+      const backgrounded = backgroundedAt.current;
+      backgroundedAt.current = null;
+      if (
+        backgrounded === null
+        || Date.now() - backgrounded <= UNLOCK_GRACE_MS
+        || lockedRef.current
+      ) {
+        return;
+      }
+
+      void getNativeUnlockMethod().then((method) => {
+        if (!mounted || !method || lockedRef.current) return;
+        setUnlockMethod(method);
+        lockedRef.current = true;
+        setLocked(true);
+      }).catch(() => {
+        // A preference read failure should leave the current session usable.
+      });
+    });
+
+    return () => {
+      mounted = false;
+      void listenerPromise.then((listener) => listener.remove());
+    };
+  }, []);
+
+  if (recovering) {
+    return (
+      <NativeAccessCodeScreen
+        onAuthenticated={(me) => {
+          setRecovering(false);
+          lockedRef.current = false;
+          setLocked(false);
+          onReauthenticated(me);
+        }}
+      />
+    );
+  }
+
+  if (checking) return <NativeGateSurface />;
+  if (!locked || !unlockMethod) return <>{children}</>;
+
+  const unlock = () => {
+    lockedRef.current = false;
+    setLocked(false);
+  };
+  const forgot = () => setRecovering(true);
+
+  return unlockMethod === "pin" ? (
+    <DailyUnlockPin onUnlocked={unlock} onForgot={forgot} />
+  ) : (
+    <DailyUnlockPassword onUnlocked={unlock} onForgot={forgot} />
   );
 }

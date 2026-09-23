@@ -16,7 +16,7 @@ import { AUTH_QUERY_KEY, useAuth } from "@/hooks/use-auth";
 import { DisplayPrefsProvider, useDisplayPrefs } from "@/hooks/use-display-prefs";
 import { CalendarPrefsProvider } from "@/hooks/use-calendar-prefs";
 import { isNativePlatform } from "@/lib/capacitor";
-import { NativeEntryFlow } from "@/components/native-unlock";
+import { NativeEntryFlow, NativeSessionGate } from "@/components/native-unlock";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,7 +52,7 @@ function AuthGate() {
     return <LoginPage />;
   }
 
-  return (
+  const authenticatedContent = (
     <Layout>
       <Switch>
         <Route path="/" component={JournalPage} />
@@ -64,6 +64,23 @@ function AuthGate() {
       </Switch>
     </Layout>
   );
+
+  if (isNativePlatform) {
+    return (
+      <NativeSessionGate
+        onReauthenticated={(me) => {
+          queryClient.setQueryData(AUTH_QUERY_KEY, {
+            userId: me.userId,
+            hideCreditLine: me.hideCreditLine,
+          });
+        }}
+      >
+        {authenticatedContent}
+      </NativeSessionGate>
+    );
+  }
+
+  return authenticatedContent;
 }
 
 function InitialLandingRedirect() {
