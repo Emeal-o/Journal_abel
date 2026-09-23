@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
@@ -12,9 +12,11 @@ import { LoginPage } from "@/pages/login";
 import { AdminPage } from "@/pages/admin";
 import { SettingsPage } from "@/pages/settings";
 import { Layout } from "@/components/layout";
-import { useAuth } from "@/hooks/use-auth";
+import { AUTH_QUERY_KEY, useAuth } from "@/hooks/use-auth";
 import { DisplayPrefsProvider, useDisplayPrefs } from "@/hooks/use-display-prefs";
 import { CalendarPrefsProvider } from "@/hooks/use-calendar-prefs";
+import { isNativePlatform } from "@/lib/capacitor";
+import { NativeEntryFlow } from "@/components/native-unlock";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +29,7 @@ const queryClient = new QueryClient({
 
 function AuthGate() {
   const { isAuthenticated, isLoading } = useAuth();
+  const queryClient = useQueryClient();
 
   if (isLoading) {
     // Blank screen while we check the session — avoids a flash of the login page
@@ -34,6 +37,18 @@ function AuthGate() {
   }
 
   if (!isAuthenticated) {
+    if (isNativePlatform) {
+      return (
+        <NativeEntryFlow
+          onAuthenticated={(me) => {
+            queryClient.setQueryData(AUTH_QUERY_KEY, {
+              userId: me.userId,
+              hideCreditLine: me.hideCreditLine,
+            });
+          }}
+        />
+      );
+    }
     return <LoginPage />;
   }
 

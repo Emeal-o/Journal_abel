@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Source+Serif+4:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 /* ── Display prefs: font scale ───────────────────────────────────────────── */
@@ -193,5 +193,323 @@ html.reduce-motion *::after {
   html.native-shell::-webkit-scrollbar,
   html.native-shell *::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* ── Native-only paper ledger entry and quick-unlock surfaces ─────────────── */
+.native-entry-shell {
+  font-family: "JetBrains Mono", monospace;
+  isolation: isolate;
+}
+
+.native-access-layout {
+  width: min(100%, 560px);
+  flex: 1;
+  padding: clamp(84px, 18vh, 176px) 28px 32px;
+  margin: 0 auto;
+}
+
+.native-access-wordmark {
+  width: min(100%, 470px);
+}
+
+.native-rule-draw {
+  width: 100%;
+  height: 1px;
+  margin-top: 22px;
+  transform-origin: left center;
+  animation: native-rule-draw 1s ease-out both;
+}
+
+@keyframes native-rule-draw {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.native-access-content,
+.native-choice-content,
+.native-setup-content {
+  width: min(100%, 430px);
+}
+
+.native-access-content {
+  margin-top: clamp(48px, 9vh, 88px);
+}
+
+.native-serif-copy {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: #211D18;
+}
+
+.native-ledger-input-wrap {
+  position: relative;
+  width: 100%;
+  min-height: 52px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #A9B7C6;
+}
+
+.native-ledger-input-wrap:focus-within {
+  border-bottom-color: #211D18;
+}
+
+.native-ledger-input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  padding: 12px 0 10px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font: inherit;
+  letter-spacing: 0.08em;
+}
+
+.native-ledger-mask {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 12px 0 10px;
+  color: #211D18;
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: 0.08em;
+  white-space: pre-wrap;
+  pointer-events: none;
+}
+
+.native-ledger-input:not(:placeholder-shown) + .native-ledger-mask {
+  color: #211D18;
+}
+
+.native-ledger-cursor {
+  display: inline-block;
+  width: 1px;
+  height: 1.2em;
+  margin-left: 5px;
+  vertical-align: -0.2em;
+  animation: native-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes native-cursor-blink {
+  50% { opacity: 0; }
+}
+
+.native-outlined-button {
+  min-height: 48px;
+  border: 1px solid #211D18;
+  background: transparent;
+  padding: 12px 18px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.native-outlined-button:hover:not(:disabled),
+.native-outlined-button:focus-visible {
+  background: #211D18;
+  color: #EDE7D8 !important;
+  outline: none;
+}
+
+.native-private-copy,
+.native-step-copy,
+.native-field-label {
+  color: #8A8375;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.native-private-copy {
+  padding: 0 28px calc(22px + env(safe-area-inset-bottom, 0px));
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.native-inline-message {
+  margin-top: 14px;
+  color: #8A8375;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.native-centered-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.native-choice-content {
+  flex: 1;
+  margin: clamp(72px, 15vh, 150px) 28px 0;
+}
+
+.native-choice-rule {
+  width: 100%;
+  height: 1px;
+  margin-top: 18px;
+}
+
+.native-screen-header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 0 20px;
+  border-bottom: 1px solid;
+}
+
+.native-screen-header-dashed {
+  border-bottom-style: dashed;
+}
+
+.native-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-left: -8px;
+}
+
+.native-setup-content {
+  padding: 48px 28px calc(28px + env(safe-area-inset-bottom, 0px));
+  margin: 0 auto;
+}
+
+.native-step-copy {
+  margin-top: 36px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.native-pin-progress {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 18px 0 34px;
+}
+
+.native-pin-square {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 1px solid;
+}
+
+.native-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  border: 1px solid #A9B7C6;
+}
+
+.native-keypad-key,
+.native-keypad > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  border-right: 1px solid #A9B7C6;
+  border-bottom: 1px solid #A9B7C6;
+  color: #211D18;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.05rem;
+}
+
+.native-keypad-key:nth-child(3n) {
+  border-right: 0;
+}
+
+.native-keypad-key:nth-last-child(-n + 3),
+.native-keypad > span:nth-last-child(-n + 3) {
+  border-bottom: 0;
+}
+
+.native-keypad-key:hover,
+.native-keypad-key:focus-visible {
+  background: rgba(33, 29, 24, 0.06);
+  outline: none;
+}
+
+.native-field-label {
+  display: block;
+  margin-top: 34px;
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+
+.native-muted-link,
+.native-biometric-link {
+  color: #8A8375;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 0.95rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.native-daily-screen {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100dvh;
+}
+
+.native-daily-content {
+  width: min(100% - 56px, 360px);
+  margin: 15vh auto 0;
+  text-align: center;
+}
+
+.native-daily-content .native-pin-progress {
+  margin-top: 30px;
+}
+
+.native-daily-link {
+  display: inline-block;
+  margin-top: 34px;
+}
+
+.native-password-daily-content {
+  margin-top: 18vh;
+}
+
+.native-password-daily-content .native-ledger-input-wrap {
+  text-align: center;
+}
+
+.native-biometric-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 17px;
+  text-decoration: none;
+}
+
+@media (max-width: 380px) {
+  .native-access-layout,
+  .native-setup-content,
+  .native-choice-content {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .native-private-copy {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .native-keypad-key,
+  .native-keypad > span {
+    min-height: 58px;
   }
 }

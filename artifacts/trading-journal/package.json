@@ -78,6 +78,7 @@
     "@capacitor/android": "^7.4.4",
     "@capacitor/core": "^7.4.4",
     "@capacitor/haptics": "^7.0.3",
+    "@capacitor/preferences": "^7.0.4",
     "@capacitor/splash-screen": "^7.0.3",
     "@capacitor/status-bar": "^7.0.3",
     "@dnd-kit/core": "^6.3.1",

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronRight, ChevronDown,
   SlidersHorizontal, Info, LogOut, HelpCircle, Bug, ArrowLeft, GripVertical,
-  Home, BarChart3, Type, Zap, Palette, Check, User, Calculator, CalendarDays,
+  Home, BarChart3, Type, Zap, Palette, Check, User, Calculator, CalendarDays, KeyRound,
 } from "lucide-react";
 import {
   DndContext,
@@ -40,6 +40,8 @@ import {
   updateProfile,
 } from "@/lib/profile-api";
 import { useCalendarPrefs, type CalendarPeriodMode } from "@/hooks/use-calendar-prefs";
+import { isNativePlatform } from "@/lib/capacitor";
+import { NativeSetupFlow } from "@/components/native-unlock";
 
 // ── Section label ──────────────────────────────────────────────────────────────
 
@@ -508,6 +510,7 @@ export function SettingsPage() {
   const [privacyOpen, setPrivacyOpen]       = useState(false);
   const [customizeAnalysisOpen, setCustomizeAnalysisOpen] = useState(false);
   const [customizeCalendarMetricsOpen, setCustomizeCalendarMetricsOpen] = useState(false);
+  const [nativeSetupOpen, setNativeSetupOpen] = useState(false);
 
   const { data: setupTypes = [] } = useSetupTypes();
   const aboutQuery = useQuery({
@@ -528,6 +531,15 @@ export function SettingsPage() {
   }
   if (customizeCalendarMetricsOpen) {
     return <CalendarMetricsSettings onBack={() => setCustomizeCalendarMetricsOpen(false)} />;
+  }
+  if (nativeSetupOpen) {
+    return (
+      <NativeSetupFlow
+        showBack
+        onBack={() => setNativeSetupOpen(false)}
+        onComplete={() => setNativeSetupOpen(false)}
+      />
+    );
   }
 
   async function handleLogout() {
@@ -621,6 +633,20 @@ export function SettingsPage() {
           />
         </SettingsCard>
       </div>
+
+      {isNativePlatform && (
+        <div className="mb-6">
+          <SectionHeader>Security</SectionHeader>
+          <SettingsCard>
+            <ChevronRow
+              last
+              icon={<KeyRound className="w-5 h-5" />}
+              label="Add a PIN or password"
+              onClick={() => setNativeSetupOpen(true)}
+            />
+          </SettingsCard>
+        </div>
+      )}
 
       {/* ── Display ──────────────────────────────────────────────────────────── */}
       <div className="mb-6">
