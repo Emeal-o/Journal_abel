@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { App } from "@capacitor/app";
-import { ArrowLeft, Delete, Fingerprint } from "lucide-react";
+import { Activity, ArrowLeft, Delete, Fingerprint } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import type { MeResponse } from "@/lib/auth-api";
 import { login } from "@/lib/auth-api";
 import {
+  getNativeBiometricEnabled,
   getNativeUnlockMethod,
   hasSeenNativeUnlockOffer,
   markNativeUnlockOfferSeen,
   saveNativePassword,
   saveNativePin,
+  setNativeBiometricEnabled,
   verifyNativePassword,
   verifyNativePin,
 } from "@/lib/native-unlock";
@@ -17,41 +21,30 @@ import {
   requestNativeBiometricUnlock,
 } from "@/lib/native-biometric";
 
-const LEDGER = {
-  background: "#EDE7D8",
-  ink: "#211D18",
-  muted: "#8A8375",
-  rule: "#A9B7C6",
-  accent: "#10B981",
-} as const;
-
 type SetupChoice = "pin" | "password" | "skip";
-type SetupScreen = "choice" | "pin" | "password";
+type SetupScreen = "choice" | "pin" | "password" | "biometric";
 
 function NativeShell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <main
-      className={`native-entry-shell min-h-[100dvh] w-full overflow-x-hidden ${className}`}
-      style={{ backgroundColor: LEDGER.background, color: LEDGER.ink }}
+      className={`native-entry-shell min-h-[100dvh] w-full overflow-x-hidden bg-background text-foreground ${className}`}
     >
       {children}
     </main>
   );
 }
 
-function Wordmark({ small = false, centered = false }: { small?: boolean; centered?: boolean }) {
+function BrandLockup({ compact = false }: { compact?: boolean }) {
   return (
-    <div
-      className={`font-mono font-semibold tracking-[-0.07em] ${small ? "text-2xl" : "text-5xl"} ${centered ? "text-center" : ""}`}
-      style={{ color: LEDGER.ink }}
-    >
-      TradeOps
+    <div className={`native-brand-lockup ${compact ? "native-brand-lockup-compact" : ""}`}>
+      <span className="native-brand-mark" aria-hidden="true">
+        <Activity className="h-4 w-4 text-primary" strokeWidth={2} />
+      </span>
+      <span className="font-semibold tracking-tight">
+        Trade<span className="text-primary">Ops</span>
+      </span>
     </div>
   );
-}
-
-function LedgerCursor() {
-  return <span className="native-ledger-cursor" aria-hidden="true" style={{ backgroundColor: LEDGER.accent }} />;
 }
 
 function MaskedLedgerInput({
@@ -62,6 +55,7 @@ function MaskedLedgerInput({
   ariaLabel,
   type = "text",
   onKeyDown,
+  id,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -70,10 +64,12 @@ function MaskedLedgerInput({
   ariaLabel: string;
   type?: "text" | "password";
   onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+  id?: string;
 }) {
   return (
     <div className="native-ledger-input-wrap">
       <input
+        id={id}
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -83,17 +79,14 @@ function MaskedLedgerInput({
         autoComplete="off"
         autoCapitalize="none"
         spellCheck={false}
+        placeholder={placeholder}
         className="native-ledger-input"
       />
-      <span className="native-ledger-mask" aria-hidden="true">
-        {value ? "— ".repeat(value.length).trimEnd() : placeholder}
-        <LedgerCursor />
-      </span>
     </div>
   );
 }
 
-function OutlinedButton({
+function PrimaryActionButton({
   children,
   onClick,
   type = "button",
@@ -105,31 +98,30 @@ function OutlinedButton({
   disabled?: boolean;
 }) {
   return (
-    <button
+    <Button
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="native-outlined-button w-full disabled:cursor-not-allowed disabled:opacity-45"
-      style={{ borderColor: LEDGER.ink, color: LEDGER.ink }}
+      className="native-primary-button w-full"
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
-function BackHeader({ title, dashed = false, onBack }: { title: string; dashed?: boolean; onBack: () => void }) {
+function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
-    <header className={`native-screen-header ${dashed ? "native-screen-header-dashed" : ""}`} style={{ borderColor: LEDGER.rule }}>
+    <header className="native-screen-header">
       <button
         type="button"
         onClick={onBack}
         aria-label="Back"
         className="native-icon-button"
-        style={{ color: LEDGER.ink }}
       >
         <ArrowLeft className="h-5 w-5" strokeWidth={1.5} />
       </button>
-      <h1 className="font-mono text-base font-semibold" style={{ color: LEDGER.ink }}>{title}</h1>
+      <span className="sr-only">{title}</span>
+      <BrandLockup compact />
     </header>
   );
 }
@@ -156,29 +148,23 @@ export function NativeAccessCodeScreen({ onAuthenticated }: { onAuthenticated: (
   }
 
   return (
-    <NativeShell className="flex flex-col">
-      <div className="native-access-layout">
-        <div className="native-access-wordmark">
-          <Wordmark />
-          <div className="native-rule-draw" style={{ backgroundColor: LEDGER.rule }} />
-        </div>
-
-        <div className="native-access-content">
-          <p className="native-serif-copy">Enter your access code to open your journal.</p>
-          <form onSubmit={handleSubmit} className="mt-10">
-            <MaskedLedgerInput
-              value={code}
-              onChange={(value) => { setCode(value); setError(null); }}
-              ariaLabel="Access code"
-              placeholder="Enter access code"
-              autoFocus
-            />
-            <OutlinedButton type="submit" disabled={pending || !code.trim()}>
-              {pending ? "Opening…" : "Open journal"}
-            </OutlinedButton>
-            {error && <p className="native-inline-message" role="alert">{error}</p>}
-          </form>
-        </div>
+    <NativeShell className="native-auth-shell">
+      <div className="native-auth-content">
+        <BrandLockup />
+        <p className="native-instruction">Enter your access code to open your journal.</p>
+        <form onSubmit={handleSubmit} className="native-auth-form">
+          <MaskedLedgerInput
+            value={code}
+            onChange={(value) => { setCode(value); setError(null); }}
+            ariaLabel="Access code"
+            placeholder="Enter access code"
+            autoFocus
+          />
+          <PrimaryActionButton type="submit" disabled={pending || !code.trim()}>
+            {pending ? "Opening…" : "Open journal"}
+          </PrimaryActionButton>
+          {error && <p className="native-inline-message" role="alert">{error}</p>}
+        </form>
       </div>
       <p className="native-private-copy">Private access only</p>
     </NativeShell>
@@ -195,18 +181,17 @@ export function NativeUnlockSetupOffer({
   showBack?: boolean;
 }) {
   return (
-    <NativeShell className="native-centered-screen">
+    <NativeShell className="native-auth-shell">
       {showBack && onBack && <BackHeader title="Quick unlock" onBack={onBack} />}
-      <div className="native-choice-content">
-        <Wordmark />
-        <div className="native-choice-rule" style={{ backgroundColor: LEDGER.rule }} />
-        <p className="native-serif-copy mt-8">
+      <div className={`native-auth-content native-flow-content ${showBack ? "native-flow-content-with-header" : ""}`}>
+        {!showBack && <BrandLockup />}
+        <p className="native-instruction">
           Add a PIN or password for quick unlock on this device? Your admin code will always still work.
         </p>
-        <div className="mt-10 space-y-3">
-          <OutlinedButton onClick={() => onChoose("pin")}>Set a PIN</OutlinedButton>
-          <OutlinedButton onClick={() => onChoose("password")}>Set a password</OutlinedButton>
-          <button type="button" className="native-muted-link mt-4" onClick={() => onChoose("skip")}>
+        <div className="native-action-stack">
+          <PrimaryActionButton onClick={() => onChoose("pin")}>Set a PIN</PrimaryActionButton>
+          <PrimaryActionButton onClick={() => onChoose("password")}>Set a password</PrimaryActionButton>
+          <button type="button" className="native-muted-link" onClick={() => onChoose("skip")}>
             Skip for now
           </button>
         </div>
@@ -254,17 +239,17 @@ export function NativePinSetupScreen({ onBack, onSaved }: { onBack: () => void; 
   }
 
   return (
-    <NativeShell>
+    <NativeShell className="native-auth-shell">
       <BackHeader title="Set your PIN" onBack={onBack} />
-      <div className="native-setup-content">
-        <p className="native-serif-copy">
-          Set a PIN to unlock TradeOps quickly. Your admin code still always works.
+      <div className="native-auth-content native-flow-content native-flow-content-with-header">
+        <p className="native-instruction">
+          Set a 6-digit PIN to unlock TradeOps quickly.
         </p>
         <p className="native-step-copy">{phase === "initial" ? "Choose 6 digits" : "Confirm your 6 digits"}</p>
         <PinProgress length={digits.length} />
         <div className="native-keypad" aria-label="PIN keypad">
           {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"].map((key, index) => (
-            key === "" ? <span key={index} aria-hidden="true" /> :
+            key === "" ? <span key={index} className="native-keypad-empty" aria-hidden="true" /> :
             key === "back" ? (
               <button key={key} type="button" onClick={backspace} className="native-keypad-key" aria-label="Delete last digit">
                 <Delete className="h-5 w-5" strokeWidth={1.5} />
@@ -286,11 +271,7 @@ function PinProgress({ length }: { length: number }) {
       {Array.from({ length: 6 }, (_, index) => (
         <span
           key={index}
-          className="native-pin-square"
-          style={{
-            backgroundColor: index < length ? LEDGER.ink : "transparent",
-            borderColor: index < length ? LEDGER.ink : LEDGER.rule,
-          }}
+          className={`native-pin-dot ${index < length ? "native-pin-dot-filled" : ""}`}
         />
       ))}
     </div>
@@ -326,14 +307,15 @@ export function NativePasswordSetupScreen({ onBack, onSaved }: { onBack: () => v
   }
 
   return (
-    <NativeShell>
-      <BackHeader title="Set your password" dashed onBack={onBack} />
-      <form className="native-setup-content" onSubmit={handleSubmit}>
-        <p className="native-serif-copy">
-          Set a password to unlock TradeOps quickly. Your admin code still always works.
+    <NativeShell className="native-auth-shell">
+      <BackHeader title="Set your password" onBack={onBack} />
+      <form className="native-auth-content native-flow-content native-flow-content-with-header" onSubmit={handleSubmit}>
+        <p className="native-instruction">
+          Set a password to unlock TradeOps quickly.
         </p>
         <label className="native-field-label" htmlFor="native-password">Password</label>
         <MaskedLedgerInput
+          id="native-password"
           value={password}
           onChange={(value) => { setPassword(value); setMessage(null); }}
           ariaLabel="Password"
@@ -342,15 +324,16 @@ export function NativePasswordSetupScreen({ onBack, onSaved }: { onBack: () => v
         />
         <label className="native-field-label mt-8" htmlFor="native-password-confirm">Confirm password</label>
         <MaskedLedgerInput
+          id="native-password-confirm"
           value={confirmation}
           onChange={(value) => { setConfirmation(value); setMessage(null); }}
           ariaLabel="Confirm password"
           type="password"
         />
         <div className="mt-10">
-          <OutlinedButton type="submit" disabled={pending || !password || !confirmation}>
+          <PrimaryActionButton type="submit" disabled={pending || !password || !confirmation}>
             {pending ? "Saving…" : "Save password"}
-          </OutlinedButton>
+          </PrimaryActionButton>
         </div>
         {message && <p className="native-inline-message" role="alert">{message}</p>}
       </form>
@@ -363,8 +346,11 @@ function useNativeBiometricAvailability() {
 
   useEffect(() => {
     let mounted = true;
-    void isNativeBiometricAvailable().then((value) => {
-      if (mounted) setAvailable(value);
+    void Promise.all([
+      isNativeBiometricAvailable(),
+      getNativeBiometricEnabled(),
+    ]).then(([deviceAvailable, enabled]) => {
+      if (mounted) setAvailable(deviceAvailable && enabled);
     });
     return () => {
       mounted = false;
@@ -372,6 +358,50 @@ function useNativeBiometricAvailability() {
   }, []);
 
   return available;
+}
+
+function NativeBiometricPreferenceScreen({ onComplete }: { onComplete: () => void }) {
+  const [enabled, setEnabled] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function handleContinue() {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await setNativeBiometricEnabled(enabled);
+      onComplete();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <NativeShell className="native-auth-shell">
+      <div className="native-auth-content native-flow-content">
+        <BrandLockup />
+        <p className="native-instruction">Enable fingerprint unlock?</p>
+        <p className="native-supporting-copy">
+          Use your enrolled biometric as an alternative to your quick-unlock credential.
+        </p>
+        <div className="native-toggle-card">
+          <div>
+            <p className="font-medium">Fingerprint unlock</p>
+            <p className="native-toggle-description">You can change this later in Settings.</p>
+          </div>
+          <Switch
+            checked={enabled}
+            onCheckedChange={setEnabled}
+            aria-label="Enable fingerprint unlock"
+          />
+        </div>
+        <div className="native-flow-action">
+          <PrimaryActionButton onClick={() => void handleContinue()} disabled={saving}>
+            {saving ? "Saving…" : "Continue"}
+          </PrimaryActionButton>
+        </div>
+      </div>
+    </NativeShell>
+  );
 }
 
 export function DailyUnlockPin({
@@ -407,13 +437,14 @@ export function DailyUnlockPin({
   }
 
   return (
-    <NativeShell className="native-daily-screen">
+    <NativeShell className="native-auth-shell native-daily-screen">
       <div className="native-daily-content">
-        <Wordmark small centered />
+        <BrandLockup />
+        <p className="native-instruction">Enter your PIN to unlock your journal.</p>
         <PinProgress length={digits.length} />
         <div className="native-keypad" aria-label="PIN keypad">
           {["1", "2", "3", "4", "5", "6", "7", "8", "9", "fingerprint", "0", "back"].map((key, index) =>
-            key === "" ? <span key={index} aria-hidden="true" /> :
+            key === "" ? <span key={index} className="native-keypad-empty" aria-hidden="true" /> :
             key === "fingerprint" ? (
               biometricsAvailable ? (
                 <button
@@ -474,9 +505,10 @@ export function DailyUnlockPassword({
   }
 
   return (
-    <NativeShell className="native-daily-screen">
+    <NativeShell className="native-auth-shell native-daily-screen">
       <div className="native-daily-content native-password-daily-content">
-        <Wordmark small centered />
+        <BrandLockup />
+        <p className="native-instruction">Enter your password to unlock your journal.</p>
         <div className="native-daily-password-field">
           <MaskedLedgerInput
             value={password}
@@ -497,10 +529,10 @@ export function DailyUnlockPassword({
             Use fingerprint instead
           </button>
         )}
-        <div className="mt-9 w-full">
-          <OutlinedButton onClick={() => void handleUnlock()} disabled={pending || !password}>
+        <div className="native-flow-action">
+          <PrimaryActionButton onClick={() => void handleUnlock()} disabled={pending || !password}>
             {pending ? "Unlocking…" : "Unlock"}
-          </OutlinedButton>
+          </PrimaryActionButton>
         </div>
         {message && <p className="native-inline-message text-center" role="status">{message}</p>}
         <button type="button" onClick={onForgot} className="native-muted-link native-daily-link">Forgot password?</button>
@@ -520,11 +552,22 @@ export function NativeSetupFlow({
 }) {
   const [screen, setScreen] = useState<SetupScreen>("choice");
 
+  async function handleCredentialSaved() {
+    if (await isNativeBiometricAvailable()) {
+      setScreen("biometric");
+      return;
+    }
+    onComplete();
+  }
+
   if (screen === "pin") {
-    return <NativePinSetupScreen onBack={() => setScreen("choice")} onSaved={onComplete} />;
+    return <NativePinSetupScreen onBack={() => setScreen("choice")} onSaved={() => void handleCredentialSaved()} />;
   }
   if (screen === "password") {
-    return <NativePasswordSetupScreen onBack={() => setScreen("choice")} onSaved={onComplete} />;
+    return <NativePasswordSetupScreen onBack={() => setScreen("choice")} onSaved={() => void handleCredentialSaved()} />;
+  }
+  if (screen === "biometric") {
+    return <NativeBiometricPreferenceScreen onComplete={onComplete} />;
   }
   return (
     <NativeUnlockSetupOffer
@@ -575,7 +618,6 @@ function NativeGateSurface() {
     <main
       className="native-entry-shell min-h-[100dvh] w-full"
       aria-busy="true"
-      style={{ backgroundColor: LEDGER.background }}
     />
   );
 }

@@ -196,197 +196,226 @@ html.reduce-motion *::after {
   }
 }
 
-/* ── Native-only paper ledger entry and quick-unlock surfaces ─────────────── */
+/* ── Native auth redesign: reuse the app theme and shared control geometry ─── */
 .native-entry-shell {
-  font-family: "JetBrains Mono", monospace;
-  isolation: isolate;
+  font-family: var(--app-font-sans);
+  color: var(--foreground);
+  background: var(--background);
 }
 
-.native-access-layout {
-  width: min(100%, 560px);
-  flex: 1;
-  padding: clamp(84px, 18vh, 176px) 28px 32px;
+.native-auth-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  padding: max(24px, env(safe-area-inset-top, 0px)) 0 max(24px, env(safe-area-inset-bottom, 0px));
+}
+
+.native-auth-shell *,
+.native-auth-shell *::before,
+.native-auth-shell *::after {
+  box-sizing: border-box;
+}
+
+.native-auth-content {
+  width: min(100%, 390px);
+  min-width: 0;
   margin: 0 auto;
+  padding: clamp(40px, 10vh, 92px) 24px 32px;
+  text-align: center;
 }
 
-.native-access-wordmark {
-  width: min(100%, 470px);
+.native-flow-content {
+  padding-top: clamp(28px, 7vh, 64px);
 }
 
-.native-rule-draw {
-  width: 100%;
-  height: 1px;
-  margin-top: 22px;
-  transform-origin: left center;
-  animation: native-rule-draw 1s ease-out both;
+.native-flow-content-with-header {
+  padding-top: clamp(24px, 5vh, 48px);
 }
 
-@keyframes native-rule-draw {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
+.native-brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  max-width: 100%;
+  color: var(--foreground);
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
-.native-access-content,
-.native-choice-content,
-.native-setup-content {
-  width: min(100%, 430px);
+.native-brand-lockup-compact {
+  font-size: 1rem;
 }
 
-.native-access-content {
-  margin-top: clamp(48px, 9vh, 88px);
+.native-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  box-shadow: 0 0 15px var(--primary-glow);
 }
 
-.native-serif-copy {
-  font-family: "Source Serif 4", Georgia, serif;
-  font-size: 1.2rem;
+.native-brand-lockup-compact .native-brand-mark {
+  width: 28px;
+  height: 28px;
+}
+
+.native-instruction {
+  max-width: 320px;
+  margin: 24px auto 0;
+  color: var(--muted-foreground);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.native-supporting-copy {
+  max-width: 320px;
+  margin: 10px auto 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
   line-height: 1.5;
-  color: #211D18;
+}
+
+.native-auth-form {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 14px;
+  margin-top: 28px;
 }
 
 .native-ledger-input-wrap {
-  position: relative;
   width: 100%;
-  min-height: 52px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid #A9B7C6;
+  min-width: 0;
+  min-height: 48px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .native-ledger-input-wrap:focus-within {
-  border-bottom-color: #211D18;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
 .native-ledger-input {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
+  position: static;
+  display: block;
   width: 100%;
-  height: 100%;
-  padding: 12px 0 10px;
+  min-width: 0;
+  height: 48px;
+  padding: 0 16px;
   border: 0;
-  outline: none;
+  outline: 0;
+  color: var(--foreground);
+  caret-color: var(--primary);
   background: transparent;
-  color: transparent;
-  caret-color: transparent;
   font: inherit;
-  letter-spacing: 0.08em;
+  font-size: 0.95rem;
+  text-align: center;
 }
 
-.native-ledger-mask {
-  display: flex;
-  align-items: center;
-  min-height: 52px;
-  padding: 12px 0 10px;
-  color: #211D18;
-  font-family: "JetBrains Mono", monospace;
-  letter-spacing: 0.08em;
-  white-space: pre-wrap;
-  pointer-events: none;
+.native-ledger-input::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.8;
 }
 
-.native-ledger-input:not(:placeholder-shown) + .native-ledger-mask {
-  color: #211D18;
-}
-
-.native-ledger-cursor {
-  display: inline-block;
-  width: 1px;
-  height: 1.2em;
-  margin-left: 5px;
-  vertical-align: -0.2em;
-  animation: native-cursor-blink 1s steps(1, end) infinite;
-}
-
-@keyframes native-cursor-blink {
-  50% { opacity: 0; }
-}
-
-.native-outlined-button {
-  min-height: 48px;
-  border: 1px solid #211D18;
-  background: transparent;
-  padding: 12px 18px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.8rem;
+.native-primary-button {
+  min-height: 44px;
+  border-radius: var(--radius-lg);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary-border);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  transition: background-color 160ms ease, color 160ms ease;
-}
-
-.native-outlined-button:hover:not(:disabled),
-.native-outlined-button:focus-visible {
-  background: #211D18;
-  color: #EDE7D8 !important;
-  outline: none;
-}
-
-.native-private-copy,
-.native-step-copy,
-.native-field-label {
-  color: #8A8375;
-  font-family: "JetBrains Mono", monospace;
 }
 
 .native-private-copy {
-  padding: 0 28px calc(22px + env(safe-area-inset-bottom, 0px));
-  font-size: 0.7rem;
-  letter-spacing: 0.04em;
+  margin-top: auto;
+  padding: 20px 24px 0;
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.native-action-stack {
+  display: grid;
+  width: 100%;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.native-action-stack .native-muted-link {
+  margin-top: 6px;
+}
+
+.native-muted-link,
+.native-biometric-link {
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.native-muted-link:hover,
+.native-biometric-link:hover {
+  color: var(--foreground);
 }
 
 .native-inline-message {
-  margin-top: 14px;
-  color: #8A8375;
-  font-family: "Source Serif 4", Georgia, serif;
-  font-size: 0.9rem;
+  margin: 2px 0 0;
+  color: var(--destructive);
+  font-size: 0.82rem;
   line-height: 1.4;
 }
 
-.native-centered-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.native-choice-content {
-  flex: 1;
-  margin: clamp(72px, 15vh, 150px) 28px 0;
-}
-
-.native-choice-rule {
-  width: 100%;
-  height: 1px;
-  margin-top: 18px;
-}
-
 .native-screen-header {
+  position: relative;
   display: flex;
-  width: 100%;
   align-items: center;
-  gap: 12px;
-  min-height: 60px;
-  padding: 0 20px;
-  border-bottom: 1px solid;
-}
-
-.native-screen-header-dashed {
-  border-bottom-style: dashed;
+  justify-content: center;
+  width: min(100%, 390px);
+  min-height: 52px;
+  padding: 4px 56px;
+  border: 0;
 }
 
 .native-icon-button {
+  position: absolute;
+  left: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
-  margin-left: -8px;
+  color: var(--muted-foreground);
+  border-radius: var(--radius-md);
 }
 
-.native-setup-content {
-  padding: 48px 28px calc(28px + env(safe-area-inset-bottom, 0px));
-  margin: 0 auto;
+.native-icon-button:hover,
+.native-icon-button:focus-visible {
+  color: var(--foreground);
+  background: var(--surface-hover);
+  outline: none;
+}
+
+.native-step-copy,
+.native-field-label {
+  color: var(--muted-foreground);
+  font-family: var(--app-font-mono);
 }
 
 .native-step-copy {
-  margin-top: 36px;
+  margin-top: 28px;
   font-size: 0.72rem;
   letter-spacing: 0.04em;
 }
@@ -394,93 +423,134 @@ html.reduce-motion *::after {
 .native-pin-progress {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin: 18px 0 34px;
+  gap: 14px;
+  margin: 20px 0 40px;
 }
 
-.native-pin-square {
+.native-pin-dot {
   display: block;
-  width: 16px;
-  height: 16px;
-  border: 1px solid;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--muted-foreground);
+  border-radius: 9999px;
+  background: transparent;
+}
+
+.native-pin-dot-filled {
+  border-color: var(--primary);
+  background: var(--primary);
 }
 
 .native-keypad {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  width: 100%;
-  border: 1px solid #A9B7C6;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 4vw, 20px);
+  width: min(100%, 300px);
+  margin: 0 auto;
 }
 
 .native-keypad-key,
-.native-keypad > span {
+.native-keypad-empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 64px;
-  border-right: 1px solid #A9B7C6;
-  border-bottom: 1px solid #A9B7C6;
-  color: #211D18;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 1.05rem;
-}
-
-.native-keypad-key:nth-child(3n) {
-  border-right: 0;
-}
-
-.native-keypad-key:nth-last-child(-n + 3),
-.native-keypad > span:nth-last-child(-n + 3) {
-  border-bottom: 0;
+  justify-self: center;
+  width: min(100%, 74px);
+  aspect-ratio: 1;
+  min-height: 0;
+  border: 1px solid var(--surface-border);
+  border-radius: 9999px;
+  color: var(--foreground);
+  background: var(--surface-2);
+  font-family: var(--app-font-mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 120ms ease;
 }
 
 .native-keypad-key:hover,
 .native-keypad-key:focus-visible {
-  background: rgba(33, 29, 24, 0.06);
+  border-color: var(--primary);
+  background: var(--surface-active);
   outline: none;
+}
+
+.native-keypad-key:active {
+  transform: scale(0.96);
+}
+
+.native-keypad-empty {
+  border-color: transparent;
+  background: transparent;
 }
 
 .native-field-label {
   display: block;
-  margin-top: 34px;
-  margin-bottom: 6px;
-  font-size: 0.7rem;
+  margin: 26px 0 8px;
+  font-size: 0.72rem;
   letter-spacing: 0.06em;
+  text-align: center;
 }
 
-.native-muted-link,
-.native-biometric-link {
-  color: #8A8375;
-  font-family: "Source Serif 4", Georgia, serif;
-  font-size: 0.95rem;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.native-field-label + .native-ledger-input-wrap {
+  margin: 0;
+}
+
+.native-flow-action {
+  width: 100%;
+  margin-top: 26px;
+}
+
+.native-toggle-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  gap: 16px;
+  margin-top: 28px;
+  padding: 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  color: var(--foreground);
+  background: var(--surface-1);
+  text-align: left;
+}
+
+.native-toggle-description {
+  margin-top: 4px;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 .native-daily-screen {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  min-height: 100dvh;
+  align-items: stretch;
 }
 
 .native-daily-content {
-  width: min(100% - 56px, 360px);
-  margin: 15vh auto 0;
+  width: min(100%, 390px);
+  min-width: 0;
+  margin: 0 auto;
+  padding: clamp(56px, 13vh, 120px) 24px 32px;
   text-align: center;
 }
 
 .native-daily-content .native-pin-progress {
-  margin-top: 30px;
+  margin-top: 36px;
 }
 
 .native-daily-link {
   display: inline-block;
-  margin-top: 34px;
+  margin-top: 32px;
 }
 
 .native-password-daily-content {
-  margin-top: 18vh;
+  padding-top: clamp(56px, 15vh, 140px);
+}
+
+.native-password-daily-content .native-instruction {
+  margin-bottom: 28px;
 }
 
 .native-password-daily-content .native-ledger-input-wrap {
@@ -495,21 +565,19 @@ html.reduce-motion *::after {
   text-decoration: none;
 }
 
-@media (max-width: 380px) {
-  .native-access-layout,
-  .native-setup-content,
-  .native-choice-content {
-    padding-left: 22px;
-    padding-right: 22px;
+@media (max-width: 360px) {
+  .native-auth-content,
+  .native-daily-content {
+    padding-left: 18px;
+    padding-right: 18px;
   }
 
-  .native-private-copy {
-    padding-left: 22px;
-    padding-right: 22px;
+  .native-keypad {
+    gap: 10px;
   }
 
   .native-keypad-key,
-  .native-keypad > span {
-    min-height: 58px;
+  .native-keypad-empty {
+    width: min(100%, 68px);
   }
 }

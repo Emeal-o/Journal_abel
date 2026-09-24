@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronRight, ChevronDown,
   SlidersHorizontal, Info, LogOut, HelpCircle, Bug, ArrowLeft, GripVertical,
-  Home, BarChart3, Type, Zap, Palette, Check, User, Calculator, CalendarDays, KeyRound,
+  Home, BarChart3, Type, Zap, Palette, Check, User, Calculator, CalendarDays, KeyRound, Fingerprint,
 } from "lucide-react";
 import {
   DndContext,
@@ -42,6 +42,12 @@ import {
 import { useCalendarPrefs, type CalendarPeriodMode } from "@/hooks/use-calendar-prefs";
 import { isNativePlatform } from "@/lib/capacitor";
 import { NativeSetupFlow } from "@/components/native-unlock";
+import { isNativeBiometricAvailable } from "@/lib/native-biometric";
+import {
+  getNativeBiometricEnabled,
+  getNativeUnlockMethod,
+  setNativeBiometricEnabled,
+} from "@/lib/native-unlock";
 
 // ── Section label ──────────────────────────────────────────────────────────────
 
@@ -178,6 +184,45 @@ function ToggleRow({ icon, label, checked, onCheckedChange, last }: ToggleRowPro
         aria-label={label}
       />
     </div>
+  );
+}
+
+function NativeBiometricSettingsRow() {
+  const [available, setAvailable] = useState<boolean | null>(null);
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    void Promise.all([
+      isNativeBiometricAvailable(),
+      getNativeBiometricEnabled(),
+      getNativeUnlockMethod(),
+    ]).then(([deviceAvailable, configured, unlockMethod]) => {
+      if (!mounted) return;
+      const canUseBiometric = deviceAvailable && Boolean(unlockMethod);
+      setAvailable(canUseBiometric);
+      setEnabled(canUseBiometric && configured);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (available !== true) return null;
+
+  function handleChange(next: boolean) {
+    setEnabled(next);
+    void setNativeBiometricEnabled(next);
+  }
+
+  return (
+    <ToggleRow
+      icon={<Fingerprint className="w-5 h-5" />}
+      label="Fingerprint unlock"
+      checked={enabled}
+      onCheckedChange={handleChange}
+      last
+    />
   );
 }
 
@@ -639,11 +684,11 @@ export function SettingsPage() {
           <SectionHeader>Security</SectionHeader>
           <SettingsCard>
             <ChevronRow
-              last
               icon={<KeyRound className="w-5 h-5" />}
               label="Add a PIN or password"
               onClick={() => setNativeSetupOpen(true)}
             />
+            <NativeBiometricSettingsRow />
           </SettingsCard>
         </div>
       )}

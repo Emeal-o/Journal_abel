@@ -1,5 +1,6 @@
 import { NativeBiometric } from "capacitor-native-biometric";
 import { isNativePlatform } from "@/lib/capacitor";
+import { getNativeBiometricEnabled } from "@/lib/native-unlock";
 
 export async function isNativeBiometricAvailable(): Promise<boolean> {
   if (!isNativePlatform) return false;
@@ -13,6 +14,7 @@ export async function isNativeBiometricAvailable(): Promise<boolean> {
 
 export async function requestNativeBiometricUnlock(): Promise<boolean> {
   if (!isNativePlatform) return false;
+  if (!await getNativeBiometricEnabled()) return false;
   try {
     await NativeBiometric.verifyIdentity({
       reason: "Unlock your TradeOps journal",

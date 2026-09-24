@@ -6,6 +6,7 @@ export const NATIVE_UNLOCK_KEYS = {
   passwordHash: "nativeUnlockPasswordHash",
   salt: "nativeUnlockSalt",
   method: "nativeUnlockMethod",
+  biometricEnabled: "nativeUnlockBiometricEnabled",
 } as const;
 
 export type NativeUnlockMethod = "pin" | "password";
@@ -36,6 +37,7 @@ async function clearNativeUnlockCredential(): Promise<void> {
     Preferences.remove({ key: NATIVE_UNLOCK_KEYS.passwordHash }),
     Preferences.remove({ key: NATIVE_UNLOCK_KEYS.salt }),
     Preferences.remove({ key: NATIVE_UNLOCK_KEYS.method }),
+    Preferences.remove({ key: NATIVE_UNLOCK_KEYS.biometricEnabled }),
   ]);
 }
 
@@ -46,6 +48,18 @@ export async function hasSeenNativeUnlockOffer(): Promise<boolean> {
 
 export async function markNativeUnlockOfferSeen(): Promise<void> {
   await Preferences.set({ key: NATIVE_UNLOCK_KEYS.hasSeenOffer, value: "true" });
+}
+
+export async function getNativeBiometricEnabled(): Promise<boolean> {
+  const { value } = await Preferences.get({ key: NATIVE_UNLOCK_KEYS.biometricEnabled });
+  return value === "true";
+}
+
+export async function setNativeBiometricEnabled(enabled: boolean): Promise<void> {
+  await Preferences.set({
+    key: NATIVE_UNLOCK_KEYS.biometricEnabled,
+    value: String(enabled),
+  });
 }
 
 export async function saveNativePin(pin: string): Promise<void> {
