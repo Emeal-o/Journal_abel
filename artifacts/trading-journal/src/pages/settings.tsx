@@ -41,8 +41,14 @@ import {
 } from "@/lib/profile-api";
 import { useCalendarPrefs, type CalendarPeriodMode } from "@/hooks/use-calendar-prefs";
 import { isNativePlatform } from "@/lib/capacitor";
-import { NativeSetupFlow } from "@/components/native-unlock";
-import { isNativeBiometricAvailable } from "@/lib/native-biometric";
+import {
+  NativeCredentialConfirmationScreen,
+  NativeSetupFlow,
+} from "@/components/native-unlock";
+import {
+  isNativeBiometricAvailable,
+  requestNativeBiometricVerification,
+} from "@/lib/native-biometric";
 import {
   getNativeBiometricEnabled,
   getNativeUnlockMethod,
@@ -190,6 +196,8 @@ function ToggleRow({ icon, label, checked, onCheckedChange, last }: ToggleRowPro
 function NativeBiometricSettingsRow() {
   const [available, setAvailable] = useState<boolean | null>(null);
   const [enabled, setEnabled] = useState(false);
+  const [unlockMethod, setUnlockMethod] = useState<"pin" | "password" | null>(null);
+  const [pendingTarget, setPendingTarget] = useState<boolean | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -202,6 +210,7 @@ function NativeBiometricSettingsRow() {
       const canUseBiometric = deviceAvailable && Boolean(unlockMethod);
       setAvailable(canUseBiometric);
       setEnabled(canUseBiometric && configured);
+      setUnlockMethod(unlockMethod);
     });
     return () => {
       mounted = false;
@@ -211,18 +220,45 @@ function NativeBiometricSettingsRow() {
   if (available !== true) return null;
 
   function handleChange(next: boolean) {
-    setEnabled(next);
-    void setNativeBiometricEnabled(next);
+    if (!unlockMethod || next === enabled) return;
+    setPendingTarget(next);
   }
 
+  const target = pendingTarget;
+
   return (
-    <ToggleRow
-      icon={<Fingerprint className="w-5 h-5" />}
-      label="Fingerprint unlock"
-      checked={enabled}
-      onCheckedChange={handleChange}
-      last
-    />
+    <>
+      <ToggleRow
+        icon={<Fingerprint className="w-5 h-5" />}
+        label="Fingerprint unlock"
+        checked={enabled}
+        onCheckedChange={handleChange}
+        last
+      />
+      {target !== null && unlockMethod && (
+        <NativeCredentialConfirmationScreen
+          method={unlockMethod}
+          className="native-biometric-confirm-overlay"
+          onCancel={() => setPendingTarget(null)}
+          onVerified={async () => {
+            if (target && !await requestNativeBiometricVerification()) {
+              return {
+                ok: false,
+                message: "Biometric verification was cancelled or failed. Fingerprint unlock remains off.",
+              };
+            }
+            try {
+              await setNativeBiometricEnabled(target);
+              setEnabled(target);
+              setPendingTarget(null);
+              return { ok: true };
+            } catch {
+              return { ok: false, message: "Could not save the biometric setting. Please try again." };
+            }
+          }}
+        />
+      )}
+    </>
   );
 }
 
@@ -583,6 +619,7 @@ export function SettingsPage() {
         showBack
         onBack={() => setNativeSetupOpen(false)}
         onComplete={() => setNativeSetupOpen(false)}
+        onCredentialRemoved={handleLogout}
       />
     );
   }

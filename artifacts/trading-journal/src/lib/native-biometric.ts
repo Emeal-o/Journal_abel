@@ -12,9 +12,7 @@ export async function isNativeBiometricAvailable(): Promise<boolean> {
   }
 }
 
-export async function requestNativeBiometricUnlock(): Promise<boolean> {
-  if (!isNativePlatform) return false;
-  if (!await getNativeBiometricEnabled()) return false;
+async function promptForNativeBiometricIdentity(): Promise<boolean> {
   try {
     await NativeBiometric.verifyIdentity({
       reason: "Unlock your TradeOps journal",
@@ -30,4 +28,16 @@ export async function requestNativeBiometricUnlock(): Promise<boolean> {
     // to the same screen without creating a dead end or a blocking error.
     return false;
   }
+}
+
+/** Runs the operating-system biometric prompt without checking the saved preference. */
+export async function requestNativeBiometricVerification(): Promise<boolean> {
+  if (!isNativePlatform) return false;
+  return promptForNativeBiometricIdentity();
+}
+
+export async function requestNativeBiometricUnlock(): Promise<boolean> {
+  if (!isNativePlatform) return false;
+  if (!await getNativeBiometricEnabled()) return false;
+  return promptForNativeBiometricIdentity();
 }

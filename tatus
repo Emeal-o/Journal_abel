@@ -1,0 +1,68 @@
+[33m3d1682b[m[33m ([m[1;33mtag: [m[1;33mv1.1.1[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Refactor native unlock component and update global styles
+[33med59694[m[33m ([m[1;33mtag: [m[1;33mv1.1.0[m[33m)[m Implement native unlock logic in trading journal
+[33m6104c69[m Implement native biometric authentication module and update dependencies
+[33me2cd682[m Implement native unlock feature and update trading journal styles
+[33m01aff00[m[33m ([m[1;33mtag: [m[1;33mv1.0.2[m[33m)[m Update MainActivity path in android-release.yml
+[33me2f11f8[m Disable native WebView scrollbar in Android app
+[33m86c844b[m[33m ([m[1;33mtag: [m[1;33mv1.0.1[m[33m)[m Hide scrollbars in native shell
+[33meae4c7d[m Revert temporary CORS diagnostic
+[33mdc43f92[m TEMPORARY DIAGNOSTIC - revert after use: expose origin rejection details
+[33mc683d61[m Update API server distribution artifacts
+[33mda01cd0[m Allow Capacitor Android origin in CORS
+[33m5ccc543[m[33m ([m[1;33mtag: [m[1;33mv1.0.0[m[33m)[m Fix native API base URL and Android icon
+[33meab0526[m Update Java version from 17 to 21 in workflow
+[33m7bb205a[m Use preinstalled Android SDK licenses
+[33m61c042e[m Update replit configuration and add asset files
+[33ma491c42[m Add signed Android release workflow
+[33m994f3a3[m Ignore keystore files
+[33m33bae28[m Add ignore instructions file
+[33mc551771[m Document Capacitor packaging constraint
+[33mfd2760c[m Add manual Capacitor v7 frontend shell
+[33m42ce8c2[m Update project dependencies
+[33m6a5ce10[m Update project dependencies in package.json
+[33m417dbb2[m Update trading journal dependencies
+[33ma69373b[m Add loading skeleton for Trading Calendar section
+[33m22d54a9[m Fix trading calendar grid sizing and toolbar spacing v2
+[33m580add0[m Fix trading calendar grid sizing and toolbar spacing
+[33m198afaa[m Update trading calendar component and preferences hook
+[33m2a3020c[m Implement trading calendar and metrics components
+[33mf9e9749[m Update replit configuration
+[33mfc83726[m Replace global credit line visibility with user blacklist
+[33me3504d7[m Add visibility toggle for credit line
+[33mc07c78a[m Update trading journal settings page
+[33mf61c5ed[m Refactor components and optimize styling in the trading journal application
+[33m54fd5ef[m Add customizable analysis section preferences
+[33m16a881a[m Restructure admin into navigation cards and detail views
+[33m5e8f559[m Fix geolocation fallback and tab admin dashboard
+[33ma8411f7[m Update configuration and add prompt test asset
+[33ma0e4f7b[m Reapply login tracking and preserve app settings
+[33m2a684e5[m Add read-only what-if risk calculator
+[33m890695c[m Respect stat display preference in archive totals
+[33m3292827[m Add pasted asset file for reference
+[33mc87dce3[m Add prompt injection instruction file to attached assets
+[33m911e906[m Wire default stat display into trade rows
+[33mf9d19f5[m Fix cross-site cookie bug: proxy /api through frontend domain via Vercel rewrite
+[33m674e63d[m Default theme to AMOLED for new visitors
+[33m718e787[m Add public landing page
+[33m68a78a7[m Add prompt engineering test files to assets directory
+[33maaa2355[m Add optional About credit line
+[33m147165a[m Add profile nickname feature (self-service + admin visibility)
+[33m302574b[m Increase Dim theme contrast against Current
+[33m08d409e[m Add Theme setting (Current/AMOLED/Dim) to Settings Display
+[33m4321c9e[m Fix default landing redirect scope
+[33md54d44a[m Update api-server sourcemap artifacts
+[33m32cf3d3[m chore: document partial database bootstrap
+[33mf70a4f6[m feat: add settings FAQ and bug reporting
+[33mf60a6e1[m Fix: preserve line breaks in About text
+[33ma02e25b[m Stage 1b: admin-editable About section via app_settings table
+[33maa062fd[m Update trading journal application component
+[33mc890bf5[m Add documentation for display preferences settings task
+[33m980f47d[m feat(settings): Stage 2 — Display Preferences section (landing page, stat display, font size, reduce motion)
+[33m80a29bd[m Add settings page visual restyle artifacts
+[33m2116cf2[m restyle(settings): grouped cards, row icons, value preview, OS-style layout
+[33m9778c0b[m Add task details for the new settings page build stage
+[33m866ea3a[m feat(settings): Stage 1a — Settings page with setup types shortcut, about panel, logout
+[33m434a531[m Update api-server build artifacts and add documentation screenshot
+[33m85a7435[m Add three screenshot images to attached assets
+[33me7aa870[m Add screenshots from July 6, 2026
+[33m2a209f0[m Add screenshot of user interface state

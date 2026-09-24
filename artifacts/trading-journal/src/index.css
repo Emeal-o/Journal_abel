@@ -358,6 +358,30 @@ html.reduce-motion *::after {
   margin-top: 6px;
 }
 
+.native-manage-secondary,
+.native-manage-remove {
+  min-height: 44px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+}
+
+.native-manage-secondary {
+  border-color: var(--surface-border);
+  color: var(--foreground);
+}
+
+.native-manage-remove {
+  border-color: color-mix(in srgb, var(--destructive) 35%, transparent);
+  color: var(--destructive);
+}
+
+.native-biometric-confirm-overlay {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  overflow-y: auto;
+}
+
 .native-muted-link,
 .native-biometric-link {
   color: var(--muted-foreground);

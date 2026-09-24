@@ -10,6 +10,7 @@ import {
   getNativeUnlockMethod,
   hasSeenNativeUnlockOffer,
   markNativeUnlockOfferSeen,
+  removeNativeUnlockCredential,
   saveNativePassword,
   saveNativePin,
   setNativeBiometricEnabled,
@@ -18,11 +19,16 @@ import {
 } from "@/lib/native-unlock";
 import {
   isNativeBiometricAvailable,
+  requestNativeBiometricVerification,
   requestNativeBiometricUnlock,
 } from "@/lib/native-biometric";
 
 type SetupChoice = "pin" | "password" | "skip";
-type SetupScreen = "choice" | "pin" | "password" | "biometric";
+type ManageAction =
+  | { type: "change-credential"; method: "pin" | "password" }
+  | { type: "remove-credential" };
+type SetupScreen = "loading" | "load-error" | "choice" | "manage" | "verify" | "pin" | "password" | "biometric";
+type CredentialConfirmationResult = { ok: boolean; message?: string };
 
 function NativeShell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -191,10 +197,192 @@ export function NativeUnlockSetupOffer({
         <div className="native-action-stack">
           <PrimaryActionButton onClick={() => onChoose("pin")}>Set a PIN</PrimaryActionButton>
           <PrimaryActionButton onClick={() => onChoose("password")}>Set a password</PrimaryActionButton>
-          <button type="button" className="native-muted-link" onClick={() => onChoose("skip")}>
-            Skip for now
+          <button
+            type="button"
+            className="native-muted-link"
+            onClick={() => showBack ? onBack?.() : onChoose("skip")}
+          >
+            {showBack ? "Cancel" : "Skip for now"}
           </button>
         </div>
+      </div>
+    </NativeShell>
+  );
+}
+
+function NativeQuickUnlockManageScreen({
+  method,
+  onChoose,
+  onBack,
+}: {
+  method: "pin" | "password";
+  onChoose: (action: ManageAction) => void;
+  onBack: () => void;
+}) {
+  const methodLabel = method === "pin" ? "PIN" : "password";
+  const otherMethod = method === "pin" ? "password" : "pin";
+  const otherMethodLabel = otherMethod === "pin" ? "PIN" : "password";
+
+  return (
+    <NativeShell className="native-auth-shell">
+      <BackHeader title="Manage quick unlock" onBack={onBack} />
+      <div className="native-auth-content native-flow-content native-flow-content-with-header">
+        <p className="native-instruction">Manage quick unlock</p>
+        <p className="native-supporting-copy">
+          Your current method is <span className="font-medium text-foreground">{methodLabel}</span>.
+          Confirm it before making any changes.
+        </p>
+        <div className="native-action-stack">
+          <PrimaryActionButton onClick={() => onChoose({ type: "change-credential", method })}>
+            Change {methodLabel}
+          </PrimaryActionButton>
+          <Button
+            type="button"
+            variant="outline"
+            className="native-manage-secondary"
+            onClick={() => onChoose({ type: "change-credential", method: otherMethod })}
+          >
+            Switch to {otherMethodLabel}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="native-manage-remove"
+            onClick={() => onChoose({ type: "remove-credential" })}
+          >
+            Remove quick unlock
+          </Button>
+        </div>
+      </div>
+    </NativeShell>
+  );
+}
+
+function verifyNativeCredential(method: "pin" | "password", secret: string): Promise<boolean> {
+  return method === "pin" ? verifyNativePin(secret) : verifyNativePassword(secret);
+}
+
+export function NativeCredentialConfirmationScreen({
+  method,
+  onCancel,
+  onVerified,
+  className = "",
+}: {
+  method: "pin" | "password";
+  onCancel: () => void;
+  onVerified: () => Promise<CredentialConfirmationResult>;
+  className?: string;
+}) {
+  const [digits, setDigits] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
+
+  async function confirm(secret: string) {
+    if (pendingRef.current) return;
+    pendingRef.current = true;
+    setPending(true);
+    setMessage(null);
+    try {
+      const valid = await verifyNativeCredential(method, secret);
+      if (!valid) {
+        setMessage(method === "pin"
+          ? "That PIN was not recognised. Nothing was changed."
+          : "That password was not recognised. Nothing was changed.");
+        setDigits("");
+        setPassword("");
+        return;
+      }
+
+      const result = await onVerified();
+      if (!result.ok) {
+        setMessage(result.message ?? "Could not complete this change. Please try again.");
+        setDigits("");
+        setPassword("");
+      }
+    } catch {
+      setMessage("Could not verify your credential. Please try again.");
+      setDigits("");
+      setPassword("");
+    } finally {
+      pendingRef.current = false;
+      setPending(false);
+    }
+  }
+
+  function pressDigit(digit: string) {
+    if (pendingRef.current || digits.length >= 6) return;
+    setMessage(null);
+    const next = `${digits}${digit}`;
+    setDigits(next);
+    if (next.length === 6) void confirm(next);
+  }
+
+  return (
+    <NativeShell className={`native-auth-shell ${className}`}>
+      <BackHeader
+        title={`Confirm your current ${method === "pin" ? "PIN" : "password"}`}
+        onBack={onCancel}
+      />
+      <div className="native-auth-content native-flow-content native-flow-content-with-header">
+        <p className="native-instruction">
+          Enter your current {method === "pin" ? "6-digit PIN" : "password"} to continue.
+        </p>
+        {method === "pin" ? (
+          <>
+            <PinProgress length={digits.length} />
+            <div className="native-keypad" aria-label="Confirm current PIN">
+              {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"].map((key, index) =>
+                key === "" ? <span key={index} className="native-keypad-empty" aria-hidden="true" /> :
+                key === "back" ? (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setDigits((value) => value.slice(0, -1))}
+                    className="native-keypad-key"
+                    aria-label="Delete last digit"
+                    disabled={pending}
+                  >
+                    <Delete className="h-5 w-5" strokeWidth={1.5} />
+                  </button>
+                ) : (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => pressDigit(key)}
+                    className="native-keypad-key"
+                    disabled={pending}
+                  >
+                    {key}
+                  </button>
+                )
+              )}
+            </div>
+          </>
+        ) : (
+          <form
+            className="native-auth-form"
+            onSubmit={(event) => { event.preventDefault(); void confirm(password); }}
+          >
+            <MaskedLedgerInput
+              value={password}
+              onChange={(value) => { setPassword(value); setMessage(null); }}
+              ariaLabel="Current password"
+              type="password"
+              autoFocus
+            />
+            <PrimaryActionButton type="submit" disabled={pending || !password}>
+              {pending ? "Verifying…" : "Verify and continue"}
+            </PrimaryActionButton>
+          </form>
+        )}
+        {message && <p className="native-inline-message text-center" role="alert">{message}</p>}
+        {method === "pin" && (
+          <p className="native-step-copy">
+            {pending ? "Verifying…" : "Your credential is required before any change."}
+          </p>
+        )}
       </div>
     </NativeShell>
   );
@@ -360,9 +548,16 @@ function useNativeBiometricAvailability() {
   return available;
 }
 
-function NativeBiometricPreferenceScreen({ onComplete }: { onComplete: () => void }) {
+function NativeBiometricPreferenceScreen({
+  method,
+  onComplete,
+}: {
+  method: "pin" | "password";
+  onComplete: () => void;
+}) {
   const [enabled, setEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [pendingTarget, setPendingTarget] = useState<boolean | null>(null);
 
   async function handleContinue() {
     if (saving) return;
@@ -373,6 +568,32 @@ function NativeBiometricPreferenceScreen({ onComplete }: { onComplete: () => voi
     } finally {
       setSaving(false);
     }
+  }
+
+  if (pendingTarget !== null) {
+    const target = pendingTarget;
+    return (
+      <NativeCredentialConfirmationScreen
+        method={method}
+        onCancel={() => setPendingTarget(null)}
+        onVerified={async () => {
+          if (target && !await requestNativeBiometricVerification()) {
+            return {
+              ok: false,
+              message: "Biometric verification was cancelled or failed. Fingerprint unlock remains off.",
+            };
+          }
+          try {
+            await setNativeBiometricEnabled(target);
+            setEnabled(target);
+            setPendingTarget(null);
+            return { ok: true };
+          } catch {
+            return { ok: false, message: "Could not save the biometric setting. Please try again." };
+          }
+        }}
+      />
+    );
   }
 
   return (
@@ -390,7 +611,7 @@ function NativeBiometricPreferenceScreen({ onComplete }: { onComplete: () => voi
           </div>
           <Switch
             checked={enabled}
-            onCheckedChange={setEnabled}
+            onCheckedChange={(next) => setPendingTarget(next)}
             aria-label="Enable fingerprint unlock"
           />
         </div>
@@ -545,14 +766,40 @@ export function NativeSetupFlow({
   onComplete,
   onBack,
   showBack = false,
+  onCredentialRemoved,
 }: {
   onComplete: () => void;
   onBack?: () => void;
   showBack?: boolean;
+  onCredentialRemoved?: () => void | Promise<void>;
 }) {
-  const [screen, setScreen] = useState<SetupScreen>("choice");
+  const [screen, setScreen] = useState<SetupScreen>(showBack ? "loading" : "choice");
+  const [activeMethod, setActiveMethod] = useState<"pin" | "password" | null>(null);
+  const [credentialBackScreen, setCredentialBackScreen] = useState<"choice" | "manage">("choice");
+  const [pendingAction, setPendingAction] = useState<ManageAction | null>(null);
+
+  useEffect(() => {
+    if (!showBack) return;
+    let mounted = true;
+    void getNativeUnlockMethod().then((method) => {
+      if (!mounted) return;
+      setActiveMethod(method);
+      setScreen(method ? "manage" : "choice");
+    }).catch(() => {
+      if (mounted) setScreen("load-error");
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [showBack]);
 
   async function handleCredentialSaved() {
+    const method = await getNativeUnlockMethod();
+    if (method) setActiveMethod(method);
+    if (!method) {
+      onComplete();
+      return;
+    }
     if (await isNativeBiometricAvailable()) {
       setScreen("biometric");
       return;
@@ -560,25 +807,116 @@ export function NativeSetupFlow({
     onComplete();
   }
 
+  async function handleManageAction(action: ManageAction) {
+    setPendingAction(action);
+    setCredentialBackScreen("manage");
+    setScreen("verify");
+  }
+
+  if (screen === "loading") {
+    return (
+      <NativeShell className="native-auth-shell">
+        <div className="native-auth-content native-flow-content">
+          <BrandLockup />
+          <p className="native-instruction">Checking quick unlock settings…</p>
+        </div>
+      </NativeShell>
+    );
+  }
+  if (screen === "load-error") {
+    return (
+      <NativeShell className="native-auth-shell">
+        <BackHeader title="Quick unlock" onBack={() => onBack?.()} />
+        <div className="native-auth-content native-flow-content native-flow-content-with-header">
+          <p className="native-instruction">Quick unlock settings could not be checked.</p>
+          <p className="native-supporting-copy">Close this screen and try again. No credential was changed.</p>
+        </div>
+      </NativeShell>
+    );
+  }
+  if (
+    (screen === "manage" && !activeMethod)
+    || (screen === "verify" && (!activeMethod || !pendingAction))
+  ) {
+    return (
+      <NativeShell className="native-auth-shell">
+        <BackHeader title="Quick unlock" onBack={() => onBack?.()} />
+        <div className="native-auth-content native-flow-content native-flow-content-with-header">
+          <p className="native-instruction">Quick unlock settings could not be checked.</p>
+          <p className="native-supporting-copy">No credential was changed. Close this screen and try again.</p>
+        </div>
+      </NativeShell>
+    );
+  }
+  if (screen === "manage" && activeMethod) {
+    return (
+      <NativeQuickUnlockManageScreen
+        method={activeMethod}
+        onBack={() => onBack?.()}
+        onChoose={(action) => void handleManageAction(action)}
+      />
+    );
+  }
+  if (screen === "verify" && activeMethod && pendingAction) {
+    return (
+      <NativeCredentialConfirmationScreen
+        method={activeMethod}
+        onCancel={() => {
+          setPendingAction(null);
+          setScreen(credentialBackScreen);
+        }}
+        onVerified={async () => {
+          if (pendingAction.type === "remove-credential") {
+            try {
+              await removeNativeUnlockCredential();
+              if (onCredentialRemoved) await onCredentialRemoved();
+              else onComplete();
+              return { ok: true };
+            } catch {
+              return { ok: false, message: "Could not remove quick unlock. Please try again." };
+            }
+          }
+          setCredentialBackScreen("manage");
+          setScreen(pendingAction.method);
+          setPendingAction(null);
+          return { ok: true };
+        }}
+      />
+    );
+  }
   if (screen === "pin") {
-    return <NativePinSetupScreen onBack={() => setScreen("choice")} onSaved={() => void handleCredentialSaved()} />;
+    return <NativePinSetupScreen onBack={() => setScreen(credentialBackScreen)} onSaved={() => void handleCredentialSaved()} />;
   }
   if (screen === "password") {
-    return <NativePasswordSetupScreen onBack={() => setScreen("choice")} onSaved={() => void handleCredentialSaved()} />;
+    return <NativePasswordSetupScreen onBack={() => setScreen(credentialBackScreen)} onSaved={() => void handleCredentialSaved()} />;
   }
-  if (screen === "biometric") {
-    return <NativeBiometricPreferenceScreen onComplete={onComplete} />;
+  if (screen === "biometric" && activeMethod) {
+    return <NativeBiometricPreferenceScreen method={activeMethod} onComplete={onComplete} />;
   }
-  return (
+  if (screen === "choice") return (
     <NativeUnlockSetupOffer
       showBack={showBack}
       onBack={onBack}
       onChoose={(choice) => {
-        if (choice === "pin") setScreen("pin");
-        else if (choice === "password") setScreen("password");
+        if (choice === "pin") {
+          setCredentialBackScreen("choice");
+          setScreen("pin");
+        } else if (choice === "password") {
+          setCredentialBackScreen("choice");
+          setScreen("password");
+        }
         else onComplete();
       }}
     />
+  );
+  return (
+    <NativeShell className="native-auth-shell">
+      <BackHeader title="Quick unlock" onBack={() => onBack?.()} />
+      <div className="native-auth-content native-flow-content native-flow-content-with-header">
+        <p className="native-instruction">Quick unlock could not be opened.</p>
+        <p className="native-supporting-copy">No credential was changed. Close this screen and try again.</p>
+      </div>
+    </NativeShell>
   );
 }
 

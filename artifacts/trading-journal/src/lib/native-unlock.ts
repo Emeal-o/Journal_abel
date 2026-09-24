@@ -41,6 +41,10 @@ async function clearNativeUnlockCredential(): Promise<void> {
   ]);
 }
 
+export async function removeNativeUnlockCredential(): Promise<void> {
+  await clearNativeUnlockCredential();
+}
+
 export async function hasSeenNativeUnlockOffer(): Promise<boolean> {
   const { value } = await Preferences.get({ key: NATIVE_UNLOCK_KEYS.hasSeenOffer });
   return value === "true";

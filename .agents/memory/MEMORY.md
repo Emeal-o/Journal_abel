@@ -3,3 +3,4 @@
 - [Drizzle push TTY prompt](drizzle-push-tty.md) — drizzle-kit push can't be answered non-interactively on a fresh DB; create tables via raw SQL DDL instead.
 - [Partial development database](partial-development-db.md) — startup migrations can expose partially provisioned dev tables; verify prerequisite schemas before debugging feature code.
 - [Capacitor native packaging](capacitor-native-packaging.md) — keep the Trading Journal on Capacitor v7 runtime packages with a manual config; generate native projects in CI.
+- [Workspace dependency restore](workspace-dependency-restore.md) — the generic package installer targets the monorepo root; restore existing package deps with a workspace-filtered pnpm install.
