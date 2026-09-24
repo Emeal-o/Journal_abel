@@ -636,6 +636,18 @@ export function DailyUnlockPin({
   const [message, setMessage] = useState<string | null>(null);
   const biometricsAvailable = useNativeBiometricAvailability();
 
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    html.classList.add("native-pin-unlock-active");
+    body.classList.add("native-pin-unlock-active");
+
+    return () => {
+      html.classList.remove("native-pin-unlock-active");
+      body.classList.remove("native-pin-unlock-active");
+    };
+  }, []);
+
   async function handleBiometricUnlock() {
     setMessage(null);
     if (await requestNativeBiometricUnlock()) onUnlocked();
@@ -675,13 +687,13 @@ export function DailyUnlockPin({
                   className="native-keypad-key native-keypad-action"
                   aria-label="Use fingerprint"
                 >
-                  <Fingerprint className="h-5 w-5" strokeWidth={1.5} />
+                  <Fingerprint className="h-12 w-12" strokeWidth={2} />
                 </button>
               ) : <span key={key} aria-hidden="true" /> 
             ) :
             key === "back" ? (
               <button key={key} type="button" onClick={() => setDigits((value) => value.slice(0, -1))} className="native-keypad-key native-keypad-action" aria-label="Delete last digit">
-                <Delete className="h-5 w-5" strokeWidth={1.5} />
+                <Delete className="h-12 w-12" strokeWidth={2} />
               </button>
             ) : (
               <button key={key} type="button" onClick={() => pressDigit(key)} className="native-keypad-key">{key}</button>

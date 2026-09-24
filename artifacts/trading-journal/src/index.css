@@ -184,6 +184,12 @@ html.reduce-motion *::after {
     padding-left: env(safe-area-inset-left, 0px);
   }
 
+  html.native-pin-unlock-active,
+  html.native-pin-unlock-active body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   html.native-shell,
   html.native-shell * {
     -ms-overflow-style: none;
@@ -565,6 +571,14 @@ html.reduce-motion *::after {
   padding-top: clamp(28px, 5vh, 56px);
 }
 
+.native-pin-unlock-screen {
+  height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  min-height: 0;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 .native-pin-unlock-screen .native-brand-lockup {
   gap: 12px;
   font-size: 1.45rem;
@@ -623,9 +637,9 @@ html.reduce-motion *::after {
 }
 
 .native-pin-unlock-screen .native-keypad-action {
-  width: 48px;
-  height: 48px;
-  min-height: 48px;
+  width: 64px;
+  height: 64px;
+  min-height: 64px;
   aspect-ratio: auto;
   border: 0;
   color: #e4e8eb;
