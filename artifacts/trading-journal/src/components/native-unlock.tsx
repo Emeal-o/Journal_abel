@@ -658,7 +658,7 @@ export function DailyUnlockPin({
   }
 
   return (
-    <NativeShell className="native-auth-shell native-daily-screen">
+    <NativeShell className="native-auth-shell native-daily-screen native-pin-unlock-screen">
       <div className="native-daily-content">
         <BrandLockup />
         <p className="native-instruction">Enter your PIN to unlock your journal.</p>
@@ -672,7 +672,7 @@ export function DailyUnlockPin({
                   key={key}
                   type="button"
                   onClick={() => void handleBiometricUnlock()}
-                  className="native-keypad-key"
+                  className="native-keypad-key native-keypad-action"
                   aria-label="Use fingerprint"
                 >
                   <Fingerprint className="h-5 w-5" strokeWidth={1.5} />
@@ -680,7 +680,7 @@ export function DailyUnlockPin({
               ) : <span key={key} aria-hidden="true" /> 
             ) :
             key === "back" ? (
-              <button key={key} type="button" onClick={() => setDigits((value) => value.slice(0, -1))} className="native-keypad-key" aria-label="Delete last digit">
+              <button key={key} type="button" onClick={() => setDigits((value) => value.slice(0, -1))} className="native-keypad-key native-keypad-action" aria-label="Delete last digit">
                 <Delete className="h-5 w-5" strokeWidth={1.5} />
               </button>
             ) : (

@@ -560,13 +560,99 @@ html.reduce-motion *::after {
   text-align: center;
 }
 
+.native-pin-unlock-screen .native-daily-content {
+  width: min(100%, 430px);
+  padding-top: clamp(28px, 5vh, 56px);
+}
+
+.native-pin-unlock-screen .native-brand-lockup {
+  gap: 12px;
+  font-size: 1.45rem;
+}
+
+.native-pin-unlock-screen .native-brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+}
+
+.native-pin-unlock-screen .native-instruction {
+  margin-top: clamp(42px, 6.5vh, 74px);
+}
+
 .native-daily-content .native-pin-progress {
   margin-top: 36px;
+}
+
+.native-pin-unlock-screen .native-pin-progress {
+  gap: 16px;
+  margin: clamp(18px, 2.5vh, 26px) 0 clamp(50px, 5.5vh, 66px);
+}
+
+.native-pin-unlock-screen .native-pin-dot {
+  width: 12px;
+  height: 12px;
+  border-color: #737b84;
+}
+
+.native-pin-unlock-screen .native-pin-dot-filled {
+  border-color: #6c8291;
+  background: #6c8291;
+}
+
+.native-pin-unlock-screen .native-keypad {
+  width: min(100%, 330px);
+  row-gap: clamp(20px, 2.5vh, 26px);
+  column-gap: clamp(8px, 2.5vw, 12px);
+}
+
+.native-pin-unlock-screen .native-keypad-key:not(.native-keypad-action) {
+  width: min(100%, 88px);
+  border-color: #20242a;
+  color: #f4f5f6;
+  background: #1b1e24;
+  font-family: var(--app-font-sans);
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+.native-pin-unlock-screen .native-keypad-key:not(.native-keypad-action):hover,
+.native-pin-unlock-screen .native-keypad-key:not(.native-keypad-action):focus-visible {
+  border-color: #343a43;
+  background: #232831;
+}
+
+.native-pin-unlock-screen .native-keypad-action {
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+  aspect-ratio: auto;
+  border: 0;
+  color: #e4e8eb;
+  background: transparent;
+}
+
+.native-pin-unlock-screen .native-keypad-action:hover,
+.native-pin-unlock-screen .native-keypad-action:focus-visible {
+  border: 0;
+  color: #fff;
+  background: transparent;
+  outline: 2px solid color-mix(in srgb, var(--primary) 65%, transparent);
+  outline-offset: 2px;
+}
+
+.native-pin-unlock-screen .native-keypad-action:active {
+  opacity: 0.72;
 }
 
 .native-daily-link {
   display: inline-block;
   margin-top: 32px;
+}
+
+.native-pin-unlock-screen .native-daily-link {
+  margin-top: clamp(48px, 6vh, 72px);
+  font-size: 1rem;
 }
 
 .native-password-daily-content {
@@ -603,5 +689,9 @@ html.reduce-motion *::after {
   .native-keypad-key,
   .native-keypad-empty {
     width: min(100%, 68px);
+  }
+
+  .native-pin-unlock-screen .native-keypad-key:not(.native-keypad-action) {
+    width: min(100%, 82px);
   }
 }
