@@ -778,12 +778,10 @@ export function NativeSetupFlow({
   onComplete,
   onBack,
   showBack = false,
-  onCredentialRemoved,
 }: {
   onComplete: () => void;
   onBack?: () => void;
   showBack?: boolean;
-  onCredentialRemoved?: () => void | Promise<void>;
 }) {
   const [screen, setScreen] = useState<SetupScreen>(showBack ? "loading" : "choice");
   const [activeMethod, setActiveMethod] = useState<"pin" | "password" | null>(null);
@@ -881,8 +879,7 @@ export function NativeSetupFlow({
           if (pendingAction.type === "remove-credential") {
             try {
               await removeNativeUnlockCredential();
-              if (onCredentialRemoved) await onCredentialRemoved();
-              else onComplete();
+              onComplete();
               return { ok: true };
             } catch {
               return { ok: false, message: "Could not remove quick unlock. Please try again." };

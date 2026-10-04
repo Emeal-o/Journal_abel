@@ -619,7 +619,6 @@ export function SettingsPage() {
         showBack
         onBack={() => setNativeSetupOpen(false)}
         onComplete={() => setNativeSetupOpen(false)}
-        onCredentialRemoved={handleLogout}
       />
     );
   }
